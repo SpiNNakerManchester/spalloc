@@ -1,0 +1,291 @@
+import pytest
+
+from mock import Mock
+
+import socket
+import json
+import threading
+import time
+import logging
+
+from spalloc import ProtocolClient
+
+
+logging.basicConfig(level=logging.DEBUG)
+
+
+class MockServer(object):
+    """A mock JSON line sender/receiver server."""
+    
+    def __init__(self):
+        self._server_socket = socket.socket(socket.AF_INET,
+                                            socket.SOCK_STREAM)
+        self._server_socket.setsockopt(socket.SOL_SOCKET,
+                                       socket.SO_REUSEADDR, 1)
+        
+        self._sock = None
+        self._buf = b""
+        self._started = threading.Event()
+    
+    def connect(self):
+        """Wait for a client to connect."""
+        self._server_socket.bind(("", 22244))
+        self._server_socket.listen(1)
+        self._started.set()
+        self._sock, addr = self._server_socket.accept()
+    
+    def close(self):
+        if self._sock is not None:
+            self._sock.close()
+        self._sock = None
+        self._buf = b""
+        self._server_socket.close()
+    
+    def send(self, obj):
+        """Send a JSON object to the client."""
+        self._sock.send(json.dumps(obj).encode("utf-8") + b"\n")
+    
+    def recv(self):
+        """Recieve a JSON object."""
+        while b"\n" not in self._buf:
+            data = self._sock.recv(1024)
+            if len(data) == 0:
+                raise OSError("Socket closed!")
+            self._buf += data
+        
+        line, _, self._buf = self._buf.partition(b"\n")
+        return json.loads(line.decode("utf-8"))
+
+@pytest.yield_fixture
+def s():
+    # A mock server
+    s = MockServer()
+    yield s
+    s.close()
+
+@pytest.yield_fixture
+def c():
+    c = ProtocolClient("localhost")
+    yield c
+    c.close()
+
+@pytest.yield_fixture
+def bg_accept(s):
+    # Accept the first conncetion in the background
+    t = threading.Thread(target=s.connect)
+    t.start()
+    t._started.wait()
+    yield t
+    s.close()
+    t.join()
+
+
+class TestCconnect():
+    
+    @pytest.mark.timeout(1.0)
+    def test_first_time(self, s, c, bg_accept):
+        # If server already available, should just connect straight away
+        c.connect()
+        bg_accept.join()
+    
+    @pytest.mark.timeout(1.0)
+    def test_no_server_no_retry(self):
+        # Do not retry connecting if server not started
+        c = ProtocolClient("localhost")
+        with pytest.raises(OSError):
+            c.connect(no_retry=True)
+    
+    @pytest.mark.timeout(1.0)
+    def test_no_server_timeout(self):
+        # If no server is there, should stop retrying on connect after a
+        # timeout
+        c = ProtocolClient("localhost", reconnect_delay=0.1)
+        before = time.time()
+        with pytest.raises(TimeoutError):
+            c.connect(timeout=0.3)
+        after = time.time()
+        assert 0.3 < after - before < 0.4
+    
+    @pytest.mark.timeout(1.0)
+    @pytest.mark.parametrize("timeout", [5.0, None])
+    def test_retry(self, timeout):
+        # If the server is not arround initially, a later retry shouuld find it
+        # it.
+        c = ProtocolClient("localhost", reconnect_delay=0.1)
+        
+        def wait_and_accept():
+            time.sleep(0.3)
+            s = MockServer()
+            s.connect()
+            time.sleep(0.2)
+            s.close()
+        t = threading.Thread(target=wait_and_accept)
+        t.start()
+        
+        c.connect(timeout=timeout)
+        
+        t.join()
+        
+        # Should be connected now
+        assert c._sock is not None
+
+
+@pytest.mark.timeout(1.0)
+def test_close(c, s, bg_accept):
+    # If already connected, should be able to close
+    assert c._sock is None
+    c.connect()
+    assert c._sock is not None
+    c.close()
+    assert c._sock is None
+    bg_accept.join()
+    s.close()
+    
+    # Should be able to close again
+    c.close()
+    assert c._sock is None
+    
+    # And should be able to close a newly created connection
+    c = ProtocolClient("localhost")
+    assert c._sock is None
+    c.close()
+    assert c._sock is None
+
+
+@pytest.mark.timeout(1.0)
+def test_recv_json(c, s, bg_accept):
+    
+    # Should fail before connecting
+    with pytest.raises(OSError):
+        c._recv_json()
+    
+    c.connect()
+    bg_accept.join()
+    
+    # Make sure timeout works once connected
+    before = time.time()
+    with pytest.raises(TimeoutError):
+        c._recv_json(timeout=0.1)
+    after = time.time()
+    assert 0.1 < after - before < 0.2
+    
+    # Make sure we can actually receieve JSON
+    s.send({"foo": 1, "bar": 2})
+    assert c._recv_json() == {"foo": 1, "bar": 2}
+    
+    # Make sure we can receieve large blobs of JSON
+    s.send({"foo": list(range(1000))})
+    assert c._recv_json() == {"foo": list(range(1000))}
+    
+    # Make sure we can receive multiple blobs of JSON before returning each
+    # sequentially
+    s.send({"first": True, "second": False})
+    s.send({"first": False, "second": True})
+    assert c._recv_json() == {"first": True, "second": False}
+    assert c._recv_json() == {"first": False, "second": True}
+    
+    # When socket becomes closed should fail
+    s.close()
+    with pytest.raises(OSError):
+        c._recv_json()
+
+@pytest.mark.timeout(1.0)
+def test_send_json(c, s, bg_accept):
+    # Should fail before connecting
+    with pytest.raises(OSError):
+        c._send_json(123)
+    
+    c.connect()
+    bg_accept.join()
+    
+    # Make sure we can send JSON
+    c._send_json({"foo": 1, "bar": 2})
+    assert s.recv() == {"foo": 1, "bar": 2}
+
+@pytest.mark.timeout(1.0)
+def test_send_json_fails(c):
+    c._sock = Mock()
+    c._sock.send.side_effect = [1, socket.timeout()]
+    
+    # If full amount is not sent, should fail
+    with pytest.raises(OSError):
+        c._send_json(123)
+    
+    # If timeout, should fail
+    with pytest.raises(TimeoutError):
+        c._send_json(123)
+
+@pytest.mark.timeout(1.0)
+def test_call(c, s, bg_accept):
+    c.connect()
+    bg_accept.join()
+    
+    # Basic calls should work
+    s.send({"return": "Woo"})
+    assert c.call("foo", 1, bar=2) == "Woo"
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    
+    # Should be able to cope with notifications arriving before return value
+    s.send({"notification": 1})
+    s.send({"notification": 2})
+    s.send({"return": "Woo"})
+    assert c.call("foo", 1, bar=2) == "Woo"
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    assert list(c._notifications) == [{"notification": 1}, {"notification": 2}]
+    c._notifications.clear()
+    
+    # Should be able to timeout immediately
+    before = time.time()
+    with pytest.raises(TimeoutError):
+        c.call("foo", 1, bar=2, timeout=0.1)
+    after = time.time()
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    assert 0.1 < after - before < 0.2
+    
+    # Should be able to timeout after getting a notification
+    s.send({"notification": 3})
+    before = time.time()
+    with pytest.raises(TimeoutError):
+        c.call("foo", 1, bar=2, timeout=0.1)
+    after = time.time()
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    assert 0.1 < after - before < 0.2
+    assert list(c._notifications) == [{"notification": 3}]
+
+
+def test_wait_for_notification(c, s, bg_accept):
+    c.connect()
+    bg_accept.join()
+    
+    # Should be able to timeout
+    with pytest.raises(TimeoutError):
+        c.wait_for_notification(timeout=0.1)
+    
+    # Should return None on negative timeout when no notifications arrived
+    assert c.wait_for_notification(timeout=-1) is None
+    
+    # If notifications queued during call, should just return those
+    s.send({"notification": 1})
+    s.send({"notification": 2})
+    s.send({"return": "Woo"})
+    assert c.call("foo", 1, bar=2) == "Woo"
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    assert c.wait_for_notification() == {"notification": 1}
+    assert c.wait_for_notification() == {"notification": 2}
+    
+    # If no notifications queued, should listen for them
+    s.send({"notification": 3})
+    assert c.wait_for_notification() == {"notification": 3}
+
+
+def test_commands_as_methods(c, s, bg_accept):
+    c.connect()
+    bg_accept.join()
+    
+    s.send({"return": "Woo"})
+    assert c.foo(1, bar=2) == "Woo"
+    assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
+    
+    # Should fail for _prefixed things to help quickly find internal bugs...
+    with pytest.raises(AttributeError):
+        c._bar()
