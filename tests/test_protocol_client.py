@@ -10,77 +10,12 @@ import logging
 
 from spalloc import ProtocolClient
 
+from common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)
 
 
-class MockServer(object):
-    """A mock JSON line sender/receiver server."""
-    
-    def __init__(self):
-        self._server_socket = socket.socket(socket.AF_INET,
-                                            socket.SOCK_STREAM)
-        self._server_socket.setsockopt(socket.SOL_SOCKET,
-                                       socket.SO_REUSEADDR, 1)
-        
-        self._sock = None
-        self._buf = b""
-        self._started = threading.Event()
-    
-    def connect(self):
-        """Wait for a client to connect."""
-        self._server_socket.bind(("", 22244))
-        self._server_socket.listen(1)
-        self._started.set()
-        self._sock, addr = self._server_socket.accept()
-    
-    def close(self):
-        if self._sock is not None:
-            self._sock.close()
-        self._sock = None
-        self._buf = b""
-        self._server_socket.close()
-    
-    def send(self, obj):
-        """Send a JSON object to the client."""
-        self._sock.send(json.dumps(obj).encode("utf-8") + b"\n")
-    
-    def recv(self):
-        """Recieve a JSON object."""
-        while b"\n" not in self._buf:
-            data = self._sock.recv(1024)
-            if len(data) == 0:
-                raise OSError("Socket closed!")
-            self._buf += data
-        
-        line, _, self._buf = self._buf.partition(b"\n")
-        return json.loads(line.decode("utf-8"))
-
-@pytest.yield_fixture
-def s():
-    # A mock server
-    s = MockServer()
-    yield s
-    s.close()
-
-@pytest.yield_fixture
-def c():
-    c = ProtocolClient("localhost")
-    yield c
-    c.close()
-
-@pytest.yield_fixture
-def bg_accept(s):
-    # Accept the first conncetion in the background
-    t = threading.Thread(target=s.connect)
-    t.start()
-    t._started.wait()
-    yield t
-    s.close()
-    t.join()
-
-
-class TestCconnect():
+class TestConnect():
     
     @pytest.mark.timeout(1.0)
     def test_first_time(self, s, c, bg_accept):
@@ -89,46 +24,38 @@ class TestCconnect():
         bg_accept.join()
     
     @pytest.mark.timeout(1.0)
-    def test_no_server_no_retry(self):
-        # Do not retry connecting if server not started
+    def test_no_server(self):
+        # Should just fail if there is no server
         c = ProtocolClient("localhost")
         with pytest.raises(OSError):
-            c.connect(no_retry=True)
+            c.connect()
     
     @pytest.mark.timeout(1.0)
-    def test_no_server_timeout(self):
-        # If no server is there, should stop retrying on connect after a
-        # timeout
-        c = ProtocolClient("localhost", reconnect_delay=0.1)
-        before = time.time()
-        with pytest.raises(TimeoutError):
-            c.connect(timeout=0.3)
-        after = time.time()
-        assert 0.3 < after - before < 0.4
-    
-    @pytest.mark.timeout(1.0)
-    @pytest.mark.parametrize("timeout", [5.0, None])
-    def test_retry(self, timeout):
-        # If the server is not arround initially, a later retry shouuld find it
-        # it.
-        c = ProtocolClient("localhost", reconnect_delay=0.1)
+    def test_reconnect(self):
+        # If previously connected, connecting should close the existing
+        # connection and attempt to start a new one
         
-        def wait_and_accept():
-            time.sleep(0.3)
+        started = threading.Event()
+        finish = threading.Event()
+        def accept_and_listen():
             s = MockServer()
+            s.listen()
+            started.set()
             s.connect()
-            time.sleep(0.2)
+            finish.wait()
+            finish.clear()
             s.close()
-        t = threading.Thread(target=wait_and_accept)
-        t.start()
         
-        c.connect(timeout=timeout)
-        
-        t.join()
-        
-        # Should be connected now
-        assert c._sock is not None
-
+        # Attempt several reconnects
+        for _ in range(2):
+            t = threading.Thread(target=accept_and_listen)
+            t.start()
+            started.wait()
+            started.clear()
+            c = ProtocolClient("localhost")
+            c.connect()
+            finish.set()
+            t.join()
 
 @pytest.mark.timeout(1.0)
 def test_close(c, s, bg_accept):

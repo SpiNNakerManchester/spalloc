@@ -11,9 +11,6 @@ from collections import deque
 import logging
 
 
-logger = logging.getLogger(__name__)
-
-
 class ProtocolClient(object):
     """A simple `spalloc-server
     <https://github.com/project-rig/spalloc_server>`_ protocol client
@@ -27,6 +24,7 @@ class ProtocolClient(object):
     
         # Connect to a spalloc_server
         c = ProtocolClient("hostname")
+        c.connect()
         
         # Call commands by name
         print(c.call("version"))  # '0.0.2'
@@ -41,7 +39,7 @@ class ProtocolClient(object):
         c.close()
     """
     
-    def __init__(self, hostname, port=22244, reconnect_delay=5.0):
+    def __init__(self, hostname, port=22244):
         """
         Parameters
         ----------
@@ -49,13 +47,9 @@ class ProtocolClient(object):
             The hostname of the server.
         port : str
             The port to use (default: 22244).
-        reconnect_delay : float
-            The number of seconds to wait between attempts to (re)connect to
-            the server when the socket is closed.
         """
         self._hostname = hostname
         self._port = port
-        self._reconnect_delay = reconnect_delay
         
         # The socket connected to the server or None if disconnected.
         self._sock = None
@@ -66,74 +60,40 @@ class ProtocolClient(object):
         # A queue of unprocessed notifications
         self._notifications = deque()
     
-    def connect(self, timeout=None, no_retry=False):
+    def connect(self, timeout=None):
         """(Re)connect to the server.
-        
-        Parameters
-        ----------
-        timeout : float or None
-            The number of seconds to wait before timing out. None if this
-            function should try again forever.
-        no_retry : bool
-            If True, will only attempt to connect to the server once.
         
         Raises
         ------
-        TimeoutError
-            If a timeout occurs.
+        OSError
+            If a connection failure occurs.
         """
-        finish_time = time.time() + timeout if timeout is not None else None
-        
-        # Close any existing connection (and wait the reconnect delay before
-        # connecting again)
+        # Close any existing connection
         if self._sock is not None:
             self.close()
-            delay = self._reconnect_delay
-            if finish_time is not None:
-                delay = min(finish_time - time.time(), delay)
-            time.sleep(delay)
         
-        # Keep trying to reconnect to the server (until a timeout is reached)
+        # Try to (re)connect to the server
         first_try = True
-        while finish_time is None or finish_time > time.time():
-            try:
-                self._sock = socket.socket(socket.AF_INET,
-                                           socket.SOCK_STREAM)
-                self._sock.connect((self._hostname, self._port))
-                logger.debug("Connected to server.")
-                # Success!
-                return True
-            except OSError as e:
-                # Failiure, try again...
-                logger.info("Could not connect to server: %s.", e)
-                
-                self.close()
-                
-                # Should we give up after this first failure?
-                if first_try and no_retry:
-                    first_try = False
-                    raise
-                else:
-                    first_try = False
-                
-                # Wait before next attempt. If the timeout will expire before
-                # then, just wait for the timeout.
-                delay = self._reconnect_delay
-                if finish_time is not None:
-                    delay = min(finish_time - time.time(), delay)
-                if delay > 0.0:
-                    logger.info("Retrying in %0.1f seconds...",
-                                self._reconnect_delay)
-                    time.sleep(delay)
-        
-        # Timeout
-        logger.debug("Connection attempt timed out.")
-        raise TimeoutError()
+        try:
+            self._sock = socket.socket(socket.AF_INET,
+                                       socket.SOCK_STREAM)
+            self._sock.settimeout(timeout)
+            self._sock.connect((self._hostname, self._port))
+            # Success!
+            return
+        except socket.timeout:
+            self.close()
+            raise TimeoutError("Timed out while connecting.")
+        except OSError as e:
+            # Failiure, try again...
+            self.close()
+            
+            # Pass on the exception
+            raise
     
     def close(self):
         """Disconnect from the server."""
         if self._sock is not None:
-            logger.debug("Disconnecting from server.")
             self._sock.close()
         self._sock = None
         self._buf = b""
