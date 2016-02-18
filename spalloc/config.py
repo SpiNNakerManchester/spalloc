@@ -50,6 +50,7 @@ def read_config(filenames=SEARCH_PATH):
             
             "machine": "None",
             "tags": "None",
+            "min_ratio": "0.333",
             "max_dead_boards": "0",
             "max_dead_links": "None",
             "require_torus": "False",
@@ -96,6 +97,8 @@ def read_config(filenames=SEARCH_PATH):
         cfg["tags"] = None
     else:
         cfg["tags"] = list(map(str.strip, spalloc.get("tags").split(",")))
+    
+    cfg["min_ratio"] = spalloc.getfloat("min_ratio")
     
     if spalloc.get("max_dead_boards", fallback="None") == "None":
         cfg["max_dead_boards"] = None

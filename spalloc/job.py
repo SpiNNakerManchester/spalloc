@@ -3,6 +3,8 @@
 import threading
 import time
 
+from collections import namedtuple
+
 from six import iteritems
 
 from spalloc.protocol_client import ProtocolClient
@@ -33,10 +35,24 @@ class Job(object):
 
             # Any single (SpiNN-5) board
             Job()
+            Job(1)
+
+            # Board x=3, y=2, z=1 on the machine named "m"
+            Job(3, 2, 1, machine="m")
+
+            # Any machine with at least 4 boards
+            Job(4)
+
+            # Any 7-or-more board machine with an aspect ratio at least as
+            # square as 1:2
+            Job(7, min_ratio=0.5)
 
             # Any 4x5 triad segment of a machine (may or may-not be a
             # torus/full machine)
             Job(4, 5)
+
+            # Any torus-connected (full machine) 4x2 machine
+            Job(4, 2, require_torus=True)
         
         The following keyword-only parameters are also defined and default to
         the values supplied in the local config file.
@@ -81,6 +97,11 @@ class Job(object):
             have. If None is supplied, only machines with the "default" tag
             will be used. If machine is given, this argument must be None.
             (Read from config file if not specified.)
+        min_ratio : float
+            The aspect ratio (h/w) which the allocated region must be 'at least
+            as square as'. Set to 0.0 for any allowable shape, 1.0 to be
+            exactly square etc. Ignored when allocating single boards or
+            specific rectangles of triads.
         max_dead_boards : int or None
             *Optional.* The maximum number of broken or unreachable boards to
             allow in the allocated region. If None, any number of dead boards
@@ -117,6 +138,7 @@ class Job(object):
             "keepalive": kwargs.get("keepalive", config["keepalive"]),
             "machine": kwargs.get("machine", config["machine"]),
             "tags": kwargs.get("tags", config["tags"]),
+            "min_ratio": kwargs.get("min_ratio", config["min_ratio"]),
             "max_dead_boards":
                 kwargs.get("max_dead_boards", config["max_dead_boards"]),
             "max_dead_links":
@@ -141,6 +163,7 @@ class Job(object):
         self._keepalive_thread = threading.Thread(
             target=self._keepalive_thread,
             name="job-keepalive-thread")
+        self._keepalive_thread.deamon = True
         
         # Event fired when the keepalive thread should shut-down
         self._stop = threading.Event()
@@ -274,29 +297,16 @@ class Job(object):
         
         Returns
         -------
-        {state: state, "power": power, \
-                "keepalive": keepalive, "reason": reason}
-            Where:
-
-            state : :py:class:`~spalloc.states.JobState`
-                The current state of the job.
-            power : bool or None
-                If job is in the ready or power states, indicates whether the
-                boards are power{ed,ing} on (True), or power{ed,ing} off
-                (False). In other states, this value is None.
-            keepalive : float or None
-                The Job's keepalive value: the number of seconds between
-                queries about the job before it is automatically destroyed.
-                None if no timeout is active (or when the job has been
-                destroyed).
-            reason : str or None
-                If the job has been destroyed, this may be a string describing
-                the reason the job was terminated.
+        :py:class:`.JobStateTuple`
         """
         with self._client_lock:
             state = self._client.get_job_state(self.id, timeout=self._timeout)
-            state["state"] = JobState(state["state"])
-            return state
+            return JobStateTuple(
+                state=JobState(state["state"]),
+                power=state["power"],
+                keepalive=state["keepalive"],
+                reason=state["reason"],
+            )
     
     def set_power(self, power):
         """Turn the boards allocated to the job on or off.
@@ -339,35 +349,22 @@ class Job(object):
         
         Returns
         -------
-        {"width": width, "height": height, \
-         "connections": connections, "machine_name": machine_name}
-            Where:
-
-            width, height : int or None
-                The dimensions of the machine in chips, e.g. for booting.
-
-                None if no boards are allocated to the job.
-            connections : {(x, y): hostname, ...} or None
-                A list giving Ethernet-connected chip coordinates in the
-                machine to hostname.
-
-                None if no boards are allocated to the job.
-            machine_name : str or None
-                The name of the machine the job is allocated on.
-
-                None if no boards are allocated to the job.
+        :py:class:`.JobMachineInfoTuple`
         """
         with self._client_lock:
             info = self._client.get_job_machine_info(
                 self.id, timeout=self._timeout)
             
-            # Convert connection list into dictionary
-            if info["connections"] is not None:
-                info["connections"] = {(x, y): hostname
-                                       for (x, y), hostname
-                                       in info["connections"]}
-            
-            return info
+            return JobMachineInfoTuple(
+                width=info["width"],
+                height=info["height"],
+                connections=({(x, y): hostname
+                              for (x, y), hostname
+                              in info["connections"]}
+                             if info["connections"] is not None
+                             else None),
+                machine_name=info["machine_name"],
+            )
     
     def wait_for_state_change(self, old_state, timeout=None):
         """Block until the job's state changes from the supplied state.
@@ -397,7 +394,7 @@ class Job(object):
                 # Wait for job state to change
                 while finish_time is None or finish_time > time.time():
                     # Has the job changed state?
-                    new_state = self.get_state()["state"]
+                    new_state = self.get_state().state
                     if new_state != old_state:
                         return new_state
                     
@@ -473,7 +470,7 @@ class Job(object):
         while finish_time is None or finish_time > time.time():
             if cur_state is None:
                 # Get initial state
-                cur_state = self.get_state()["state"]
+                cur_state = self.get_state().state
             
             # Are we ready yet?
             if cur_state == JobState.ready:
@@ -485,7 +482,7 @@ class Job(object):
                 logger.info("Waiting for board power commands to complete.")
             elif cur_state == JobState.destroyed:
                 # In a state which can never become ready
-                raise JobDestroyedError(self.get_state()["reason"])
+                raise JobDestroyedError(self.get_state().reason)
             elif cur_state == JobState.unknown:
                 # Server has forgotten what this job even was...
                 raise JobDestroyedError("Server no longer recognises job.")
@@ -504,3 +501,53 @@ class Job(object):
 
 class JobDestroyedError(Exception):
     """Thrown when the job was destroyed while waiting for it to become ready."""
+
+
+class JobStateTuple(namedtuple("JobStateTuple",
+                               "state,power,keepalive,reason")):
+    """Tuple describing the state of a particular job, returned by
+    :py:meth:`.Controller.get_job_state`.
+
+    Parameters
+    ----------
+    state : :py:class:`.JobState`
+        The current state of the queried job.
+    power : bool or None
+        If job is in the ready or power states, indicates whether the boards
+        are power{ed,ing} on (True), or power{ed,ing} off (False). In other
+        states, this value is None.
+    keepalive : float or None
+        The Job's keepalive value: the number of seconds between queries
+        about the job before it is automatically destroyed. None if no
+        timeout is active (or when the job has been destroyed).
+    reason : str or None
+        If the job has been destroyed, this may be a string describing the
+        reason the job was terminated.
+    """
+
+    # Python 3.4 Workaround: https://bugs.python.org/issue24931
+    __slots__ = tuple()
+
+
+class JobMachineInfoTuple(namedtuple("JobMachineInfoTuple",
+                                     "width,height,connections,machine_name")):
+    """Tuple describing the machine alloated to a job, returned by
+    :py:meth:`.Controller.get_job_machine_info`.
+
+    Parameters
+    
+    from collections import namedtuple
+    ----------
+    width, height : int or None
+        The dimensions of the machine in *chips* or None if no machine
+        allocated.
+    connections : {(x, y): hostname, ...} or None
+        A dictionary mapping from SpiNNaker Ethernet-connected chip coordinates
+        in the machine to hostname or None if no machine allocated.
+    machine_name : str or None
+        The name of the machine the job is allocated on or None if no machine
+        allocated.
+    """
+
+    # Python 3.4 Workaround: https://bugs.python.org/issue24931
+    __slots__ = tuple()

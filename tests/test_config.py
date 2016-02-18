@@ -59,6 +59,8 @@ def test_priority(tempdir):
      ("tags", "None", None),
      ("tags", "foo", ["foo"]),
      ("tags", "one, two , three", ["one", "two", "three"]),
+     ("min_ratio", None, 0.333),
+     ("min_ratio", "1.0", 1.0),
      ("max_dead_boards", None, 0),
      ("max_dead_boards", "None", None),
      ("max_dead_boards", "3", 3),

@@ -7,6 +7,8 @@ import time
 
 from spalloc import Job, JobState, JobDestroyedError
 
+from spalloc.job import JobStateTuple, JobMachineInfoTuple
+
 from common import MockServer
 
 GOOD_VERSION = "0.0.2"
@@ -83,6 +85,7 @@ def test_create(s, no_config_files, version, ok):
                                        "keepalive": 60.0,
                                        "machine": None,
                                        "tags": None,
+                                       "min_ratio": 0.333,
                                        "max_dead_boards": 0,
                                        "max_dead_links": None,
                                        "require_torus": False}}
@@ -177,10 +180,8 @@ def test_get_state(bg_version_connect, s, j, no_config_files):
                        "power": True,
                        "keepalive": 60.0,
                        "reason": None}})
-    assert j.get_state() == {"state": 3,
-                             "power": True,
-                             "keepalive": 60.0,
-                             "reason": None}
+    assert j.get_state() == JobStateTuple(state=3, power=True,
+                                          keepalive=60.0, reason=None)
     assert s.recv() == {"command": "get_job_state", "args": [1], "kwargs": {}}
 
 
@@ -222,16 +223,16 @@ def test_get_machine_info(bg_version_connect, s, j, no_config_files, allocated):
         "command": "get_job_machine_info", "args": [1], "kwargs": {}}
     
     if allocated:
-        assert info == {
-            "width": 8, "height": 8,
-            "connections": {(0, 0): "localhost"},
-            "machine_name": "m",
-        }
+        assert info == JobMachineInfoTuple(
+            width=8, height=8,
+            connections={(0, 0): "localhost"},
+            machine_name="m",
+        )
     else:
-        assert info == {
-            "width": None, "height": None,
-            "connections": None, "machine_name": None,
-        }
+        assert info == JobMachineInfoTuple(
+            width=None, height=None,
+            connections=None, machine_name=None,
+        )
 
 class TestWaitForStateChange(object):
     
@@ -460,8 +461,8 @@ class TestWaitUntilReady(object):
         # Simple mocked implementation where at first the job is in the wrong
         # state then eventually in the correct state.
         j.get_state = Mock(side_effect=[
-            {"state": JobState.power, "power": True,
-             "keepalive": 60.0, "reason": None}])
+            JobStateTuple(state=JobState.power, power=True,
+                          keepalive=60.0, reason=None)])
         j.wait_for_state_change = Mock(side_effect=[
             JobState.power, JobState.ready])
         
@@ -476,8 +477,8 @@ class TestWaitUntilReady(object):
         # Simple mocked implementation where the job enters an unrecoverable
         # state
         j.get_state = Mock(return_value=
-            {"state": final_state, "power": None,
-             "keepalive": None, "reason": reason})
+            JobStateTuple(state=final_state, power=None,
+                          keepalive=None, reason=reason))
         
         with pytest.raises(JobDestroyedError):
             j.wait_until_ready()
@@ -491,8 +492,8 @@ class TestWaitUntilReady(object):
     def test_timeout(bg_version_connect, s, j, no_config_files):
         # Simple mocked implementation which times out
         j.get_state = Mock(return_value=
-            {"state": JobState.power, "power": True,
-             "keepalive": 60.0, "reason": None})
+            JobStateTuple(state=JobState.power, power=True,
+                          keepalive=60.0, reason=None))
         j.wait_for_state_change = Mock(
             side_effect=(lambda *a, **k: time.sleep(0.1)))
         

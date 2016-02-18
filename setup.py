@@ -34,11 +34,12 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["six", "appdirs"],
+    install_requires=["six", "appdirs", "blessings", "colorama"],
 
     # Scripts
     entry_points={
         "console_scripts": [
+            "spalloc = spalloc.scripts.alloc:main",
         ],
     }
 )
