@@ -124,6 +124,7 @@ class Job(object):
         
         # Get protocol client options
         hostname = kwargs.get("hostname", config["hostname"])
+        owner = kwargs.get("owner", config["owner"])
         port = kwargs.get("port", config["port"])
         self._reconnect_delay = kwargs.get("reconnect_delay",
                                            config["reconnect_delay"])
@@ -134,7 +135,7 @@ class Job(object):
         # Get job creation arguments
         self._create_job_args = args
         self._create_job_kwargs = {
-            "owner": kwargs.get("owner", config["owner"]),
+            "owner": owner,
             "keepalive": kwargs.get("keepalive", config["keepalive"]),
             "machine": kwargs.get("machine", config["machine"]),
             "tags": kwargs.get("tags", config["tags"]),
@@ -469,7 +470,8 @@ class Job(object):
         finish_time = time.time() + timeout if timeout is not None else None
         while finish_time is None or finish_time > time.time():
             if cur_state is None:
-                # Get initial state
+                # Get initial state (NB: done here such that the command is
+                # never sent if the timeout has already occurred)
                 cur_state = self.get_state().state
             
             # Are we ready yet?

@@ -1,6 +1,8 @@
 import pytest
 
+import os
 import threading
+import tempfile
 
 from spalloc import ProtocolClient
 from spalloc.config import SEARCH_PATH
@@ -44,3 +46,47 @@ def bg_accept(s):
     s.close()
     t.join()
 
+
+@pytest.yield_fixture
+def basic_config_file(monkeypatch):
+    # Sets up a basic config file with known and non-default values for all
+    # fields
+    fd, filename = tempfile.mkstemp()
+    with open(filename, "w") as f:
+        f.write("[spalloc]\n"
+                "hostname=servername\n"
+                "port=1234\n"
+                "owner=me\n"
+                "keepalive=1.0\n"
+                "reconnect_delay=2.0\n"
+                "timeout=3.0\n"
+                "machine=m\n"
+                "tags=foo, bar\n"
+                "min_ratio=4.0\n"
+                "max_dead_boards=5\n"
+                "max_dead_links=6\n"
+                "require_torus=True\n")
+    before = SEARCH_PATH[:]
+    SEARCH_PATH.clear()
+    SEARCH_PATH.append(filename)
+    yield
+    SEARCH_PATH.clear()
+    SEARCH_PATH.extend(before)
+    os.remove(filename)
+
+
+@pytest.fixture
+def basic_job_kwargs():
+    # The kwargs set by the basic_config_file fixture
+    return dict(hostname="servername",
+                port=1234,
+                reconnect_delay=2.0,
+                timeout=3.0,
+                owner="me",
+                keepalive=1.0,
+                machine="m",
+                tags=None,  # As machine is not None
+                min_ratio=4.0,
+                max_dead_boards=5,
+                max_dead_links=6,
+                require_torus=True)

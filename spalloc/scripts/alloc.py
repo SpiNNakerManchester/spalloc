@@ -329,7 +329,7 @@ def main(argv=None):
                         # Exit with error state
                         try:
                             reason = job.get_state().reason
-                        except OSError:
+                        except (IOError, OSError):
                             reason = None
                         
                         if reason is not None:
@@ -389,5 +389,5 @@ def main(argv=None):
         os.remove(ip_file_filename)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

@@ -41,7 +41,7 @@ class MockServer(object):
         """Recieve a JSON object."""
         while b"\n" not in self._buf:
             data = self._sock.recv(1024)
-            if len(data) == 0:
+            if len(data) == 0:  # pragma: no cover
                 raise OSError("Socket closed!")
             self._buf += data
         

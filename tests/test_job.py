@@ -49,6 +49,61 @@ def j(s, bg_version_connect):
     s.send({"return": None})
     j.destroy()
 
+
+class TestConstructor(object):
+    
+    @pytest.mark.parametrize("kwargs",
+                             [{},
+                              {"owner": "me"},
+                              {"hostname": "foobar"}])
+    def test_no_owner_or_hostname(self, no_config_files, kwargs):
+        with pytest.raises(ValueError):
+            Job(**kwargs)
+    
+    def test_both_tags_and_machine_specified(self, basic_config_file):
+        with pytest.raises(ValueError):
+            Job(machine="m", tags=["foo"])
+    
+    def test_args_from_config(self, basic_config_file, basic_job_kwargs):
+        # NB: Must override basic config file's tags default
+        j = Job(tags=None)
+        basic_job_kwargs.pop("hostname")
+        basic_job_kwargs.pop("port")
+        basic_job_kwargs.pop("reconnect_delay")
+        assert j._create_job_args == tuple()
+        assert j._create_job_kwargs == basic_job_kwargs
+    
+    def test_override_config_file(self, basic_config_file):
+        # The basic config file should not be found and thus neither should the
+        # hostname.
+        with pytest.raises(ValueError):
+            Job(config_filenames=[])
+    
+    def test_override_config(self, basic_config_file, basic_job_kwargs):
+        j = Job(hostname="thehost",
+                port=123321,
+                reconnect_delay=0.1,
+                timeout=0.2,
+                owner="mossblaser",
+                keepalive=0.3,
+                machine=None,
+                tags=["baz", "quz"],
+                min_ratio=0.4,
+                max_dead_boards=None,
+                max_dead_links=None,
+                require_torus=False)
+        assert j._create_job_args == tuple()
+        assert j._create_job_kwargs == dict(timeout=0.2,
+                                            owner="mossblaser",
+                                            keepalive=0.3,
+                                            machine=None,
+                                            tags=["baz", "quz"],
+                                            min_ratio=0.4,
+                                            max_dead_boards=None,
+                                            max_dead_links=None,
+                                            require_torus=False)
+
+
 @pytest.mark.parametrize("version,ok",
                          [(GOOD_VERSION, True),
                           ("0.0.2", True),
@@ -461,10 +516,10 @@ class TestWaitUntilReady(object):
         # Simple mocked implementation where at first the job is in the wrong
         # state then eventually in the correct state.
         j.get_state = Mock(side_effect=[
-            JobStateTuple(state=JobState.power, power=True,
+            JobStateTuple(state=JobState.queued, power=None,
                           keepalive=60.0, reason=None)])
         j.wait_for_state_change = Mock(side_effect=[
-            JobState.power, JobState.ready])
+            JobState.queued, JobState.power, JobState.ready])
         
         j.wait_until_ready()
     
@@ -503,3 +558,32 @@ class TestWaitUntilReady(object):
         after = time.time()
         
         assert 0.3 <= after - before < 0.4
+
+
+def test_context_manager_fail(no_config_files, monkeypatch):
+    monkeypatch.setattr(Job, "create", Mock())
+    monkeypatch.setattr(Job, "destroy", Mock())
+    monkeypatch.setattr(Job, "wait_until_ready", Mock(side_effect=IOError()))
+    
+    j = Job(hostname="localhost", owner="me")
+    with pytest.raises(IOError):
+        with j:
+            pass  # pragma: no cover
+
+    j.create.assert_called_once_with()
+    j.wait_until_ready.assert_called_once_with()
+    j.destroy.assert_called_once_with()
+
+
+def test_context_manager_success(no_config_files, monkeypatch):
+    monkeypatch.setattr(Job, "create", Mock())
+    monkeypatch.setattr(Job, "destroy", Mock())
+    monkeypatch.setattr(Job, "wait_until_ready", Mock())
+    
+    j = Job(hostname="localhost", owner="me")
+    with j as j_:
+        assert j is j_
+
+    j.create.assert_called_once_with()
+    j.wait_until_ready.assert_called_once_with()
+    j.destroy.assert_called_once_with()

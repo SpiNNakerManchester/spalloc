@@ -15,7 +15,7 @@ from common import MockServer
 logging.basicConfig(level=logging.DEBUG)
 
 
-class TestConnect():
+class TestConnect(object):
     
     @pytest.mark.timeout(1.0)
     def test_first_time(self, s, c, bg_accept):
@@ -34,28 +34,33 @@ class TestConnect():
     def test_reconnect(self):
         # If previously connected, connecting should close the existing
         # connection and attempt to start a new one
+        c = ProtocolClient("localhost")
         
         started = threading.Event()
-        finish = threading.Event()
         def accept_and_listen():
             s = MockServer()
             s.listen()
             started.set()
             s.connect()
-            finish.wait()
-            finish.clear()
-            s.close()
         
         # Attempt several reconnects
-        for _ in range(2):
+        for _ in range(3):
             t = threading.Thread(target=accept_and_listen)
             t.start()
             started.wait()
             started.clear()
-            c = ProtocolClient("localhost")
             c.connect()
-            finish.set()
             t.join()
+    
+    def test_timeout(self, monkeypatch):
+        mock_socket = Mock()
+        monkeypatch.setattr(socket, "socket", Mock(return_value=mock_socket))
+        mock_socket.connect.side_effect = socket.timeout
+        
+        c = ProtocolClient("localhost")
+        with pytest.raises(TimeoutError):
+            c.connect()
+        
 
 @pytest.mark.timeout(1.0)
 def test_close(c, s, bg_accept):

@@ -76,49 +76,6 @@ def no_rig(monkeypatch):
     import spalloc.scripts.alloc
     monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", None)
 
-@pytest.yield_fixture
-def basic_config_file(monkeypatch):
-    # Sets up a basic config file with known and non-default values for all
-    # fields
-    fd, filename = tempfile.mkstemp()
-    with open(filename, "w") as f:
-        f.write("[spalloc]\n"
-                "hostname=servername\n"
-                "port=1234\n"
-                "owner=me\n"
-                "keepalive=1.0\n"
-                "reconnect_delay=2.0\n"
-                "timeout=3.0\n"
-                "machine=m\n"
-                "tags=foo, bar\n"
-                "min_ratio=4.0\n"
-                "max_dead_boards=5\n"
-                "max_dead_links=6\n"
-                "require_torus=True\n")
-    before = config.SEARCH_PATH[:]
-    config.SEARCH_PATH.clear()
-    config.SEARCH_PATH.append(filename)
-    yield
-    config.SEARCH_PATH.clear()
-    config.SEARCH_PATH.extend(before)
-    os.remove(filename)
-
-@pytest.fixture
-def basic_job_kwargs():
-    # The kwargs set by the basic_config_file
-    return dict(hostname="servername",
-                port=1234,
-                reconnect_delay=2.0,
-                timeout=3.0,
-                owner="me",
-                keepalive=1.0,
-                machine="m",
-                tags=None,  # As machine is not None
-                min_ratio=4.0,
-                max_dead_boards=5,
-                max_dead_links=6,
-                require_torus=True)
-
 
 def test_write_ips_to_file_empty(filename):
     write_ips_to_csv({}, filename)
@@ -176,6 +133,17 @@ def test_print_info_many_boards(capsys, mock_input):
                    "   Running on: m\n")
     assert err == ""
     mock_input.assert_called_once_with("<Press enter to destroy job>")
+
+
+def test_print_info_keyboard_interrupt(capsys, mock_input):
+    # Make sure keyboard interrpt during input is handled gracefully
+    machine_info = JobMachineInfoTuple(width=1,
+                                       height=2,
+                                       connections={(0, 0): "foobar",
+                                                    (4, 8): "bazqux"},
+                                       machine_name="m")
+    mock_input.side_effect = KeyboardInterrupt()
+    print_info(machine_info, "/some/file")
 
 
 @pytest.mark.parametrize("args,expected",
@@ -421,8 +389,17 @@ def test_failiure_modes(basic_config_file, mock_job, state, reason, retcode):
     job = Mock()
     mock_job.return_value = job
     job.get_state.return_value = Mock(state=state,
-                                          reason=reason)
+                                      reason=reason)
     assert main("".split()) == retcode
+
+
+def test_get_reason_fails(basic_config_file, mock_job):
+    job = Mock()
+    mock_job.return_value = job
+    job.get_state.side_effect = [Mock(state=JobState.destroyed,
+                                      reason=None),
+                                 IOError()]
+    assert main("".split()) == 1
 
 
 def test_keyboard_interrupt(basic_config_file, mock_job):
