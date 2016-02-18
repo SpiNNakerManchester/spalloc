@@ -8,7 +8,7 @@ import threading
 import time
 import logging
 
-from spalloc import ProtocolClient
+from spalloc import ProtocolClient, ProtocolTimeoutError
 
 from common import MockServer
 
@@ -27,7 +27,7 @@ class TestConnect(object):
     def test_no_server(self):
         # Should just fail if there is no server
         c = ProtocolClient("localhost")
-        with pytest.raises(OSError):
+        with pytest.raises((IOError, OSError)):
             c.connect()
     
     @pytest.mark.timeout(1.0)
@@ -51,15 +51,6 @@ class TestConnect(object):
             started.clear()
             c.connect()
             t.join()
-    
-    def test_timeout(self, monkeypatch):
-        mock_socket = Mock()
-        monkeypatch.setattr(socket, "socket", Mock(return_value=mock_socket))
-        mock_socket.connect.side_effect = socket.timeout
-        
-        c = ProtocolClient("localhost")
-        with pytest.raises(TimeoutError):
-            c.connect()
         
 
 @pytest.mark.timeout(1.0)
@@ -88,7 +79,7 @@ def test_close(c, s, bg_accept):
 def test_recv_json(c, s, bg_accept):
     
     # Should fail before connecting
-    with pytest.raises(OSError):
+    with pytest.raises((IOError, OSError)):
         c._recv_json()
     
     c.connect()
@@ -96,7 +87,7 @@ def test_recv_json(c, s, bg_accept):
     
     # Make sure timeout works once connected
     before = time.time()
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ProtocolTimeoutError):
         c._recv_json(timeout=0.1)
     after = time.time()
     assert 0.1 < after - before < 0.2
@@ -118,13 +109,13 @@ def test_recv_json(c, s, bg_accept):
     
     # When socket becomes closed should fail
     s.close()
-    with pytest.raises(OSError):
+    with pytest.raises((IOError, OSError)):
         c._recv_json()
 
 @pytest.mark.timeout(1.0)
 def test_send_json(c, s, bg_accept):
     # Should fail before connecting
-    with pytest.raises(OSError):
+    with pytest.raises((IOError, OSError)):
         c._send_json(123)
     
     c.connect()
@@ -140,11 +131,11 @@ def test_send_json_fails(c):
     c._sock.send.side_effect = [1, socket.timeout()]
     
     # If full amount is not sent, should fail
-    with pytest.raises(OSError):
+    with pytest.raises((IOError, OSError)):
         c._send_json(123)
     
     # If timeout, should fail
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ProtocolTimeoutError):
         c._send_json(123)
 
 @pytest.mark.timeout(1.0)
@@ -168,7 +159,7 @@ def test_call(c, s, bg_accept):
     
     # Should be able to timeout immediately
     before = time.time()
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ProtocolTimeoutError):
         c.call("foo", 1, bar=2, timeout=0.1)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
@@ -177,7 +168,7 @@ def test_call(c, s, bg_accept):
     # Should be able to timeout after getting a notification
     s.send({"notification": 3})
     before = time.time()
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ProtocolTimeoutError):
         c.call("foo", 1, bar=2, timeout=0.1)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
@@ -190,7 +181,7 @@ def test_wait_for_notification(c, s, bg_accept):
     bg_accept.join()
     
     # Should be able to timeout
-    with pytest.raises(TimeoutError):
+    with pytest.raises(ProtocolTimeoutError):
         c.wait_for_notification(timeout=0.1)
     
     # Should return None on negative timeout when no notifications arrived

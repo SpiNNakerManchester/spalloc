@@ -7,7 +7,7 @@ from collections import namedtuple
 
 from six import iteritems
 
-from spalloc.protocol_client import ProtocolClient
+from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
 from spalloc.config import read_config, SEARCH_PATH
 from spalloc.states import JobState
 
@@ -225,7 +225,7 @@ class Job(object):
             self._client.connect(self._timeout)
             self._assert_compatible_version()
             logger.info("Reconnected successfully.")
-        except (TimeoutError, OSError) as e:
+        except (IOError, OSError) as e:
             # Connect/version command failed... Leave the socket clearly
             # broken so that we retry again
             logger.warning("Reconnect attempt failed: %s", e)
@@ -246,7 +246,7 @@ class Job(object):
                         self._client.job_keepalive(
                             self.id, timeout=self._timeout)
                         break
-                    except (TimeoutError, OSError) as e:
+                    except (ProtocolTimeoutError, IOError, OSError) as e:
                         # Something went wrong, reconnect, after a delay which
                         # may be interrupted by the thread being stopped
                         self._client.close()
@@ -288,7 +288,7 @@ class Job(object):
         # itself.
         try:
             self._client.destroy_job(self.id, reason)
-        except (OSError, TimeoutError) as e:
+        except (IOError, OSError, ProtocolTimeoutError) as e:
             logger.warning("Could not destroy job: %s", e)
         
         self._client.close()
@@ -424,7 +424,7 @@ class Job(object):
                                 if wait_timeout >= 0.0:
                                     self._client.wait_for_notification(wait_timeout)
                                     break
-                            except TimeoutError:
+                            except ProtocolTimeoutError:
                                 # Its been a while, send a keep-alive since we're
                                 # still holding the lock
                                 pass
@@ -432,7 +432,7 @@ class Job(object):
                             # The user's timeout expired while waiting for a
                             # state change, return the old state and give up.
                             return old_state
-            except (OSError, TimeoutError):
+            except (IOError, OSError, ProtocolTimeoutError):
                 # Something went wrong while communicating with the server,
                 # reconnect after the reconnection delay (or timeout, whichever
                 # came first.
@@ -461,7 +461,7 @@ class Job(object):
         
         Raises
         ------
-        TimeoutError
+        StateChangeTimeoutError
             If the timeout expired before the ready state was entered.
         JobDestroyedError
             If the job was destroyed.
@@ -497,9 +497,11 @@ class Job(object):
             cur_state = self.wait_for_state_change(cur_state, time_left)
         
         # Timed out!
-        raise TimeoutError()
+        raise StateChangeTimeoutError()
 
 
+class StateChangeTimeoutError(Exception):
+    """Thrown when a state change takes too long to occur."""
 
 class JobDestroyedError(Exception):
     """Thrown when the job was destroyed while waiting for it to become ready."""

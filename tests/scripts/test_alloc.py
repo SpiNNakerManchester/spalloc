@@ -7,7 +7,7 @@ import tempfile
 
 from spalloc.job import JobMachineInfoTuple
 
-from spalloc import config, JobState
+from spalloc import config, JobState, term
 
 from spalloc.scripts.alloc import \
     write_ips_to_csv, print_info, run_command, main
@@ -97,7 +97,7 @@ def test_write_ips_to_file(filename):
                             "4,8,board-4-8\n"
                             "8,4,board-8-4\n")
 
-def test_print_info_one_board(capsys, mock_input):
+def test_print_info_one_board(capsys, mock_input, no_colour):
     machine_info = JobMachineInfoTuple(width=1,
                                        height=2,
                                        connections={(0, 0): "foobar"},
@@ -115,7 +115,7 @@ def test_print_info_one_board(capsys, mock_input):
     mock_input.assert_called_once_with("<Press enter to destroy job>")
 
 
-def test_print_info_many_boards(capsys, mock_input):
+def test_print_info_many_boards(capsys, mock_input, no_colour):
     machine_info = JobMachineInfoTuple(width=1,
                                        height=2,
                                        connections={(0, 0): "foobar",
@@ -331,7 +331,7 @@ def test_no_boot_arg_when_no_rig(basic_config_file, mock_job, no_rig):
 
 @pytest.mark.parametrize("args,boot", [("--boot", True), ("", False)])
 def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
-                      args, boot, mock_mc):
+                      args, boot, mock_mc, no_colour):
     assert main(args.split()) == 0
     
     out, err = capsys.readouterr()

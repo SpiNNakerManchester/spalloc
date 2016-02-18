@@ -11,6 +11,14 @@ from collections import deque
 import logging
 
 
+
+class ProtocolTimeoutError(Exception):
+    """Thrown upon a timeout.
+    
+    Defined for Python 2 compatibility.
+    """
+
+
 class ProtocolClient(object):
     """A simple `spalloc-server
     <https://github.com/project-rig/spalloc_server>`_ protocol client
@@ -81,10 +89,7 @@ class ProtocolClient(object):
             self._sock.connect((self._hostname, self._port))
             # Success!
             return
-        except socket.timeout:
-            self.close()
-            raise TimeoutError("Timed out while connecting.")
-        except OSError as e:
+        except (IOError, OSError) as e:
             # Failiure, try again...
             self.close()
             
@@ -114,7 +119,7 @@ class ProtocolClient(object):
         
         Raises
         ------
-        TimeoutError
+        ProtocolTimeoutError
             If a timeout occurs.
         OSError
             If the socket is unusable or becomes disconnected.
@@ -128,7 +133,7 @@ class ProtocolClient(object):
                 self._sock.settimeout(timeout)
                 data = self._sock.recv(1024)
             except socket.timeout:
-                raise TimeoutError("recv timed out.")
+                raise ProtocolTimeoutError("recv timed out.")
             
             # Has socket closed?
             if len(data) == 0:
@@ -153,7 +158,7 @@ class ProtocolClient(object):
         
         Raises
         ------
-        TimeoutError
+        ProtocolTimeoutError
             If a timeout occurs.
         OSError
             If the socket is unusable or becomes disconnected.
@@ -170,7 +175,7 @@ class ProtocolClient(object):
                 # XXX: If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
         except socket.timeout:
-            raise TimeoutError("send timed out.")
+            raise ProtocolTimeoutError("send timed out.")
     
     def call(self, name, *args, **kwargs):
         """Send a command to the server and return the reply.
@@ -190,7 +195,7 @@ class ProtocolClient(object):
         
         Raises
         ------
-        TimeoutError
+        ProtocolTimeoutError
             If a timeout occurs.
         OSError
             If the connection is unavailable or is closed.
@@ -234,7 +239,7 @@ class ProtocolClient(object):
             
             If negative only responses already-received will be returned. If no
             responses are available, in this case the function does not raise a
-            TimeoutError but returns None instead.
+            ProtocolTimeoutError but returns None instead.
         
         Returns
         -------
@@ -243,7 +248,7 @@ class ProtocolClient(object):
         
         Raises
         ------
-        TimeoutError
+        ProtocolTimeoutError
             If a timeout occurs.
         OSError
             If the socket is unusable or becomes disconnected.
@@ -270,4 +275,3 @@ class ProtocolClient(object):
             raise AttributeError(name)
         else:
             return partial(self.call, name)
-

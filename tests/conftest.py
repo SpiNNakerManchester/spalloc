@@ -1,6 +1,9 @@
 import pytest
 
+from mock import Mock
+
 import os
+import sys
 import threading
 import tempfile
 
@@ -13,7 +16,7 @@ from common import MockServer
 def no_config_files(monkeypatch):
     # Prevent discovery of config files during test
     before = SEARCH_PATH[:]
-    SEARCH_PATH.clear()
+    del SEARCH_PATH[:]
     yield
     SEARCH_PATH.extend(before)
 
@@ -67,10 +70,10 @@ def basic_config_file(monkeypatch):
                 "max_dead_links=6\n"
                 "require_torus=True\n")
     before = SEARCH_PATH[:]
-    SEARCH_PATH.clear()
+    del SEARCH_PATH[:]
     SEARCH_PATH.append(filename)
     yield
-    SEARCH_PATH.clear()
+    del SEARCH_PATH[:]
     SEARCH_PATH.extend(before)
     os.remove(filename)
 
@@ -90,3 +93,11 @@ def basic_job_kwargs():
                 max_dead_boards=5,
                 max_dead_links=6,
                 require_torus=True)
+
+@pytest.fixture
+def no_colour(monkeypatch):
+    isatty = Mock(return_value=False)
+    monkeypatch.setattr(sys, "stdout",
+                        Mock(write=sys.stdout.write, isatty=isatty))
+    monkeypatch.setattr(sys, "stderr",
+                        Mock(write=sys.stdout.write, isatty=isatty))

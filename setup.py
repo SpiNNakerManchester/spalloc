@@ -34,7 +34,7 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["six", "appdirs", "blessings", "colorama"],
+    install_requires=["six", "appdirs", "colorama"],
 
     # Scripts
     entry_points={

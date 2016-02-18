@@ -6,8 +6,6 @@ import logging
 import subprocess
 import colorama
 
-from blessings import Terminal
-
 from collections import OrderedDict
 
 from six import iteritems
@@ -15,6 +13,7 @@ from six.moves import input
 
 from spalloc import config
 from spalloc import Job, JobState, __version__
+from spalloc.term import Terminal
 
 
 try:
@@ -55,7 +54,7 @@ def print_info(machine_info, ip_file_filename):
     
     to_print = OrderedDict()
     
-    to_print["Hostname"] = t.bold(machine_info.connections[(0, 0)])
+    to_print["Hostname"] = t.bright(machine_info.connections[(0, 0)])
     to_print["Width"] = machine_info.width
     to_print["Height"] = machine_info.height
     
@@ -313,15 +312,11 @@ def main(argv=None):
                 # Show debug info on state-change
                 if old_state != cur_state:
                     if cur_state == JobState.queued:
-                        with t.location():
-                            info(t.clear_eol + t.yellow(
-                                "Job {}: Waiting in queue...".format(
-                                    job.id)))
+                        info(t.update(t.yellow(
+                            "Job {}: Waiting in queue...".format(job.id))))
                     elif cur_state == JobState.power:
-                        with t.location():
-                            info(t.clear_eol + t.yellow(
-                                "Job {}: Waiting for power on...".format(
-                                    job.id)))
+                        info(t.update(t.yellow(
+                            "Job {}: Waiting for power on...".format(job.id))))
                     elif cur_state == JobState.ready:
                         # Here we go!
                         break
@@ -333,21 +328,21 @@ def main(argv=None):
                             reason = None
                         
                         if reason is not None:
-                            info(t.clear_eol + t.red(
+                            info(t.update(t.red(
                                 "Job {}: Destroyed: {}".format(
-                                    job.id, reason)))
+                                    job.id, reason))))
                         else:
                             info(t.red("Job {}: Destroyed.".format(job.id)))
                         return 1
                     elif cur_state == JobState.unknown:
-                        info(t.clear_eol + t.red(
+                        info(t.update(t.red(
                             "Job {}: Job not recognised by server.".format(
-                                job.id)))
+                                job.id))))
                         return 2
                     else:
-                        info(t.clear_eol + t.red(
+                        info(t.update(t.red(
                             "Job {}: Entered an unrecognised state {}.".format(
-                                job.id, cur_state)))
+                                job.id, cur_state))))
                         return 3
                 
                 try:
@@ -355,9 +350,9 @@ def main(argv=None):
                     cur_state = job.wait_for_state_change(cur_state)
                 except KeyboardInterrupt:
                     # Gracefully terminate from keyboard interrupt
-                    info(t.clear_eol + t.red(
+                    info(t.update(t.red(
                         "Job {}: Destroyed by keyboard interrupt.".format(
-                            job.id)))
+                            job.id))))
                     return 4
             
             # Machine is now ready
@@ -366,13 +361,12 @@ def main(argv=None):
             
             # Boot the machine if required
             if MachineController is not None and args.boot:
-                with t.location():
-                    info(t.clear_eol + t.yellow(
-                        "Job {}: Booting...".format(job.id)))
+                info(t.update(t.yellow(
+                    "Job {}: Booting...".format(job.id))))
                 mc = MachineController(machine_info.connections[(0, 0)])
                 mc.boot(machine_info.width, machine_info.height)
             
-            info(t.clear_eol + t.green("Job {}: Ready!".format(job.id)))
+            info(t.update(t.green("Job {}: Ready!".format(job.id))))
             
             # Either run the user's application or just print the details.
             if args.command:

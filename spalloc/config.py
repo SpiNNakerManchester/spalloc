@@ -4,7 +4,8 @@ import os
 import os.path
 import appdirs
 
-from six.moves.configparser import ConfigParser
+from six import iteritems
+from six.moves.configparser import ConfigParser, NoOptionError
 
 
 # The application name to use in config file names
@@ -39,77 +40,77 @@ def read_config(filenames=SEARCH_PATH):
     """
     parser = ConfigParser()
     
-    # Set default config values
-    parser.read_dict({
-        "spalloc": {
-            "port": 22244,
-            
-            "keepalive": "60.0",
-            "reconnect_delay": "5.0",
-            "timeout": "5.0",
-            
-            "machine": "None",
-            "tags": "None",
-            "min_ratio": "0.333",
-            "max_dead_boards": "0",
-            "max_dead_links": "None",
-            "require_torus": "False",
-        }
-    })
+    # Set default config values (NB: No read_dict in Python 2.7)
+    parser.add_section("spalloc")
+    for key, value in iteritems({"port": "22244",
+                                 "keepalive": "60.0",
+                                 "reconnect_delay": "5.0",
+                                 "timeout": "5.0",
+                                 "machine": "None",
+                                 "tags": "None",
+                                 "min_ratio": "0.333",
+                                 "max_dead_boards": "0",
+                                 "max_dead_links": "None",
+                                 "require_torus": "False"}):
+        parser.set("spalloc", key, value)
     
     # Attempt to read from each possible file location in turn
     for filename in filenames:
         try:
             with open(filename, "r") as f:
-                parser.read_file(f, filename)
-        except FileNotFoundError:
+                parser.readfp(f, filename)
+        except (IOError, OSError):
             # File did not exist, keep trying
             pass
     
-    spalloc = parser["spalloc"]
-    
     cfg = {}
     
-    cfg["hostname"] = spalloc.get("hostname", fallback=None)
+    try:
+        cfg["hostname"] = parser.get("spalloc", "hostname")
+    except NoOptionError:
+        cfg["hostname"] = None
     
-    cfg["port"] = spalloc.getint("port")
+    cfg["port"] = parser.getint("spalloc", "port")
     
-    cfg["owner"] = spalloc.get("owner", fallback=None)
+    try:
+        cfg["owner"] = parser.get("spalloc", "owner")
+    except NoOptionError:
+        cfg["owner"] = None
     
-    if spalloc.get("keepalive", fallback="None") == "None":
+    if parser.get("spalloc", "keepalive") == "None":
         cfg["keepalive"] = None
     else:
-        cfg["keepalive"] = spalloc.getfloat("keepalive")
+        cfg["keepalive"] = parser.getfloat("spalloc", "keepalive")
     
-    cfg["reconnect_delay"] = spalloc.getfloat("reconnect_delay", fallback=None)
+    cfg["reconnect_delay"] = parser.getfloat("spalloc", "reconnect_delay")
     
-    if spalloc.get("timeout", fallback="None") == "None":
+    if parser.get("spalloc", "timeout") == "None":
         cfg["timeout"] = None
     else:
-        cfg["timeout"] = spalloc.getfloat("timeout")
+        cfg["timeout"] = parser.getfloat("spalloc", "timeout")
     
-    if spalloc.get("machine", fallback="None") == "None":
+    if parser.get("spalloc", "machine") == "None":
         cfg["machine"] = None
     else:
-        cfg["machine"] = spalloc.get("machine")
+        cfg["machine"] = parser.get("spalloc", "machine")
     
-    if spalloc.get("tags", fallback="None") == "None":
+    if parser.get("spalloc", "tags") == "None":
         cfg["tags"] = None
     else:
-        cfg["tags"] = list(map(str.strip, spalloc.get("tags").split(",")))
+        cfg["tags"] = list(map(str.strip, parser.get("spalloc", "tags").split(",")))
     
-    cfg["min_ratio"] = spalloc.getfloat("min_ratio")
+    cfg["min_ratio"] = parser.getfloat("spalloc", "min_ratio")
     
-    if spalloc.get("max_dead_boards", fallback="None") == "None":
+    if parser.get("spalloc", "max_dead_boards") == "None":
         cfg["max_dead_boards"] = None
     else:
-        cfg["max_dead_boards"] = spalloc.getint("max_dead_boards")
+        cfg["max_dead_boards"] = parser.getint("spalloc", "max_dead_boards")
     
-    if spalloc.get("max_dead_links", fallback="None") == "None":
+    if parser.get("spalloc", "max_dead_links") == "None":
         cfg["max_dead_links"] = None
     else:
-        cfg["max_dead_links"] = spalloc.getint("max_dead_links")
+        cfg["max_dead_links"] = parser.getint("spalloc", "max_dead_links")
     
-    cfg["require_torus"] = spalloc.getboolean("require_torus", fallback=False)
+    cfg["require_torus"] = parser.getboolean("spalloc", "require_torus")
     
     return cfg

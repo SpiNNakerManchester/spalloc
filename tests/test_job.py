@@ -5,9 +5,10 @@ from mock import Mock
 import threading
 import time
 
-from spalloc import Job, JobState, JobDestroyedError
+from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError
 
-from spalloc.job import JobStateTuple, JobMachineInfoTuple
+from spalloc.job import \
+    JobStateTuple, JobMachineInfoTuple, StateChangeTimeoutError
 
 from common import MockServer
 
@@ -540,7 +541,7 @@ class TestWaitUntilReady(object):
     
     @pytest.mark.timeout(1.0)
     def test_impossible_timeout(bg_version_connect, s, j, no_config_files):
-        with pytest.raises(TimeoutError):
+        with pytest.raises(StateChangeTimeoutError):
             j.wait_until_ready(timeout=0.0)
     
     @pytest.mark.timeout(1.0)
@@ -553,7 +554,7 @@ class TestWaitUntilReady(object):
             side_effect=(lambda *a, **k: time.sleep(0.1)))
         
         before = time.time()
-        with pytest.raises(TimeoutError):
+        with pytest.raises(StateChangeTimeoutError):
             j.wait_until_ready(timeout=0.3)
         after = time.time()
         
