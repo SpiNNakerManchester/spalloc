@@ -7,7 +7,7 @@ import tempfile
 
 from spalloc.job import JobMachineInfoTuple
 
-from spalloc import config, JobState, term
+from spalloc import JobState
 
 from spalloc.scripts.alloc import \
     write_ips_to_csv, print_info, run_command, main
@@ -19,12 +19,14 @@ def filename():
     yield filename
     os.remove(filename)
 
+
 @pytest.fixture
 def mock_input(monkeypatch):
     m = Mock()
     import spalloc.scripts.alloc
     monkeypatch.setattr(spalloc.scripts.alloc, "input", m)
     return m
+
 
 @pytest.fixture
 def mock_popen(monkeypatch):
@@ -34,32 +36,34 @@ def mock_popen(monkeypatch):
     monkeypatch.setattr(subprocess, "Popen", Popen)
     return Popen
 
+
 @pytest.fixture
 def mock_job(monkeypatch):
     # A fake job which immediately exits with a connection error.
     job = Mock()
-    job.create.side_effect=OSError()
+    job.create.side_effect = OSError()
     Job = Mock(return_value=job)
     import spalloc.scripts.alloc
     monkeypatch.setattr(spalloc.scripts.alloc, "Job", Job)
     return Job
+
 
 @pytest.fixture
 def mock_working_job(mock_job):
     job = Mock()
     job.id = 123
     mock_job.return_value = job
-    
+
     job.get_state.return_value = Mock(state=JobState.queued)
     job.wait_for_state_change.side_effect = [JobState.power,
                                              JobState.power,
                                              JobState.ready]
-    
+
     job.get_machine_info.return_value = JobMachineInfoTuple(
         width=8, height=8,
         connections={(0, 0): "foobar"},
         machine_name="m")
-    
+
     return mock_job
 
 
@@ -71,6 +75,7 @@ def mock_mc(monkeypatch):
     monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", MC)
     return MC
 
+
 @pytest.fixture
 def no_rig(monkeypatch):
     import spalloc.scripts.alloc
@@ -79,7 +84,7 @@ def no_rig(monkeypatch):
 
 def test_write_ips_to_file_empty(filename):
     write_ips_to_csv({}, filename)
-    
+
     with open(filename, "r") as f:
         assert f.read() == "x,y,hostname\n"
 
@@ -90,12 +95,13 @@ def test_write_ips_to_file(filename):
         (4, 8): "board-4-8",
         (8, 4): "board-8-4",
     }, filename)
-    
+
     with open(filename, "r") as f:
         assert f.read() == ("x,y,hostname\n"
                             "0,0,board-0-0\n"
                             "4,8,board-4-8\n"
                             "8,4,board-8-4\n")
+
 
 def test_print_info_one_board(capsys, mock_input, no_colour):
     machine_info = JobMachineInfoTuple(width=1,
@@ -103,15 +109,15 @@ def test_print_info_one_board(capsys, mock_input, no_colour):
                                        connections={(0, 0): "foobar"},
                                        machine_name="m")
     print_info(machine_info, "/some/file")
-    
+
     out, err = capsys.readouterr()
-    
+
     assert out == ("  Hostname: foobar\n"
                    "     Width: 1\n"
                    "    Height: 2\n"
                    "Running on: m\n")
     assert err == ""
-    
+
     mock_input.assert_called_once_with("<Press enter to destroy job>")
 
 
@@ -122,9 +128,9 @@ def test_print_info_many_boards(capsys, mock_input, no_colour):
                                                     (4, 8): "bazqux"},
                                        machine_name="m")
     print_info(machine_info, "/some/file")
-    
+
     out, err = capsys.readouterr()
-    
+
     assert out == ("     Hostname: foobar\n"
                    "        Width: 1\n"
                    "       Height: 2\n"
@@ -316,7 +322,7 @@ def test_timeout_args(basic_config_file, mock_job, basic_job_kwargs):
 def test_boot_args(basic_config_file, mock_working_job, mock_input,
                    args, boot, mock_mc):
     assert main(args.split()) == 0
-    
+
     if boot:
         mock_mc.assert_called_once_with("foobar")
         mock_mc().boot.assert_called_once_with(8, 8)
@@ -333,30 +339,30 @@ def test_no_boot_arg_when_no_rig(basic_config_file, mock_job, no_rig):
 def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
                       args, boot, mock_mc, no_colour):
     assert main(args.split()) == 0
-    
+
     out, err = capsys.readouterr()
-    
+
     # Should have printed the connection info
     assert "foobar" in out
-    
+
     # Should have printed no debug output
     expected = ("Job 123: Waiting in queue...\n"
                 "Job 123: Waiting for power on...\n")
     if boot:
         expected += "Job 123: Booting...\n"
     expected += "Job 123: Ready!\n"
-    
+
     assert err == expected
 
 
 def test_quiet_args(capsys, basic_config_file, mock_working_job, mock_input):
     assert main("--quiet".split()) == 0
-    
+
     out, err = capsys.readouterr()
-    
+
     # Should have printed the connection info
     assert "foobar" in out
-    
+
     # Should have printed no debug output
     assert err == ""
 
@@ -366,9 +372,9 @@ def test_debug_args(basic_config_file, mock_job, monkeypatch, args, enable):
     import spalloc.scripts.alloc
     logging = Mock()
     monkeypatch.setattr(spalloc.scripts.alloc, "logging", logging)
-    
+
     assert main(args.split()) == 6
-    
+
     if enable:
         assert len(logging.mock_calls) == 1
     else:

@@ -22,14 +22,13 @@ except ImportError:  # pragma: no cover
     MachineController = None
 
 
-
 def write_ips_to_csv(connections, ip_file_filename):
     """Write the supplied IP addresses to a CSV file.
-    
+
     The produced CSV has three columns: x, y and hostname where x and y give
     chip coordinates of Ethernet-connected chips and hostname gives the IP
     address for that chip.
-    
+
     Parameters
     ----------
     connections : {(x, y): hostname, ...}
@@ -41,33 +40,34 @@ def write_ips_to_csv(connections, ip_file_filename):
                         for (x, y), hostname
                         in sorted(iteritems(connections))))
 
+
 def print_info(machine_info, ip_file_filename):
     """Print the current machine info in a human-readable form and wait for the
     user to press enter.
-    
+
     Parameters
     ----------
     machine_info : :py:class:`.JobMachineInfoTuple`
     ip_file_filename : str
     """
     t = Terminal()
-    
+
     to_print = OrderedDict()
-    
+
     to_print["Hostname"] = t.bright(machine_info.connections[(0, 0)])
     to_print["Width"] = machine_info.width
     to_print["Height"] = machine_info.height
-    
+
     if len(machine_info.connections) > 1:
         to_print["Num boards"] = len(machine_info.connections)
         to_print["All hostnames"] = ip_file_filename
-    
+
     to_print["Running on"] = machine_info.machine_name
-    
+
     col_width = max(map(len, to_print))
     for name, value in iteritems(to_print):
         print("{:>{}s}: {}".format(name, col_width, value))
-    
+
     try:
         input(t.dim("<Press enter to destroy job>"))
     except KeyboardInterrupt:
@@ -77,29 +77,29 @@ def print_info(machine_info, ip_file_filename):
 def run_command(command, machine_info, ip_file_filename):
     """Run a user-specified command, substituting arguments for values taken
     from the allocated board.
-    
+
     Parameters
     ----------
     logger : :py:class:`logging.Logger`
     command : [command, arg, ...]
     machine_info : :py:class:`.JobMachineInfoTuple`
     ip_file_filename : str
-    
+
     Returns
     -------
     int
         The return code of the supplied command.
     """
-    
+
     root_hostname = machine_info.connections[(0, 0)]
-    
+
     # Print essential info in log
     logging.info("Allocated %d x %d chip machine in '%s'",
                  machine_info.width, machine_info.height,
                  machine_info.machine_name)
     logging.info("Chip (0, 0) IP: %s", root_hostname)
     logging.info("All board IPs listed in: %s", ip_file_filename)
-    
+
     # Make substitutions in command arguments
     command = [arg.format(root_hostname,
                           hostname=root_hostname,
@@ -109,9 +109,9 @@ def run_command(command, machine_info, ip_file_filename):
                           height=machine_info.height,
                           ethernet_ips=ip_file_filename)
                for arg in command]
-    
+
     p = subprocess.Popen(command, shell=True)
-    
+
     # Pass through keyboard interrupts
     while True:
         try:
@@ -124,27 +124,27 @@ def main(argv=None):
     # Colour support for Windows
     colorama.init()
     t = Terminal(stream=sys.stderr)
-    
+
     cfg = config.read_config()
-    
+
     parser = argparse.ArgumentParser(
         description="Request (and allocate) a SpiNNaker machine.")
-    
+
     parser.add_argument("--version", "-V", action="version",
                         version=__version__)
-    
+
     parser.add_argument("--quiet", "-q", action="store_true",
                         default=False,
                         help="suppress informational messages")
     parser.add_argument("--debug", action="store_true",
                         default=False,
                         help="enable additional diagnostic information")
-    
+
     if MachineController is not None:
         parser.add_argument("--boot", "-B", action="store_true",
                             default=False,
                             help="boot the machine once powered on")
-    
+
     allocation_args = parser.add_argument_group(
         "allocation requirement arguments")
     allocation_args.add_argument("what", nargs="*", default=[], type=int,
@@ -204,22 +204,23 @@ def main(argv=None):
                                           "" if cfg["require_torus"]
                                           else "(default)"
                                       ))
-    
+
     command_args = parser.add_argument_group("command wrapping arguments")
     command_args.add_argument("--command", "-c", nargs=argparse.REMAINDER,
                               help="execute the specified command once boards "
-                                   "have been allocated and deallocate the boards "
-                                   "when the application exits ({} and {hostname} "
-                                   "are substituted for the hostname of the "
-                                   "SpiNNaker chip at (0, 0), {w} and {h} give "
-                                   "the dimensions of the SpiNNaker machine in "
-                                   "chips, {ethernet_ips} is a temporary file "
-                                   "containing a CSV with three columns: x, y and "
-                                   "hostname giving the hostname of each Ethernet "
-                                   "connected SpiNNaker chip)")
-    
+                                   "have been allocated and deallocate the "
+                                   "boards when the application exits ({} and "
+                                   "{hostname} are substituted for the chip "
+                                   "chip at (0, 0)'s hostname, {w} and "
+                                   "{h} give the dimensions of the SpiNNaker "
+                                   "machine in chips, {ethernet_ips} is a "
+                                   "temporary file containing a CSV with "
+                                   "three columns: x, y and hostname giving "
+                                   "the hostname of each Ethernet connected "
+                                   "SpiNNaker chip)")
+
     server_args = parser.add_argument_group("spalloc server arguments")
-    
+
     server_args.add_argument("--owner", default=cfg["owner"],
                              help="by convention, the email address of the "
                                   "owner of the job (default: %(default)s)")
@@ -248,23 +249,23 @@ def main(argv=None):
                              type=float, metavar="SECONDS",
                              help="seconds to wait for a response "
                                   "from the server (default: %(default)s)")
-    
+
     args = parser.parse_args(argv)
-    
+
     # Fail if no owner is defined
     if not args.owner:
         parser.error(
             "--owner must be specified (typically your email address)")
-    
+
     # Fail if server not specified
     if args.hostname is None:
         parser.error("--hostname of spalloc server must be specified")
-    
+
     # Make sure 'what' takes the right form
     if len(args.what) not in (0, 1, 2, 3):
         parser.error("expected either no arguments, one argument, NUM, "
                      "two arguments, WIDTH HEIGHT, or three arguments X Y Z")
-    
+
     # Unpack arguments for the job and server
     job_args = args.what
     job_kwargs = {
@@ -284,18 +285,18 @@ def main(argv=None):
             args.max_dead_links if args.max_dead_links >= 0.0 else None,
         "require_torus": args.require_torus,
     }
-    
+
     # Set debug level
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
-    
+
     # Create temporary file in which to write CSV of all board IPs
     _, ip_file_filename = tempfile.mkstemp(".csv", "spinnaker_ips_")
-    
+
     def info(msg):
         if not args.quiet:
             t.stream.write("{}\n".format(msg))
-    
+
     try:
         # Create the job
         try:
@@ -305,7 +306,8 @@ def main(argv=None):
             info(t.red("Could not connect to server: {}".format(e)))
             return 6
         try:
-            # Wait for it to become ready, keeping the user informed along the way
+            # Wait for it to become ready, keeping the user informed along the
+            # way
             old_state = None
             cur_state = job.get_state().state
             while True:
@@ -326,7 +328,7 @@ def main(argv=None):
                             reason = job.get_state().reason
                         except (IOError, OSError):
                             reason = None
-                        
+
                         if reason is not None:
                             info(t.update(t.red(
                                 "Job {}: Destroyed: {}".format(
@@ -344,7 +346,7 @@ def main(argv=None):
                             "Job {}: Entered an unrecognised state {}.".format(
                                 job.id, cur_state))))
                         return 3
-                
+
                 try:
                     old_state = cur_state
                     cur_state = job.wait_for_state_change(cur_state)
@@ -354,20 +356,20 @@ def main(argv=None):
                         "Job {}: Destroyed by keyboard interrupt.".format(
                             job.id))))
                     return 4
-            
+
             # Machine is now ready
             machine_info = job.get_machine_info()
             write_ips_to_csv(machine_info.connections, ip_file_filename)
-            
+
             # Boot the machine if required
             if MachineController is not None and args.boot:
                 info(t.update(t.yellow(
                     "Job {}: Booting...".format(job.id))))
                 mc = MachineController(machine_info.connections[(0, 0)])
                 mc.boot(machine_info.width, machine_info.height)
-            
+
             info(t.update(t.green("Job {}: Ready!".format(job.id))))
-            
+
             # Either run the user's application or just print the details.
             if args.command:
                 return run_command(args.command, machine_info,

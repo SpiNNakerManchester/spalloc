@@ -12,6 +12,7 @@ from spalloc.config import SEARCH_PATH
 
 from common import MockServer
 
+
 @pytest.yield_fixture
 def no_config_files(monkeypatch):
     # Prevent discovery of config files during test
@@ -28,16 +29,19 @@ def s():
     yield s
     s.close()
 
+
 @pytest.yield_fixture
 def c():
     c = ProtocolClient("localhost")
     yield c
     c.close()
 
+
 @pytest.yield_fixture
 def bg_accept(s):
     # Accept the first conncetion in the background
     started = threading.Event()
+
     def accept_and_listen():
         s.listen()
         started.set()
@@ -93,6 +97,7 @@ def basic_job_kwargs():
                 max_dead_boards=5,
                 max_dead_links=6,
                 require_torus=True)
+
 
 @pytest.fixture
 def no_colour(monkeypatch):

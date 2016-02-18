@@ -13,6 +13,7 @@ def tempdir():
     yield d
     shutil.rmtree(d)
 
+
 @pytest.fixture
 def filename(tempdir):
     filename = os.path.join(tempdir, "f1")
@@ -22,14 +23,14 @@ def filename(tempdir):
 def test_priority(tempdir):
     f1 = os.path.join(tempdir, "f1")
     f2 = os.path.join(tempdir, "f2")
-    
+
     with open(f1, "w") as f:
         f.write("[spalloc]\nport=123\nhostname=bar")
     with open(f2, "w") as f:
         f.write("[spalloc]\nport=321\ntags=qux")
-    
+
     cfg = read_config([f1, f2])
-    
+
     assert cfg["port"] == 321
     assert cfg["reconnect_delay"] == 5.0
     assert cfg["hostname"] == "bar"
@@ -72,15 +73,15 @@ def test_priority(tempdir):
      ("require_torus", "True", True)])
 def test_options(filename, option_name, config_value, value):
     # Test all config options.
-    
+
     # Write config file (omitting the config value if None, e.g. to test
     # default value)
     with open(filename, "w") as f:
         f.write("[spalloc]\n")
         if config_value is not None:
             f.write("{}={}".format(option_name, config_value))
-    
+
     cfg = read_config([filename])
-    
+
     assert option_name in cfg
     assert cfg[option_name] == value

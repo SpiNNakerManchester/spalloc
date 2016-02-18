@@ -5,8 +5,6 @@ import time
 
 from collections import namedtuple
 
-from six import iteritems
-
 from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
 from spalloc.config import read_config, SEARCH_PATH
 from spalloc.states import JobState
@@ -19,18 +17,18 @@ logger = logging.getLogger(__name__)
 class Job(object):
     """A context manager which will request a SpiNNaker machine from a spalloc
     server.
-    
-    
+
+
     Attributes
     ----------
     id : int or None
         The job ID allocated by the server to the job (or None if job hasn't
         been created yet).
     """
-    
+
     def __init__(self, *args, **kwargs):
         """Request a SpiNNaker machine.
-        
+
         A :py:class:`.Job` is constructed in one of the following styles::
 
             # Any single (SpiNN-5) board
@@ -53,10 +51,10 @@ class Job(object):
 
             # Any torus-connected (full machine) 4x2 machine
             Job(4, 2, require_torus=True)
-        
+
         The following keyword-only parameters are also defined and default to
         the values supplied in the local config file.
-        
+
         Parameters
         ----------
         hostname : str
@@ -66,8 +64,8 @@ class Job(object):
             The port number of the spalloc server to connect to. (Read from
             config file if not specified.)
         reconnect_delay : float
-            Number of seconds between attempts to reconnect to the server. (Read
-            from config file if not specified.)
+            Number of seconds between attempts to reconnect to the server.
+            (Read from config file if not specified.)
         timeout : float or None
             Timeout for waiting for replies from the server. If None, will keep
             trying forever. (Read from config file if not specified.)
@@ -76,7 +74,7 @@ class Job(object):
             from. If not supplied, the default config file locations are
             searched. Set to an empty list to prevent using values from config
             files.
-        
+
         Other Parameters
         ----------------
         owner : str
@@ -121,7 +119,7 @@ class Job(object):
         # Read configuration
         config_filenames = kwargs.pop("config_filenames", SEARCH_PATH)
         config = read_config(config_filenames)
-        
+
         # Get protocol client options
         hostname = kwargs.get("hostname", config["hostname"])
         owner = kwargs.get("owner", config["owner"])
@@ -131,7 +129,7 @@ class Job(object):
         self._timeout = kwargs.get("timeout", config["timeout"])
         if hostname is None:
             raise ValueError("A hostname must be specified.")
-        
+
         # Get job creation arguments
         self._create_job_args = args
         self._create_job_kwargs = {
@@ -153,42 +151,41 @@ class Job(object):
         if ((self._create_job_kwargs["tags"] is not None) and
                 (self._create_job_kwargs["machine"] is not None)):
             raise ValueError("Only one of tags and machine may be specified.")
-        
+
         self._keepalive = self._create_job_kwargs["keepalive"]
-        
+
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
         self._client_lock = threading.RLock()
-        
+
         # Set-up (but don't start) background keepalive thread
         self._keepalive_thread = threading.Thread(
             target=self._keepalive_thread,
             name="job-keepalive-thread")
         self._keepalive_thread.deamon = True
-        
+
         # Event fired when the keepalive thread should shut-down
         self._stop = threading.Event()
-        
+
         # Default job information attribute values
         self.id = None
-    
-    
+
     def __enter__(self):
         """Convenience context manager for common case.
-        
+
         Waits for machine to be ready before the context enters and frees the
         allocation when the context exits.
-        
+
         Example::
-        
+
             with Job(...) as j:
                 # Now contex has entered, machine is ready to use
                 info = j.get_machine_info()
                 boot(info["connections"][(0, 0)],
                      info["width"], info["height"])
-                
+
                 # Off we go!
-            
+
             # Job will now have been automatically destroyed!
         """
         self.create()
@@ -199,25 +196,24 @@ class Job(object):
         except:
             self.destroy()
             raise
-        
+
     def __exit__(self, type=None, value=None, traceback=None):
         self.destroy()
-    
-    
+
     def _assert_compatible_version(self):
         """Assert that the server version is compatible."""
         v = self._client.version(timeout=self._timeout)
         v_ints = tuple(map(int, v.split(".")[:3]))
-        
+
         if not ((0, 0, 2) <= v_ints < (2, 0, 0)):
             self._client.close()
             raise ValueError(
                 "Server version {} is not compatible with this client.".format(
                     v))
-    
+
     def _reconnect(self):
         """Reconnect to the server and check version.
-        
+
         If reconnection fails, the error is reported as a warning but no
         exception is raised.
         """
@@ -230,7 +226,7 @@ class Job(object):
             # broken so that we retry again
             logger.warning("Reconnect attempt failed: %s", e)
             self._client.close()
-    
+
     def _keepalive_thread(self):
         """Background keep-alive thread."""
         # Send the keepalive packet twice as often as required
@@ -246,43 +242,43 @@ class Job(object):
                         self._client.job_keepalive(
                             self.id, timeout=self._timeout)
                         break
-                    except (ProtocolTimeoutError, IOError, OSError) as e:
+                    except (ProtocolTimeoutError, IOError, OSError):
                         # Something went wrong, reconnect, after a delay which
                         # may be interrupted by the thread being stopped
                         self._client.close()
                         if not self._stop.wait(self._reconnect_delay):
                             self._reconnect()
-    
+
     def create(self):
         """Attempt to create the job on the server.
-        
+
         May only be called once. Once called, the job will be kept alive in a
         background thread until :py:meth:`.destroy` is called.
         """
         self._client.connect(timeout=self._timeout)
-        
+
         # Check version compatibility (fail fast if can't communicate with
         # server)
         self._assert_compatible_version()
-        
+
         # Create the job (failing fast if can't communicate)
         self.id = self._client.create_job(*self._create_job_args,
                                           **self._create_job_kwargs)
-        
+
         logger.info("Created job %d", self.id)
-        
+
         # Start keepalive thread
         self._keepalive_thread.start()
-    
+
     def destroy(self, reason=None):
         """Destroy the job.
-        
+
         Must only be called once.
         """
         # Stop background thread
         self._stop.set()
         self._keepalive_thread.join()
-        
+
         # Attempt to inform the server that the job was destroyed, fail
         # quietly on failure since the server will eventually time-out the job
         # itself.
@@ -290,12 +286,12 @@ class Job(object):
             self._client.destroy_job(self.id, reason)
         except (IOError, OSError, ProtocolTimeoutError) as e:
             logger.warning("Could not destroy job: %s", e)
-        
+
         self._client.close()
-    
+
     def get_state(self):
         """Get the state of the job.
-        
+
         Returns
         -------
         :py:class:`.JobStateTuple`
@@ -308,15 +304,15 @@ class Job(object):
                 keepalive=state["keepalive"],
                 reason=state["reason"],
             )
-    
+
     def set_power(self, power):
         """Turn the boards allocated to the job on or off.
-        
+
         Does nothing if the job has not been allocated.
-        
+
         The :py:meth:`.wait_until_ready` method may be used to wait for the
         power state change to complete.
-        
+
         Parameters
         ----------
         power : bool
@@ -330,24 +326,24 @@ class Job(object):
             else:
                 self._client.power_off_job_boards(
                     self.id, timeout=self._timeout)
-    
+
     def reset(self):
         """Reset (power-cycle) the boards allocated to the job.
-        
+
         Does nothing if the job has not been allocated.
-        
+
         The :py:meth:`.wait_until_ready` method may be used to wait for the
         reset to complete.
         """
         self.set_power(True)
-    
+
     def get_machine_info(self):
-        """Get information about the boards allocated to the job, e.g. the
-        IPs and system dimensions.
-        
+        """Get information about the boards allocated to the job, e.g. the IPs
+        and system dimensions.
+
         The :py:meth:`.wait_until_ready` method may be used to wait for the
         boards to become ready.
-        
+
         Returns
         -------
         :py:class:`.JobMachineInfoTuple`
@@ -355,7 +351,7 @@ class Job(object):
         with self._client_lock:
             info = self._client.get_job_machine_info(
                 self.id, timeout=self._timeout)
-            
+
             return JobMachineInfoTuple(
                 width=info["width"],
                 height=info["height"],
@@ -366,10 +362,10 @@ class Job(object):
                              else None),
                 machine_name=info["machine_name"],
             )
-    
+
     def wait_for_state_change(self, old_state, timeout=None):
         """Block until the job's state changes from the supplied state.
-        
+
         Parameters
         ----------
         old_state : int
@@ -377,28 +373,28 @@ class Job(object):
         timeout : float or None
             The number of seconds to wait for a change before timing out. If
             None, wait forever.
-        
+
         Returns
         -------
         int
             The new state, or old state if we timed out.
         """
         finish_time = time.time() + timeout if timeout is not None else None
-        
+
         # We may get disconnected while waiting so keep listening...
         while finish_time is None or finish_time > time.time():
             try:
                 # Watch for changes in this Job's state
                 with self._client_lock:
                     self._client.notify_job(self.id)
-                
+
                 # Wait for job state to change
                 while finish_time is None or finish_time > time.time():
                     # Has the job changed state?
                     new_state = self.get_state().state
                     if new_state != old_state:
                         return new_state
-                    
+
                     # Wait for a state change and keep the job alive
                     with self._client_lock:
                         # Since we're about to block holding the client lock,
@@ -406,7 +402,7 @@ class Job(object):
                         while finish_time is None or finish_time > time.time():
                             self._client.job_keepalive(
                                 self.id, timeout=self._timeout)
-                            
+
                             # Wait for the job to change
                             try:
                                 # Block waiting for the job to change no-longer
@@ -422,11 +418,12 @@ class Job(object):
                                 else:
                                     wait_timeout = finish_time - time.time()
                                 if wait_timeout >= 0.0:
-                                    self._client.wait_for_notification(wait_timeout)
+                                    self._client.wait_for_notification(
+                                        wait_timeout)
                                     break
                             except ProtocolTimeoutError:
-                                # Its been a while, send a keep-alive since we're
-                                # still holding the lock
+                                # Its been a while, send a keep-alive since
+                                # we're still holding the lock
                                 pass
                         else:
                             # The user's timeout expired while waiting for a
@@ -449,16 +446,16 @@ class Job(object):
         # If we get here, the timeout expired without a state change, just
         # return the old state
         return old_state
-    
+
     def wait_until_ready(self, timeout=None):
         """Block until the job is allocated and ready.
-        
+
         Parameters
         ----------
         timeout : float or None
             The number of seconds to wait before timing out. If None, wait
             forever.
-        
+
         Raises
         ------
         StateChangeTimeoutError
@@ -473,7 +470,7 @@ class Job(object):
                 # Get initial state (NB: done here such that the command is
                 # never sent if the timeout has already occurred)
                 cur_state = self.get_state().state
-            
+
             # Are we ready yet?
             if cur_state == JobState.ready:
                 # Now in the ready state!
@@ -488,14 +485,14 @@ class Job(object):
             elif cur_state == JobState.unknown:
                 # Server has forgotten what this job even was...
                 raise JobDestroyedError("Server no longer recognises job.")
-            
+
             # Wait for a state change...
             if finish_time is None:
                 time_left = None
             else:
                 time_left = finish_time - time.time()
             cur_state = self.wait_for_state_change(cur_state, time_left)
-        
+
         # Timed out!
         raise StateChangeTimeoutError()
 
@@ -503,8 +500,11 @@ class Job(object):
 class StateChangeTimeoutError(Exception):
     """Thrown when a state change takes too long to occur."""
 
+
 class JobDestroyedError(Exception):
-    """Thrown when the job was destroyed while waiting for it to become ready."""
+    """Thrown when the job was destroyed while waiting for it to become
+    ready.
+    """
 
 
 class JobStateTuple(namedtuple("JobStateTuple",
@@ -539,7 +539,7 @@ class JobMachineInfoTuple(namedtuple("JobMachineInfoTuple",
     :py:meth:`.Controller.get_job_machine_info`.
 
     Parameters
-    
+
     from collections import namedtuple
     ----------
     width, height : int or None

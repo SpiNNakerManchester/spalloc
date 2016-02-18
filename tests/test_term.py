@@ -16,6 +16,7 @@ def test_call():
     t.enabled = True
     assert t("foo") == "foo"
 
+
 def test_update():
     t = Terminal(force=True)
 
@@ -60,13 +61,13 @@ def test_set_attr():
     assert t.set_attrs([1]) == "\033[1m"
 
     # Many items
-    assert t.set_attrs([1,2,3]) == "\033[1;2;3m"
+    assert t.set_attrs([1, 2, 3]) == "\033[1;2;3m"
 
     # When disabled should do nothing
     t.enabled = False
     assert t.set_attrs() == ""
     assert t.set_attrs([1]) == ""
-    assert t.set_attrs([1,2,3]) == ""
+    assert t.set_attrs([1, 2, 3]) == ""
 
 
 def test_wrap():

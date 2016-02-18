@@ -46,12 +46,12 @@ class Terminal(object):
     Windows, no ANSI control characters are produced.
 
     Example::
-    
+
         t = Terminal()
-        
+
         # Printing in colours
         print(t.red("I'm in red!"))
-        
+
         # Updating a status line
         for num in range(100):
             print(t.update("Now at {}%".format(num)))
@@ -59,10 +59,10 @@ class Terminal(object):
 
         # Combining style attributes
         print(t.bg_red_white_blink("Woah!"))
-    
+
     This module was inspired by the 'blessings' module which I initially liked
     but proved to be just a little too buggy.
-    
+
     Attributes
     ----------
     stream
@@ -103,7 +103,7 @@ class Terminal(object):
     def update(self, string="", start_again=False):
         """Print before a line and it will replace the previous line prefixed
         with :py:meth:`.update`.
-        
+
         Parameters
         ----------
         string : str
@@ -128,7 +128,8 @@ class Terminal(object):
         numbers.
         """
         if attrs:
-            return self("\033[{}m".format(";".join(str(attr) for attr in attrs)))
+            return self("\033[{}m".format(";".join(str(attr)
+                                                   for attr in attrs)))
         else:
             return ""
 

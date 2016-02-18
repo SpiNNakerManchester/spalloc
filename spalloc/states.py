@@ -2,6 +2,7 @@
 
 from enum import IntEnum
 
+
 class JobState(IntEnum):
     """All the possible states that a job may be in."""
 
