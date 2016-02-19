@@ -4,7 +4,6 @@ import argparse
 import tempfile
 import logging
 import subprocess
-import colorama
 
 from collections import OrderedDict
 
@@ -122,7 +121,6 @@ def run_command(command, machine_info, ip_file_filename):
 
 def main(argv=None):
     # Colour support for Windows
-    colorama.init()
     t = Terminal(stream=sys.stderr)
 
     cfg = config.read_config()
