@@ -4,6 +4,7 @@ import os
 import sys
 
 from functools import partial
+from collections import defaultdict
 
 from enum import IntEnum
 
@@ -100,6 +101,10 @@ class Terminal(object):
         else:
             return ""
 
+    def clear_screen(self):
+        """Clear the screen and reset cursor to top-left corner."""
+        return self("\033[2J\033[;H")
+
     def update(self, string="", start_again=False):
         """Print before a line and it will replace the previous line prefixed
         with :py:meth:`.update`.
@@ -157,3 +162,68 @@ class Terminal(object):
         return partial(self.wrap,
                        pre=self.set_attrs(attrs),
                        post=self("\033[0m"))
+
+
+def render_table(table, column_sep="  "):
+    """Render an ASCII table.
+
+    Parameters
+    ----------
+    table : [row, ...]
+        A table to render. Each row contains an iterable of column values which
+        may be either values or a tuples (f, value) where value is the string
+        to print, or an integer to print right-aligned, and f is a formatting
+        function which is applied to the string before the table is finally
+        displayed.
+
+    Returns
+    -------
+    str
+        The formatted table.
+    """
+    # Determine maximum column widths
+    column_widths = defaultdict(lambda: 0)
+    for row in table:
+        for i, column in enumerate(row):
+            if isinstance(column, str):
+                string = column
+            elif isinstance(column, int):
+                string = str(column)
+            else:
+                _, string = column
+            column_widths[i] = max(len(str(string)), column_widths[i])
+
+    # Render the table cells with padding [[str, ...], ...]
+    out = []
+    for row in table:
+        rendered_row = []
+        out.append(rendered_row)
+        for i, column in enumerate(row):
+            # Get string length and formatted string
+            if isinstance(column, str):
+                string = column
+                length = len(string)
+                right_align = False
+            elif isinstance(column, int):
+                string = str(column)
+                length = len(string)
+                right_align = True
+            elif isinstance(column[1], str):
+                f, string = column
+                length = len(string)
+                right_align = False
+                string = f(string)
+            elif isinstance(column[1], int):
+                f, string = column
+                length = len(str(string))
+                right_align = True
+                string = f(string)
+
+            padding = " " * (column_widths[i] - length)
+            if right_align:
+                rendered_row.append(padding + string)
+            else:
+                rendered_row.append(string + padding)
+
+    # Render the final table
+    return "\n".join(column_sep.join(row).rstrip() for row in out)

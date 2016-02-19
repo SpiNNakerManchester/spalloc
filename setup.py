@@ -40,6 +40,7 @@ setup(
     entry_points={
         "console_scripts": [
             "spalloc = spalloc.scripts.alloc:main",
+            "spalloc-ps = spalloc.scripts.ps:main",
         ],
     }
 )

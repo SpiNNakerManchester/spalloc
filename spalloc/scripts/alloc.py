@@ -120,7 +120,6 @@ def run_command(command, machine_info, ip_file_filename):
 
 
 def main(argv=None):
-    # Colour support for Windows
     t = Terminal(stream=sys.stderr)
 
     cfg = config.read_config()

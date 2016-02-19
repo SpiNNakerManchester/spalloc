@@ -1,6 +1,6 @@
 import pytest
 
-from spalloc.term import Terminal
+from spalloc.term import Terminal, render_table
 
 
 @pytest.mark.parametrize("force", [True, False])
@@ -15,6 +15,13 @@ def test_call():
     assert t("foo") == ""
     t.enabled = True
     assert t("foo") == "foo"
+
+
+def test_clear_screen():
+    t = Terminal(force=True)
+    assert t.clear_screen() == "\033[2J\033[;H"
+    t.enabled = False
+    assert t.clear_screen() == ""
 
 
 def test_update():
@@ -116,3 +123,44 @@ def test_getattr():
         t.red_bad
     with pytest.raises(AttributeError):
         t.bad_red
+
+
+def test_render_table():
+    t = Terminal(force=True)
+
+    # Empty
+    assert render_table([]) == ""
+
+    # Singleton
+    assert render_table([["a"]]) == "a"
+
+    # Single row
+    assert render_table([["a", "bc", "def"]]) == "a  bc  def"
+
+    # Column padding
+    assert render_table([
+        ("a", "bc", "def"),
+        ("def", "bc", "a"),
+    ]) == ("a    bc  def\n"
+           "def  bc  a")
+
+    # Column padding and formatting
+    assert render_table([
+        ("a", "bc", "def"),
+        ((t.red, "def"), "bc", "a"),
+    ]) == ("a    bc  def\n"
+           "\033[31mdef\033[0m  bc  a")
+
+    # Casting from ints and right-aligning them
+    assert render_table([
+        ("a", "bc", "integers"),
+        ("def", "bc", 1234),
+    ]) == ("a    bc  integers\n"
+           "def  bc      1234")
+
+    # Formatted ints
+    assert render_table([
+        ("a", "bc", "integers"),
+        ("def", "bc", (t.red, 1234)),
+    ]) == ("a    bc  integers\n"
+           "def  bc      \033[31m1234\033[0m")
