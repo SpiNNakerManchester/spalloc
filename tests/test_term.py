@@ -2,7 +2,9 @@ import pytest
 
 from collections import OrderedDict
 
-from spalloc.term import Terminal, render_table, render_definitions
+from spalloc.term import \
+    Terminal, render_table, render_definitions, render_boards, \
+    DEFAULT_BOARD_EDGES
 
 
 @pytest.mark.parametrize("force", [True, False])
@@ -187,3 +189,93 @@ def test_render_definitions():
     # Alternative seperator
     assert render_definitions(OrderedDict([("foo", "bar")]),
                               seperator="=") == "foo=bar"
+
+
+INNER_BOARD_EDGES = ("===", "`", ",")
+OUTER_BOARD_EDGES = DEFAULT_BOARD_EDGES
+
+
+class TestRenderBoards(object):
+
+    def test_empty(self):
+        assert render_boards([]) == ""
+
+    def test_single(self):
+        out = render_boards([
+            ([(0, 0, 0)], "ABC", INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+        ])
+        assert out == (r" ___."
+                       r"/ABC\."
+                       r"\___/".replace(".", "\n"))
+
+    def test_three_boards(self):
+        out = render_boards([
+            ([(0, 0, z) for z in range(3)], "ABC",
+             INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+        ])
+        assert out == (r" ___."
+                       r"/ABC\___."
+                       r"\===,ABC\."
+                       r"/ABC`___/."
+                       r"\___/"
+                       ).replace(".", "\n")
+
+    def test_many_boards(self):
+        out = render_boards([
+            ([(x, y, z)
+              for x in range(2)
+              for y in range(2)
+              for z in range(3)], "ABC",
+             INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+        ])
+        assert out == (r" ___     ___."
+                       r"/ABC\___/ABC\___."
+                       r"\===,ABC`===,ABC\."
+                       r"/ABC`===,ABC`===/."
+                       r"\___,ABC`===,ABC\___."
+                       r"    \===,ABC`===,ABC\."
+                       r"    /ABC`___,ABC`___/."
+                       r"    \___/   \___/"
+                       ).replace(".", "\n")
+
+    def test_dead_links(self):
+        out = render_boards([
+            ([(x, y, z)
+              for x in range(2)
+              for y in range(2)
+              for z in range(3)], "ABC",
+             INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+        ], dead_links=set([
+            (0, 0, 0, 0),  # 0, 0, East
+            (0, 0, 0, 2),  # 0, 0, North
+            (0, 0, 0, 1),  # 0, 0, North East
+            (0, 0, 1, 4),  # 1, 1, South West
+        ]))
+        assert out == (r" ___     ___."
+                       r"/ABC\___/ABC\___."
+                       r"\===,ABC`===,ABC\."
+                       r"/ABC`===,ABC`===/."
+                       r"\___,ABC`===,ABC\___."
+                       r"    \XXX,ABC`===,ABC\."
+                       r"    /ABCX___,ABC`___/."
+                       r"    \___X   \___/"
+                       ).replace(".", "\n")
+
+    def test_multiple_board_groups(self):
+        out = render_boards([
+            ([(0, 0, z) for z in range(3)], " # ",
+             INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+            ([(x, y, z)
+              for x in range(2) for y in range(2) for z in range(3)
+              if (x, y) != (0, 0)], "ABC",
+             INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
+        ])
+        assert out == (r" ___     ___."
+                       r"/ABC\___/ABC\___."
+                       r"\===,ABC`===,ABC\."
+                       r"/ABC`___,ABC`===/."
+                       r"\___/ # \___,ABC\___."
+                       r"    \===, # \===,ABC\."
+                       r"    / # `___/ABC`___/."
+                       r"    \___/   \___/"
+                       ).replace(".", "\n")

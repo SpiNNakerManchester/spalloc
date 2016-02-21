@@ -42,6 +42,7 @@ setup(
             "spalloc = spalloc.scripts.alloc:main",
             "spalloc-ps = spalloc.scripts.ps:main",
             "spalloc-job = spalloc.scripts.job:main",
+            "spalloc-machine = spalloc.scripts.machine:main",
         ],
     }
 )

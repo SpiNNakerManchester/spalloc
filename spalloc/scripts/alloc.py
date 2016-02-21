@@ -68,7 +68,7 @@ def print_info(machine_info, ip_file_filename):
     try:
         input(t.dim("<Press enter to destroy job>"))
     except KeyboardInterrupt:
-        print()
+        print("")
 
 
 def run_command(command, machine_info, ip_file_filename):

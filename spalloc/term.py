@@ -4,6 +4,7 @@ import os
 import sys
 
 from functools import partial
+from itertools import chain
 from collections import defaultdict
 
 from six import iteritems
@@ -256,3 +257,140 @@ def render_definitions(definitions, seperator=": "):
     col_width = max(map(len, definitions))
     return "\n".join("{:>{}s}{}{}".format(key, col_width, seperator, value)
                      for key, value in iteritems(definitions))
+
+
+def _board_to_cartesian(x, y, z):
+    """Translate from logical board coordinates (x, y, z) into::
+
+         ___     ___
+        /-15\___/1 5\___
+        \___/0 4\___/3 4\
+        /-13\___/1 3\___/
+        \___/0 2\___/2 2\___
+            \___/1 1\___/3 1\
+            /0 0\___/2 0\___/
+            \___/   \___/
+    """
+    cx = (2*x) - y + (1 if z == 1 else 0)
+    cy = (3*y) + z
+
+    return (cx, cy)
+
+_LINK_TO_EDGE = {
+    0: (+1, -1, 2),  # E
+    1: (+1, +0, 1),  # NE
+    2: (+0, +1, 0),  # N
+    3: (+0, +0, 2),  # W
+    4: (+0, -1, 1),  # SW
+    5: (+0, -1, 0),  # S
+}
+r"""Mapping from link direction to an edge number.
+
+{link: (dx, dy, edge), ...}
+
+Directions::
+        N
+       ___
+     W/   \ NE
+    SW\___/ E
+        S
+
+Edge numbers::
+      ___
+    2/   \
+    1\___/
+       0
+"""
+
+_LINK_TO_DELTA = {
+    0: (+1, -1),  # E
+    1: (+1, +1),  # NE
+    2: (+0, +2),  # N
+    3: (-1, +1),  # W
+    4: (-1, -1),  # SW
+    5: (-0, -2),  # S
+}
+"""The offsets of the immediate neighbouring boards."""
+
+
+DEFAULT_BOARD_EDGES = ("___", "\\", "/")
+"""The default board edge styles."""
+
+
+def render_boards(board_groups, dead_links=set(),
+                  dead_edge=("XXX", "X", "X"),
+                  blank_label="   ", blank_edge=("   ", " ", " ")):
+    """Render an ASCII art diagram of a set of boards with sets of boards.
+    """
+    # {(x, y): str, ...}
+    board_labels = {}
+    # {(x, y, edge): str, ...}
+    board_edges = {}
+
+    # The set of all boards defined (used to filter displaying of dead links to
+    # non-existant boards
+    all_boards = set()
+
+    for boards, label, edge_inner, edge_outer in board_groups:
+        # Convert to cartesian coords
+        boards = set(_board_to_cartesian(x, y, z) for x, y, z in boards)
+        all_boards.update(boards)
+
+        # Set board labels and basic edge style
+        for x, y in boards:
+            board_labels[(x, y)] = label
+
+            for link in range(6):
+                dx, dy = _LINK_TO_DELTA[link]
+                x2 = x + dx
+                y2 = y + dy
+
+                edx, edy, edge = _LINK_TO_EDGE[link]
+                if (x2, y2) in boards:
+                    style = edge_inner[edge]
+                else:
+                    style = edge_outer[edge]
+                ex = x + edx
+                ey = y + edy
+                board_edges[(ex, ey, edge)] = style
+
+    # Mark dead links
+    for x, y, z, link in dead_links:
+        x, y = _board_to_cartesian(x, y, z)
+        edx, edy, edge = _LINK_TO_EDGE[link]
+        ex = x + edx
+        ey = y + edy
+        board_edges[(ex, ey, edge)] = dead_edge[edge]
+
+    # Get the bounds of the size of diagram to render
+    all_xy = tuple(chain(all_boards, ((x, y) for x, y, edge in board_edges)))
+    if len(all_xy) == 0:
+        return ""  # Special case since min/max will fail otherwise
+    x_min, y_min = map(min, zip(*all_xy))
+    x_max, y_max = map(max, zip(*all_xy))
+
+    # Render row-by-row
+    #   ___     ___            6 even
+    #  /-15\___/1 5\___        5 odd
+    #  \___/0 4\___/3 4\       4 even
+    #  /-13\___/1 3\___/       3 odd
+    #  \___/0 2\___/2 2\___    2 even
+    #  .   \___/1 1\___/3 1\   1 odd
+    #  .   /0 0\___/2 0\___/   0 even
+    #  .   \___/   \___/      -1 odd
+    # -1   0   1   2   3   4
+    out = []
+    for y in range(y_max, y_min - 1, -1):
+        even_row = (y % 2) == 0
+        row = ""
+        for x in range(x_min, x_max + 1):
+            even_col = (x % 2) == 0
+            if even_row == even_col:
+                row += board_edges.get((x, y, 2), blank_edge[2])
+                row += board_labels.get((x, y), blank_label)
+            else:
+                row += board_edges.get((x, y, 1), blank_edge[1])
+                row += board_edges.get((x, y, 0), blank_edge[0])
+        out.append(row)
+
+    return "\n".join(filter(None, map(str.rstrip, out)))

@@ -63,10 +63,10 @@ def watch_job(client, timeout, job_id):
 
         try:
             client.wait_for_notification()
-            print()
+            print("")
         except KeyboardInterrupt:
             # Gracefully exit
-            print()
+            print("")
             break
 
     return 0
