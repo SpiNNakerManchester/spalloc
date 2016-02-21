@@ -6,6 +6,8 @@ import sys
 from functools import partial
 from collections import defaultdict
 
+from six import iteritems
+
 from enum import IntEnum
 
 
@@ -175,6 +177,8 @@ def render_table(table, column_sep="  "):
         to print, or an integer to print right-aligned, and f is a formatting
         function which is applied to the string before the table is finally
         displayed.
+    column_sep : str
+        String inserted between each column.
 
     Returns
     -------
@@ -227,3 +231,28 @@ def render_table(table, column_sep="  "):
 
     # Render the final table
     return "\n".join(column_sep.join(row).rstrip() for row in out)
+
+
+def render_definitions(definitions, seperator=": "):
+    """Render a definition list.
+
+    Such a list looks like this::
+
+              Key: Value
+        Something: Else
+          Another: Thing
+
+    Parameters
+    ----------
+    definitions : :py:class:`collections.OrderedDict`
+        The key/value set to display.
+    seperator : str
+        The seperator inserted between keys and values.
+    """
+    # Special case since max would fail
+    if not definitions:
+        return ""
+
+    col_width = max(map(len, definitions))
+    return "\n".join("{:>{}s}{}{}".format(key, col_width, seperator, value)
+                     for key, value in iteritems(definitions))

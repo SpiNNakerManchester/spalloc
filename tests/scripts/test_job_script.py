@@ -1,0 +1,396 @@
+import pytest
+
+from mock import Mock
+
+import datetime
+
+from spalloc import JobState
+from spalloc.scripts.job import \
+    show_job_info, watch_job, power_job, list_ips, destroy_job, main, \
+    VERSION_RANGE_START, VERSION_RANGE_STOP
+
+
+@pytest.fixture
+def mock_protocol_client(monkeypatch):
+    mock_protocol_client = Mock()
+
+    import spalloc.scripts.job
+    monkeypatch.setattr(spalloc.scripts.job,
+                        "ProtocolClient",
+                        mock_protocol_client)
+    return mock_protocol_client
+
+
+@pytest.fixture
+def client(mock_protocol_client):
+    # A mock protocol client which returns a sensible version number.
+    client = Mock()
+    mock_protocol_client.return_value = client
+
+    client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
+
+    return client
+
+
+class TestShowJobInfo(object):
+
+    def test_unknown(self, capsys):
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(JobState.unknown),
+            "power": None,
+            "keepalive": None,
+            "reason": None,
+            "start_time": None,
+        }
+
+        assert show_job_info(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+        assert out == ("Job ID: 123\n"
+                       " State: unknown\n")
+
+    def test_queued(self, capsys):
+        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(JobState.queued),
+            "power": None,
+            "keepalive": 60.0,
+            "reason": None,
+            "start_time": epoch,
+        }
+
+        assert show_job_info(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+        assert out == ("    Job ID: 123\n"
+                       "Start time: 01/01/1970 00:00:00\n"
+                       "     State: queued\n"
+                       " Keepalive: 60.0\n")
+
+    @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
+    def test_power_ready(self, capsys, state):
+        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(state),
+            "power": True,
+            "keepalive": 60.0,
+            "reason": None,
+            "start_time": epoch,
+        }
+        client.get_job_machine_info.return_value = {
+            "width": 10,
+            "height": 20,
+            "connections": [[[4, 8], "board48"],
+                            [[8, 4], "board84"],
+                            [[0, 0], "board00"]],
+            "machine_name": "machine",
+        }
+
+        assert show_job_info(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+        assert out == ("     Job ID: 123\n"
+                       " Start time: 01/01/1970 00:00:00\n"
+                       "      State: " + state.name + "\n"
+                       "  Keepalive: 60.0\n"
+                       "Board power: on\n"
+                       "   Hostname: board00\n"
+                       " Num boards: 3\n"
+                       "      Width: 10\n"
+                       "     Height: 20\n"
+                       " Running on: machine\n")
+
+    @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
+    def test_power_ready_no_machine(self, capsys, state):
+        # If the get_job_machine_info command returns nothing, should not
+        # crash...
+        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(state),
+            "power": True,
+            "keepalive": 60.0,
+            "reason": None,
+            "start_time": epoch,
+        }
+        client.get_job_machine_info.return_value = {
+            "width": None, "height": None,
+            "connections": None, "machine_name": None,
+        }
+
+        assert show_job_info(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+        assert out == ("     Job ID: 123\n"
+                       " Start time: 01/01/1970 00:00:00\n"
+                       "      State: " + state.name + "\n"
+                       "  Keepalive: 60.0\n"
+                       "Board power: on\n")
+
+    def test_destroyed(self, capsys):
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(JobState.destroyed),
+            "power": None,
+            "keepalive": None,
+            "reason": "foobar",
+            "start_time": None,
+        }
+
+        assert show_job_info(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+        assert out == ("Job ID: 123\n"
+                       " State: destroyed\n"
+                       "Reason: foobar\n")
+
+
+def test_watch_job():
+    client = Mock()
+    client.get_job_state.return_value = {
+        "state": int(JobState.unknown),
+        "power": None, "keepalive": None,
+        "reason": None, "start_time": None,
+    }
+
+    # Loop once and then get interrupted
+    client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
+
+    assert watch_job(client, 1.0, 123) == 0
+
+
+class TestPowerJob(object):
+
+    @pytest.mark.parametrize("state", [JobState.unknown, JobState.destroyed])
+    @pytest.mark.parametrize("power", [True, False])
+    def test_bad_state(self, state, power):
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(state),
+            "power": None, "keepalive": None,
+            "reason": None, "start_time": None,
+        }
+
+        assert power_job(client, 1.0, 123, power) == 8
+
+    @pytest.mark.parametrize("states", [[JobState.power, JobState.ready],
+                                        [JobState.ready]])
+    @pytest.mark.parametrize("power", [True, False])
+    def test_success(self, states, power):
+        client = Mock()
+        client.get_job_state.side_effect = [
+            {
+                "state": int(state),
+                "power": power, "keepalive": 60.0,
+                "reason": None, "start_time": 0,
+            }
+            for state in states
+        ]
+
+        assert power_job(client, 1.0, 123, power) == 0
+
+        if power:
+            client.power_on_job_boards.assert_called_once_with(
+                123, timeout=1.0)
+        else:
+            client.power_off_job_boards.assert_called_once_with(
+                123, timeout=1.0)
+
+    @pytest.mark.parametrize("power", [True, False])
+    def test_interrupt(self, power):
+        client = Mock()
+        client.get_job_state.return_value = {
+            "state": int(JobState.power),
+            "power": power, "keepalive": 60.0,
+            "reason": None, "start_time": 0,
+        }
+
+        client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
+
+        assert power_job(client, 1.0, 123, power) == 7
+
+        if power:
+            client.power_on_job_boards.assert_called_once_with(
+                123, timeout=1.0)
+        else:
+            client.power_off_job_boards.assert_called_once_with(
+                123, timeout=1.0)
+
+
+class TestListIPs(object):
+
+    def test_no_connections(self):
+        client = Mock()
+        client.get_job_machine_info.return_value = {
+            "width": None, "height": None,
+            "connections": None, "machine_name": None,
+        }
+        assert list_ips(client, 1.0, 123) == 9
+
+    def test_some_connections(self, capsys):
+        client = Mock()
+        client.get_job_machine_info.return_value = {
+            "width": 10,
+            "height": 20,
+            "connections": [[[4, 8], "board48"],
+                            [[8, 4], "board84"],
+                            [[0, 0], "board00"]],
+            "machine_name": "machine",
+        }
+
+        assert list_ips(client, 1.0, 123) == 0
+
+        out, err = capsys.readouterr()
+
+        assert out == ("x,y,hostname\n"
+                       "0,0,board00\n"
+                       "4,8,board48\n"
+                       "8,4,board84\n")
+
+
+def test_destroy_job():
+    client = Mock()
+    assert destroy_job(client, 1.0, 123, "foo") == 0
+    client.destroy_job.assert_called_once_with(123, "foo", timeout=1.0)
+
+
+class TestMain(object):
+
+    def test_no_hostname(self, no_config_files):
+        with pytest.raises(SystemExit):
+            main("".split())
+
+    def test_no_job_id_or_owner(self, no_config_files):
+        with pytest.raises(SystemExit):
+            main("--hostname foo".split())
+
+    @pytest.mark.parametrize("version",
+                             [".".join(map(str, VERSION_RANGE_STOP)),
+                              "0.0.0"])
+    def test_bad_version(self, no_config_files, client, version):
+        client.version.return_value = version
+        assert main("--hostname foo 123".split()) == 2
+
+    def test_bad_connection(self, no_config_files, client):
+        client.version.side_effect = IOError()
+        assert main("--hostname foo 123".split()) == 1
+
+    def test_no_job_owner_has_no_jobs(self, no_config_files, client):
+        client.list_jobs.return_value = [
+            {"job_id": 1, "owner": "someone-else"}
+        ]
+        assert main("--hostname foo --owner bar".split()) == 3
+
+    def test_no_job_owner_has_many_jobs(self, no_config_files, client):
+        client.list_jobs.return_value = [
+            {"job_id": 1, "owner": "bar"},
+            {"job_id": 2, "owner": "bar"},
+        ]
+        assert main("--hostname foo --owner bar".split()) == 3
+
+    def test_automatic_job_id(self, no_config_files, client):
+        client.list_jobs.return_value = [
+            {"job_id": 123, "owner": "bar"},
+        ]
+        client.get_job_state.return_value = {
+            "state": int(JobState.unknown),
+            "power": None,
+            "keepalive": None,
+            "reason": None,
+            "start_time": None,
+        }
+        assert main("--hostname foo --owner bar".split()) == 0
+        client.get_job_state.assert_called_once_with(123, timeout=5.0)
+
+    def test_manual(self, no_config_files, client):
+        client.list_jobs.return_value = [
+            {"job_id": 123, "owner": "bar"},
+            {"job_id": 321, "owner": "someone-else"},
+        ]
+        client.get_job_state.return_value = {
+            "state": int(JobState.unknown),
+            "power": None,
+            "keepalive": None,
+            "reason": None,
+            "start_time": None,
+        }
+        assert main("321 --hostname foo --owner bar".split()) == 0
+        client.get_job_state.assert_called_once_with(321, timeout=5.0)
+
+    @pytest.mark.parametrize("args", ["", "-i", "--info"])
+    def test_info(self, no_config_files, client, args):
+        client.get_job_state.return_value = {
+            "state": int(JobState.unknown),
+            "power": None,
+            "keepalive": None,
+            "reason": None,
+            "start_time": None,
+        }
+        assert main(("321 --hostname foo --owner bar " + args).split()) == 0
+        client.get_job_state.assert_called_once_with(321, timeout=5.0)
+
+    @pytest.mark.parametrize("args", ["-w", "--watch"])
+    def test_watch(self, no_config_files, client, args):
+        client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
+        client.get_job_state.return_value = {
+            "state": int(JobState.unknown),
+            "power": None,
+            "keepalive": None,
+            "reason": None,
+            "start_time": None,
+        }
+        assert main(("321 --hostname foo --owner bar " + args).split()) == 0
+
+    @pytest.mark.parametrize("args,power",
+                             [("-p", True),
+                              ("--power-on", True),
+                              ("-r", True),
+                              ("--reset", True),
+                              ("--power-off", False)])
+    def test_power_and_reset(self, no_config_files, client, args, power):
+        client.get_job_state.return_value = {
+            "state": int(JobState.ready),
+            "power": power,
+            "keepalive": 60.0,
+            "reason": None,
+            "start_time": 0,
+        }
+        assert main(("321 --hostname foo --owner bar " + args).split()) == 0
+        if power:
+            client.power_on_job_boards.assert_called_once_with(
+                321, timeout=5.0)
+        else:
+            client.power_off_job_boards.assert_called_once_with(
+                321, timeout=5.0)
+
+    @pytest.mark.parametrize("args", ["-e", "--ethernet-ips"])
+    def test_ethernet_ips(self, no_config_files, client, args):
+        client.get_job_machine_info.return_value = {
+            "width": 10, "height": 20,
+            "connections": [[[0, 0], "board00"]],
+            "machine_name": "machine",
+        }
+        assert main(("321 --hostname foo --owner bar " + args).split()) == 0
+        client.get_job_machine_info.assert_called_once_with(321, timeout=5.0)
+
+    @pytest.mark.parametrize("args,reason", [("-D", ""),
+                                             ("--destroy", ""),
+                                             ("-D foobar", "foobar"),
+                                             ("--destroy foobar", "foobar")])
+    @pytest.mark.parametrize("owner_args, owner", [("--owner me", "me"),
+                                                   ("", None)])
+    def test_destroy(self, no_config_files, client, args, reason,
+                     owner_args, owner):
+        assert main(
+            ("321 --hostname foo " + owner_args + " " + args).split()) == 0
+
+        if not reason and owner is not None:
+            reason = "Destroyed by {}".format(owner)
+
+        client.destroy_job.assert_called_once_with(321, reason, timeout=5.0)

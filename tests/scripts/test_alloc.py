@@ -414,3 +414,4 @@ def test_keyboard_interrupt(basic_config_file, mock_job):
     job.get_state.return_value = Mock(state=JobState.queued)
     job.wait_for_state_change.side_effect = KeyboardInterrupt()
     assert main("".split()) == 4
+    job.destroy.assert_called_once_with("Keyboard interrupt.")

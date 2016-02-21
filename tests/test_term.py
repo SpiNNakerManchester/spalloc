@@ -1,6 +1,8 @@
 import pytest
 
-from spalloc.term import Terminal, render_table
+from collections import OrderedDict
+
+from spalloc.term import Terminal, render_table, render_definitions
 
 
 @pytest.mark.parametrize("force", [True, False])
@@ -164,3 +166,24 @@ def test_render_table():
         ("def", "bc", (t.red, 1234)),
     ]) == ("a    bc  integers\n"
            "def  bc      \033[31m1234\033[0m")
+
+
+def test_render_definitions():
+    # Empty case
+    assert render_definitions(OrderedDict()) == ""
+
+    # Singleton
+    assert render_definitions(OrderedDict([("foo", "bar")])) == "foo: bar"
+
+    # Ragged
+    assert render_definitions(OrderedDict([
+        ("Key", "Value"),
+        ("Something", "Else"),
+        ("Another", "Thing"),
+    ])) == ("      Key: Value\n"
+            "Something: Else\n"
+            "  Another: Thing")
+
+    # Alternative seperator
+    assert render_definitions(OrderedDict([("foo", "bar")]),
+                              seperator="=") == "foo=bar"

@@ -12,7 +12,7 @@ from six.moves import input
 
 from spalloc import config
 from spalloc import Job, JobState, __version__
-from spalloc.term import Terminal
+from spalloc.term import Terminal, render_definitions
 
 
 try:
@@ -63,9 +63,7 @@ def print_info(machine_info, ip_file_filename):
 
     to_print["Running on"] = machine_info.machine_name
 
-    col_width = max(map(len, to_print))
-    for name, value in iteritems(to_print):
-        print("{:>{}s}: {}".format(name, col_width, value))
+    print(render_definitions(to_print))
 
     try:
         input(t.dim("<Press enter to destroy job>"))
@@ -294,6 +292,9 @@ def main(argv=None):
         if not args.quiet:
             t.stream.write("{}\n".format(msg))
 
+    # Reason for destroying the job
+    reason = None
+
     try:
         # Create the job
         try:
@@ -352,6 +353,7 @@ def main(argv=None):
                     info(t.update(t.red(
                         "Job {}: Destroyed by keyboard interrupt.".format(
                             job.id))))
+                    reason = "Keyboard interrupt."
                     return 4
 
             # Machine is now ready
@@ -376,7 +378,7 @@ def main(argv=None):
                 return 0
         finally:
             # Destroy job and disconnect client
-            job.destroy()
+            job.destroy(reason)
     finally:
         # Delete IP address list file
         os.remove(ip_file_filename)

@@ -15,7 +15,7 @@ from spalloc import JobState
 def test_render_job_list(machine, owner):
     t = Terminal(force=False)
 
-    epoch = datetime.datetime(1970, 1, 1, 0, 0, 0).timestamp()
+    epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
 
     jobs = [
         # A ready, powered-on job
