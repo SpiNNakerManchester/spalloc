@@ -241,7 +241,10 @@ def render_definitions(definitions, seperator=": "):
 
               Key: Value
         Something: Else
-          Another: Thing
+          Another: Thing,
+                   but this time with
+                   line
+                   breaks!
 
     Parameters
     ----------
@@ -255,8 +258,10 @@ def render_definitions(definitions, seperator=": "):
         return ""
 
     col_width = max(map(len, definitions))
-    return "\n".join("{:>{}s}{}{}".format(key, col_width, seperator, value)
-                     for key, value in iteritems(definitions))
+    return "\n".join("{:>{}s}{}{}".format(
+        key, col_width, seperator, str(value).replace(
+            "\n", "\n{}".format(" "*(col_width + len(seperator)))))
+        for key, value in iteritems(definitions))
 
 
 def _board_to_cartesian(x, y, z):
@@ -320,7 +325,23 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 def render_boards(board_groups, dead_links=set(),
                   dead_edge=("XXX", "X", "X"),
                   blank_label="   ", blank_edge=("   ", " ", " ")):
-    """Render an ASCII art diagram of a set of boards with sets of boards.
+    r"""Render an ASCII art diagram of a set of boards with sets of boards.
+
+    Parameters
+    ----------
+    board_groups : [([(x, y, z), ...], label, edge_inner, edge_outer), ...]
+        Lists the groups of boards to display. Label is a 3-character string
+        labelling the boards in the group, edge_inner and edge_outer are the
+        edge characters as a tuple ("___", "\\", "/") which are to be used for
+        the inner and outer board edges repsectively.
+    dead_links : set([(x, y, z, link), ...])
+        Enumeration of all dead links.
+    dead_edge : ("___", "\\", "/")
+        The strings to use to draw dead links.
+    blank_label : "   "
+        The 3-character string to use to label blank boards. (Blank by default)
+    blank_edge : ("___", "\\", "/")
+        The characters to use to render blank board edges. (Blank by default)
     """
     # {(x, y): str, ...}
     board_labels = {}

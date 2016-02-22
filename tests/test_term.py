@@ -189,6 +189,12 @@ def test_render_definitions():
     # Alternative seperator
     assert render_definitions(OrderedDict([("foo", "bar")]),
                               seperator="=") == "foo=bar"
+    # Linebreaks
+    assert render_definitions({"Key": "Lines\nBroken\nUp."}) == (
+        "Key: Lines\n"
+        "     Broken\n"
+        "     Up."
+    )
 
 
 INNER_BOARD_EDGES = ("===", "`", ",")

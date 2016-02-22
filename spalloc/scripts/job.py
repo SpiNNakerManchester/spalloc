@@ -4,62 +4,90 @@ import datetime
 
 from collections import OrderedDict
 
+from six import iteritems
+
 from spalloc import config
 from spalloc import \
     __version__, ProtocolClient, ProtocolTimeoutError, JobState
-from spalloc.term import Terminal, render_definitions
+from spalloc.term import \
+    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES
 
 
 VERSION_RANGE_START = (0, 1, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
 
 
-def show_job_info(client, timeout, job_id):
-    info = OrderedDict()
+def show_job_info(t, client, timeout, job_id):
 
-    job_state = client.get_job_state(job_id, timeout=timeout)
+    # Get the complete full job information (if available)
+    job_list = client.list_jobs(timeout=timeout)
+    job = [job for job in job_list if job["job_id"] == job_id]
 
-    state = JobState(job_state["state"])
+    if not job:
+        # Job no longer exists, just print basic info
+        job = client.get_job_state(job_id, timeout=timeout)
 
-    info["Job ID"] = job_id
-    if job_state["start_time"] is not None:
-        info["Start time"] = datetime.datetime.fromtimestamp(
-            job_state["start_time"]).strftime('%d/%m/%Y %H:%M:%S')
-    info["State"] = state.name
-    if (state == JobState.queued or state == JobState.power or
-            state == JobState.ready):
-        info["Keepalive"] = job_state["keepalive"]
+        info = OrderedDict()
+        info["Job ID"] = job_id
+        info["State"] = JobState(job["state"]).name
+        if job["reason"] is not None:
+            info["Reason"] = job["reason"]
+        print(render_definitions(info))
+    else:
+        # Job is enqueued, show all info
+        machine_info = client.get_job_machine_info(job_id, timeout=timeout)
+        job = job[0]
 
-        if state == JobState.power or state == JobState.ready:
-            info["Board power"] = "on" if job_state["power"] else "off"
+        info = OrderedDict()
+        info["Job ID"] = job_id
+        info["Owner"] = job["owner"]
+        info["State"] = JobState(job["state"]).name
+        if job["start_time"] is not None:
+            info["Start time"] = datetime.datetime.fromtimestamp(
+                job["start_time"]).strftime('%d/%m/%Y %H:%M:%S')
+        info["Keepalive"] = job["keepalive"]
 
-            machine_info = client.get_job_machine_info(job_id, timeout=timeout)
+        args = job["args"]
+        kwargs = job["kwargs"]
+        info["Request"] = "Job({}{}{})".format(
+            ", ".join(map(str, args)),
+            ",\n    " if args and kwargs else "",
+            ",\n    ".join("{}={!r}".format(k, v) for
+                           k, v in sorted(iteritems(kwargs)))
+        )
 
-            if machine_info["connections"] is not None:
-                connections = sorted(machine_info["connections"])
-                info["Hostname"] = connections[0][1]
-                info["Num boards"] = len(connections)
-            if machine_info["width"] is not None:
-                info["Width"] = machine_info["width"]
-            if machine_info["height"] is not None:
-                info["Height"] = machine_info["height"]
-            if machine_info["machine_name"] is not None:
-                info["Running on"] = machine_info["machine_name"]
-    elif state == JobState.destroyed:
-        info["Reason"] = job_state["reason"]
+        if job["boards"] is not None:
+            info["Allocation"] = render_boards([(
+                job["boards"],
+                t.dim(" . "),
+                tuple(map(t.dim, DEFAULT_BOARD_EDGES)),
+                tuple(map(t.bright, DEFAULT_BOARD_EDGES)),
+            )])
 
-    print(render_definitions(info))
+        if machine_info["connections"] is not None:
+            connections = sorted(machine_info["connections"])
+            info["Hostname"] = connections[0][1]
+        if machine_info["width"] is not None:
+            info["Width"] = machine_info["width"]
+        if machine_info["height"] is not None:
+            info["Height"] = machine_info["height"]
+        if job["boards"] is not None:
+            info["Num boards"] = len(job["boards"])
+        if job["power"] is not None:
+            info["Board power"] = "on" if job["power"] else "off"
+        if job["allocated_machine_name"] is not None:
+            info["Running on"] = job["allocated_machine_name"]
+
+        print(render_definitions(info))
 
     return 0
 
 
-def watch_job(client, timeout, job_id):
-    t = Terminal()
-
+def watch_job(t, client, timeout, job_id):
     client.notify_job(job_id, timeout=timeout)
     while True:
         t.stream.write(t.clear_screen())
-        show_job_info(client, timeout, job_id)
+        show_job_info(t, client, timeout, job_id)
 
         try:
             client.wait_for_notification()
@@ -124,6 +152,8 @@ def destroy_job(client, timeout, job_id, reason=None):
 
 
 def main(argv=None):
+    t = Terminal()
+
     cfg = config.read_config()
 
     parser = argparse.ArgumentParser(
@@ -212,7 +242,7 @@ def main(argv=None):
 
         # Do as the user asked
         if args.watch:
-            return watch_job(client, args.timeout, args.job_id)
+            return watch_job(t, client, args.timeout, args.job_id)
         elif args.power_on:
             return power_job(client, args.timeout, args.job_id, True)
         elif args.power_off:
@@ -225,7 +255,7 @@ def main(argv=None):
                 args.destroy = "Destroyed by {}".format(args.owner)
             return destroy_job(client, args.timeout, args.job_id, args.destroy)
         else:
-            return show_job_info(client, args.timeout, args.job_id)
+            return show_job_info(t, client, args.timeout, args.job_id)
 
     except (IOError, OSError, ProtocolTimeoutError) as e:
         sys.stderr.write("Error communicating with server: {}\n".format(e))

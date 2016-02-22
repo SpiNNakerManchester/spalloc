@@ -5,6 +5,7 @@ from mock import Mock
 import datetime
 
 from spalloc import JobState
+from spalloc.term import Terminal
 from spalloc.scripts.job import \
     show_job_info, watch_job, power_job, list_ips, destroy_job, main, \
     VERSION_RANGE_START, VERSION_RANGE_STOP
@@ -35,7 +36,9 @@ def client(mock_protocol_client):
 class TestShowJobInfo(object):
 
     def test_unknown(self, capsys):
+        t = Terminal(force=False)
         client = Mock()
+        client.list_jobs.return_value = []
         client.get_job_state.return_value = {
             "state": int(JobState.unknown),
             "power": None,
@@ -44,44 +47,67 @@ class TestShowJobInfo(object):
             "start_time": None,
         }
 
-        assert show_job_info(client, 1.0, 123) == 0
+        assert show_job_info(t, client, 1.0, 123) == 0
 
         out, err = capsys.readouterr()
         assert out == ("Job ID: 123\n"
                        " State: unknown\n")
 
     def test_queued(self, capsys):
+        t = Terminal(force=False)
         epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
 
         client = Mock()
-        client.get_job_state.return_value = {
-            "state": int(JobState.queued),
-            "power": None,
-            "keepalive": 60.0,
-            "reason": None,
-            "start_time": epoch,
+        client.list_jobs.return_value = [
+            {
+                "job_id": 123,
+                "owner": "me",
+                "start_time": epoch,
+                "keepalive": 60.0,
+                "state": int(JobState.queued),
+                "power": None,
+                "args": [3, 2, 1],
+                "kwargs": {"tags": ["bar"]},
+                "allocated_machine_name": None,
+                "boards": None,
+            },
+        ]
+        client.get_job_machine_info.return_value = {
+            "width": None, "height": None,
+            "connections": None, "machine_name": None,
         }
 
-        assert show_job_info(client, 1.0, 123) == 0
+        assert show_job_info(t, client, 1.0, 123) == 0
 
         out, err = capsys.readouterr()
         assert out == ("    Job ID: 123\n"
-                       "Start time: 01/01/1970 00:00:00\n"
+                       "     Owner: me\n"
                        "     State: queued\n"
-                       " Keepalive: 60.0\n")
+                       "Start time: 01/01/1970 00:00:00\n"
+                       " Keepalive: 60.0\n"
+                       "   Request: Job(3, 2, 1,\n"
+                       "                tags=['bar'])\n")
 
     @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
     def test_power_ready(self, capsys, state):
+        t = Terminal(force=False)
         epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
 
         client = Mock()
-        client.get_job_state.return_value = {
-            "state": int(state),
-            "power": True,
-            "keepalive": 60.0,
-            "reason": None,
-            "start_time": epoch,
-        }
+        client.list_jobs.return_value = [
+            {
+                "job_id": 123,
+                "owner": "me",
+                "start_time": epoch,
+                "keepalive": 60.0,
+                "state": int(state),
+                "power": True,
+                "args": [3, 2, 1],
+                "kwargs": {"tags": ["bar"]},
+                "allocated_machine_name": "machine",
+                "boards": [[0, 0, z] for z in range(3)],
+            },
+        ]
         client.get_job_machine_info.return_value = {
             "width": 10,
             "height": 20,
@@ -91,50 +117,33 @@ class TestShowJobInfo(object):
             "machine_name": "machine",
         }
 
-        assert show_job_info(client, 1.0, 123) == 0
+        assert show_job_info(t, client, 1.0, 123) == 0
 
         out, err = capsys.readouterr()
         assert out == ("     Job ID: 123\n"
-                       " Start time: 01/01/1970 00:00:00\n"
+                       "      Owner: me\n"
                        "      State: " + state.name + "\n"
+                       " Start time: 01/01/1970 00:00:00\n"
                        "  Keepalive: 60.0\n"
-                       "Board power: on\n"
+                       "    Request: Job(3, 2, 1,\n"
+                       "                 tags=['bar'])\n"
+                       r" Allocation:  ___" "\n"
+                       r"             / . \___" "\n"
+                       r"             \___/ . " "\\\n"
+                       r"             / . \___/" "\n"
+                       r"             \___/" "\n"
                        "   Hostname: board00\n"
-                       " Num boards: 3\n"
                        "      Width: 10\n"
                        "     Height: 20\n"
+                       " Num boards: 3\n"
+                       "Board power: on\n"
                        " Running on: machine\n")
 
-    @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
-    def test_power_ready_no_machine(self, capsys, state):
-        # If the get_job_machine_info command returns nothing, should not
-        # crash...
-        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
-
-        client = Mock()
-        client.get_job_state.return_value = {
-            "state": int(state),
-            "power": True,
-            "keepalive": 60.0,
-            "reason": None,
-            "start_time": epoch,
-        }
-        client.get_job_machine_info.return_value = {
-            "width": None, "height": None,
-            "connections": None, "machine_name": None,
-        }
-
-        assert show_job_info(client, 1.0, 123) == 0
-
-        out, err = capsys.readouterr()
-        assert out == ("     Job ID: 123\n"
-                       " Start time: 01/01/1970 00:00:00\n"
-                       "      State: " + state.name + "\n"
-                       "  Keepalive: 60.0\n"
-                       "Board power: on\n")
-
     def test_destroyed(self, capsys):
+        t = Terminal(force=False)
+
         client = Mock()
+        client.list_jobs.return_value = []
         client.get_job_state.return_value = {
             "state": int(JobState.destroyed),
             "power": None,
@@ -143,7 +152,7 @@ class TestShowJobInfo(object):
             "start_time": None,
         }
 
-        assert show_job_info(client, 1.0, 123) == 0
+        assert show_job_info(t, client, 1.0, 123) == 0
 
         out, err = capsys.readouterr()
         assert out == ("Job ID: 123\n"
@@ -152,7 +161,9 @@ class TestShowJobInfo(object):
 
 
 def test_watch_job():
+    t = Terminal(force=False)
     client = Mock()
+    client.list_jobs.return_value = []
     client.get_job_state.return_value = {
         "state": int(JobState.unknown),
         "power": None, "keepalive": None,
@@ -162,7 +173,7 @@ def test_watch_job():
     # Loop once and then get interrupted
     client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
 
-    assert watch_job(client, 1.0, 123) == 0
+    assert watch_job(t, client, 1.0, 123) == 0
 
 
 class TestPowerJob(object):
@@ -296,35 +307,66 @@ class TestMain(object):
 
     def test_automatic_job_id(self, no_config_files, client):
         client.list_jobs.return_value = [
-            {"job_id": 123, "owner": "bar"},
+            {
+                "job_id": 123,
+                "owner": "bar",
+                "start_time": 0,
+                "keepalive": 60.0,
+                "state": int(JobState.queued),
+                "power": None,
+                "args": [3, 2, 1],
+                "kwargs": {"tags": ["bar"]},
+                "allocated_machine_name": None,
+                "boards": None,
+            },
         ]
+        client.get_job_machine_info.return_value = {
+            "width": None, "height": None,
+            "connections": None, "machine_name": None,
+        }
         client.get_job_state.return_value = {
-            "state": int(JobState.unknown),
+            "state": int(JobState.queued),
             "power": None,
-            "keepalive": None,
+            "keepalive": 60.0,
             "reason": None,
-            "start_time": None,
+            "start_time": 0,
         }
         assert main("--hostname foo --owner bar".split()) == 0
-        client.get_job_state.assert_called_once_with(123, timeout=5.0)
+        client.get_job_machine_info.assert_called_once_with(123, timeout=5.0)
 
     def test_manual(self, no_config_files, client):
         client.list_jobs.return_value = [
-            {"job_id": 123, "owner": "bar"},
-            {"job_id": 321, "owner": "someone-else"},
+            {"job_id": 123},
+            {
+                "job_id": 321,
+                "owner": "bar",
+                "start_time": 0,
+                "keepalive": 60.0,
+                "state": int(JobState.queued),
+                "power": None,
+                "args": [3, 2, 1],
+                "kwargs": {"tags": ["bar"]},
+                "allocated_machine_name": None,
+                "boards": None,
+            },
         ]
+        client.get_job_machine_info.return_value = {
+            "width": None, "height": None,
+            "connections": None, "machine_name": None,
+        }
         client.get_job_state.return_value = {
-            "state": int(JobState.unknown),
+            "state": int(JobState.queued),
             "power": None,
-            "keepalive": None,
+            "keepalive": 60.0,
             "reason": None,
-            "start_time": None,
+            "start_time": 0,
         }
         assert main("321 --hostname foo --owner bar".split()) == 0
-        client.get_job_state.assert_called_once_with(321, timeout=5.0)
+        client.get_job_machine_info.assert_called_once_with(321, timeout=5.0)
 
     @pytest.mark.parametrize("args", ["", "-i", "--info"])
     def test_info(self, no_config_files, client, args):
+        client.list_jobs.return_value = []
         client.get_job_state.return_value = {
             "state": int(JobState.unknown),
             "power": None,
@@ -338,6 +380,7 @@ class TestMain(object):
     @pytest.mark.parametrize("args", ["-w", "--watch"])
     def test_watch(self, no_config_files, client, args):
         client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
+        client.list_jobs.return_value = []
         client.get_job_state.return_value = {
             "state": int(JobState.unknown),
             "power": None,

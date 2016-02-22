@@ -123,7 +123,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
             key = job["key"]
             job_id = str(job["job_id"])
             cells.append((len(key) + len(job_id) + 1,
-                        "{}:{}".format(job["colour"](key), job_id)))
+                         "{}:{}".format(job["colour"](key), job_id)))
         print("")
         print(render_cells(cells))
     else:
