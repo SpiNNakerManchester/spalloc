@@ -72,7 +72,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
 
     try:
         input(t.dim("<Press enter to exit>"))
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         print("")
 
 
