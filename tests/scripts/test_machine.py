@@ -79,7 +79,7 @@ def test_show_machine(capsys):
     machines = [
         {"name": "m1", "tags": ["default"],
          "width": 2, "height": 1,
-         "dead_boards": [[0, 0, 1]],
+         "dead_boards": [[1, 0, 2]],
          "dead_links": []},
         {"name": "m2", "tags": ["pie", "chips"],
          "width": 1, "height": 1,
@@ -109,11 +109,13 @@ def test_show_machine(capsys):
 
     out, err = capsys.readouterr()
     assert out == (
-        "Name: m1\n"
-        "Tags: default\n"
+        "  Name: m1\n"
+        "  Tags: default\n"
+        "In-use: 3 of 5\n"
+        "  Jobs: 2\n"
         "\n"
-        r" ___     ___" "\n"
-        r"/ B \___/ . \___" "\n"
+        r" ___" "\n"
+        r"/ B \___     ___" "\n"
         r"\___/ B \___/ . " "\\\n"
         r"/ A \___/ . \___/" "\n"
         r"\___/   \___/" "\n"
@@ -121,6 +123,57 @@ def test_show_machine(capsys):
         "Key  Job ID  Num boards  Owner\n"
         "A         0           1  me\n"
         "B         1           2  me\n"
+    )
+
+
+def test_show_machine_compact(capsys):
+    t = Terminal(force=False)
+
+    machines = [
+        {"name": "m1", "tags": ["default"],
+         "width": 2, "height": 1,
+         "dead_boards": [[1, 0, 2]],
+         "dead_links": []},
+        {"name": "m2", "tags": ["pie", "chips"],
+         "width": 1, "height": 1,
+         "dead_boards": [],
+         "dead_links": []},
+    ]
+
+    jobs = [
+        # On m1
+        {"job_id": 0, "owner": "me", "start_time": 0, "keepalive": 60.0,
+         "machine": None, "state": 2, "power": True, "args": [], "kwargs": {},
+         "allocated_machine_name": "m1", "boards": [[0, 0, 0]]},
+        {"job_id": 1, "owner": "me", "start_time": 0, "keepalive": 60.0,
+         "machine": None, "state": 2, "power": True, "args": [], "kwargs": {},
+         "allocated_machine_name": "m1", "boards": [[0, 0, 1], [0, 0, 2]]},
+        # On m2
+        {"job_id": 2, "owner": "me", "start_time": 0, "keepalive": 60.0,
+         "machine": None, "state": 2, "power": True, "args": [], "kwargs": {},
+         "allocated_machine_name": "m2", "boards": [[0, 0, 0]]},
+        # Queued
+        {"job_id": 2, "owner": "me", "start_time": 0, "keepalive": 60.0,
+         "machine": None, "state": 1, "power": None, "args": [], "kwargs": {},
+         "allocated_machine_name": None, "boards": None},
+    ]
+
+    assert show_machine(t, machines, jobs, "m1", True) == 0
+
+    out, err = capsys.readouterr()
+    assert out == (
+        "  Name: m1\n"
+        "  Tags: default\n"
+        "In-use: 3 of 5\n"
+        "  Jobs: 2\n"
+        "\n"
+        r" ___" "\n"
+        r"/ B \___     ___" "\n"
+        r"\___/ B \___/ . " "\\\n"
+        r"/ A \___/ . \___/" "\n"
+        r"\___/   \___/" "\n"
+        "\n"
+        "A:0  B:1\n"
     )
 
 
@@ -142,6 +195,11 @@ def test_show_machine_fail():
 def test_no_hostname(no_config_files):
     with pytest.raises(SystemExit):
         main("".split())
+
+
+def test_compact_without_machine(basic_config_file):
+    with pytest.raises(SystemExit):
+        main("--compact".split())
 
 
 @pytest.mark.parametrize("version", [(0, 0, 0),

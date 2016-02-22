@@ -3,7 +3,7 @@ import pytest
 from collections import OrderedDict
 
 from spalloc.term import \
-    Terminal, render_table, render_definitions, render_boards, \
+    Terminal, render_table, render_definitions, render_boards, render_cells, \
     DEFAULT_BOARD_EDGES
 
 
@@ -279,3 +279,46 @@ class TestRenderBoards(object):
                        r"    / # `___/ABC`___/."
                        r"    \___/   \___/"
                        ).replace(".", "\n")
+
+
+class TestRenderCells(object):
+
+    def test_empty(self):
+        assert render_cells([]) == ""
+
+    def test_single(self):
+        assert render_cells([(3, "foo")]) == "foo"
+
+    def test_even_spacing(self):
+        assert render_cells([
+            (3, "foo"),
+            (4, "food"),
+            (5, "food!"),
+        ]) == "foo    food   food!"
+
+    @pytest.mark.parametrize("width", [5, 10])
+    def test_full_line_breaking(self, width):
+        assert render_cells([
+            (3, "foo"),
+            (4, "food"),
+            (5, "food!"),
+        ], width) == ("foo\n"
+                      "food\n"
+                      "food!")
+
+    def test_not_quite_breaking(self):
+        assert render_cells([
+            (3, "foo"),
+            (4, "food"),
+            (5, "food!"),
+        ], 11) == ("foo    food\n"
+                   "food!")
+
+    def test_column_alignment(self):
+        assert render_cells([
+            (3, "foo"),
+            (4, "food"),
+            (5, "food!"),
+            (1, "!"),
+        ], 11) == ("foo    food\n"
+                   "food!  !")

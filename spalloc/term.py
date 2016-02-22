@@ -394,3 +394,40 @@ def render_boards(board_groups, dead_links=set(),
         out.append(row)
 
     return "\n".join(filter(None, map(str.rstrip, out)))
+
+
+def render_cells(cells, width=80, col_spacing=2):
+    """Given a list of short (~10 char) strings, display these aligned in
+    columns.
+
+    Parameters
+    ----------
+    cells : [(strlen, str), ...]
+        Gives the cells to print as tuples giving the strings length in visible
+        characters and the string to display.
+    width : int
+        The width of the terminal.
+    col_spacing : int
+        Size of the gap to leave between columns.
+    """
+    # Special case (since max below will fail)
+    if len(cells) == 0:
+        return ""
+
+    # Columns should be at least as large as the largest cell with padding
+    # between columns
+    col_width = max(strlen for strlen, s in cells) + col_spacing
+
+    lines = [""]
+    cur_length = 0
+    for strlen, s in cells:
+        # Once line is full, move to the next
+        if cur_length + strlen > width:
+            lines.append("")
+            cur_length = 0
+
+        # Add the current cell (with spacing)
+        lines[-1] += s + (" "*(col_width - strlen))
+        cur_length += col_width
+
+    return "\n".join(map(str.rstrip, lines))

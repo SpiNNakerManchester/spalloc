@@ -9,7 +9,7 @@ from six import next
 from spalloc import config
 from spalloc import __version__, ProtocolClient, ProtocolTimeoutError
 from spalloc.term import \
-    Terminal, render_table, render_definitions, render_boards, \
+    Terminal, render_table, render_definitions, render_boards, render_cells, \
     DEFAULT_BOARD_EDGES
 
 
@@ -58,7 +58,7 @@ def list_machines(t, machines, jobs):
     return 0
 
 
-def show_machine(t, machines, jobs, machine_name):
+def show_machine(t, machines, jobs, machine_name, compact=False):
     # Find the machine requested
     for machine in machines:
         if machine["name"] == machine_name:
@@ -67,12 +67,6 @@ def show_machine(t, machines, jobs, machine_name):
         # No matching machine
         sys.stderr.write("No machine '{}' was found.\n".format(machine_name))
         return 6
-
-    # Show general machine information
-    info = OrderedDict()
-    info["Name"] = machine["name"]
-    info["Tags"] = ", ".join(machine["tags"])
-    print(render_definitions(info))
 
     # Extract list of jobs running on the machine
     displayed_jobs = []
@@ -86,6 +80,19 @@ def show_machine(t, machines, jobs, machine_name):
             displayed_jobs.append(job)
             job["key"] = next(job_key_generator)
             job["colour"] = next(job_colour_generator)
+
+    # Calculate machine stats
+    num_boards = ((machine["width"] * machine["height"] * 3) -
+                  len(machine["dead_boards"]))
+    num_in_use = sum(map(len, (job["boards"] for job in displayed_jobs)))
+
+    # Show general machine information
+    info = OrderedDict()
+    info["Name"] = machine["name"]
+    info["Tags"] = ", ".join(machine["tags"])
+    info["In-use"] = "{} of {}".format(num_in_use, num_boards)
+    info["Jobs"] = len(displayed_jobs)
+    print(render_definitions(info))
 
     # Draw diagram of machine
     dead_boards = set((x, y, z) for x, y, z in machine["dead_boards"])
@@ -109,21 +116,33 @@ def show_machine(t, machines, jobs, machine_name):
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
 
     # Produce table showing jobs on machine
-    job_table = [[
-        (t.underscore_bright, "Key"),
-        (t.underscore_bright, "Job ID"),
-        (t.underscore_bright, "Num boards"),
-        (t.underscore_bright, "Owner"),
-    ]]
-    for job in displayed_jobs:
-        job_table.append([
-            (job["colour"], job["key"]),
-            job["job_id"],
-            len(job["boards"]),
-            job["owner"],
-        ])
-    print("")
-    print(render_table(job_table))
+    if compact:
+        # In compact mode, produce column-aligned cells
+        cells = []
+        for job in displayed_jobs:
+            key = job["key"]
+            job_id = str(job["job_id"])
+            cells.append((len(key) + len(job_id) + 1,
+                        "{}:{}".format(job["colour"](key), job_id)))
+        print("")
+        print(render_cells(cells))
+    else:
+        # In non-compact mode, produce a full table of job information
+        job_table = [[
+            (t.underscore_bright, "Key"),
+            (t.underscore_bright, "Job ID"),
+            (t.underscore_bright, "Num boards"),
+            (t.underscore_bright, "Owner"),
+        ]]
+        for job in displayed_jobs:
+            job_table.append([
+                (job["colour"], job["key"]),
+                job["job_id"],
+                len(job["boards"]),
+                job["owner"],
+            ])
+        print("")
+        print(render_table(job_table))
 
     return 0
 
@@ -143,7 +162,10 @@ def main(argv=None):
                         help="if given, specifies the machine to inspect")
 
     parser.add_argument("--watch", "-w", action="store_true", default=False,
-                        help="Update the output when things change.")
+                        help="update the output when things change.")
+
+    parser.add_argument("--compact", "-c", action="store_true", default=False,
+                        help="use compact machine job listing")
 
     server_args = parser.add_argument_group("spalloc server arguments")
 
@@ -164,6 +186,11 @@ def main(argv=None):
     # Fail if server not specified
     if args.hostname is None:
         parser.error("--hostname of spalloc server must be specified")
+
+    # Fail if --compact used without specifying machine
+    if args.machine is None and args.compact:
+        parser.error(
+            "--compact only works when a specific machine is specified")
 
     client = ProtocolClient(args.hostname, args.port)
     try:
@@ -192,7 +219,8 @@ def main(argv=None):
             if args.machine is None:
                 retval = list_machines(t, machines, jobs)
             else:
-                retval = show_machine(t, machines, jobs, args.machine)
+                retval = show_machine(t, machines, jobs, args.machine,
+                                      args.compact)
 
             # Wait for changes (if required)
             if retval != 0 or not args.watch:
