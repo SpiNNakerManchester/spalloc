@@ -1,13 +1,11 @@
 import pytest
 
-from mock import Mock
+from mock import Mock, PropertyMock
 
 import os
 import tempfile
 
-from spalloc.job import JobMachineInfoTuple
-
-from spalloc import JobState
+from spalloc import JobState, JobDestroyedError
 
 from spalloc.scripts.alloc import \
     write_ips_to_csv, print_info, run_command, main
@@ -40,31 +38,32 @@ def mock_popen(monkeypatch):
 @pytest.fixture
 def mock_job(monkeypatch):
     # A fake job which immediately exits with a connection error.
-    job = Mock()
-    job.create.side_effect = OSError()
-    Job = Mock(return_value=job)
+    Job = Mock(side_effect=OSError())
     import spalloc.scripts.alloc
     monkeypatch.setattr(spalloc.scripts.alloc, "Job", Job)
     return Job
 
 
 @pytest.fixture
-def mock_working_job(mock_job):
+def mock_working_job(monkeypatch):
     job = Mock()
-    job.id = 123
-    mock_job.return_value = job
+    Job = Mock(return_value=job)
+    import spalloc.scripts.alloc
+    monkeypatch.setattr(spalloc.scripts.alloc, "Job", Job)
 
-    job.get_state.return_value = Mock(state=JobState.queued)
+    job.id = 123
+    job.state = JobState.queued
     job.wait_for_state_change.side_effect = [JobState.power,
                                              JobState.power,
                                              JobState.ready]
 
-    job.get_machine_info.return_value = JobMachineInfoTuple(
-        width=8, height=8,
-        connections={(0, 0): "foobar"},
-        machine_name="m")
+    job.width = 8
+    job.height = 8
+    job.connections = {(0, 0): "foobar"}
+    job.hostname = "foobar"
+    job.machine_name = "m"
 
-    return mock_job
+    return job
 
 
 @pytest.fixture
@@ -104,11 +103,7 @@ def test_write_ips_to_file(filename):
 
 
 def test_print_info_one_board(capsys, mock_input, no_colour):
-    machine_info = JobMachineInfoTuple(width=1,
-                                       height=2,
-                                       connections={(0, 0): "foobar"},
-                                       machine_name="m")
-    print_info(machine_info, "/some/file")
+    print_info("m", {(0, 0): "foobar"}, 1, 2, "/some/file")
 
     out, err = capsys.readouterr()
 
@@ -118,16 +113,11 @@ def test_print_info_one_board(capsys, mock_input, no_colour):
                    "Running on: m\n")
     assert err == ""
 
-    mock_input.assert_called_once_with("<Press enter to destroy job>")
+    mock_input.assert_called_once_with("<Press enter to exit>")
 
 
 def test_print_info_many_boards(capsys, mock_input, no_colour):
-    machine_info = JobMachineInfoTuple(width=1,
-                                       height=2,
-                                       connections={(0, 0): "foobar",
-                                                    (4, 8): "bazqux"},
-                                       machine_name="m")
-    print_info(machine_info, "/some/file")
+    print_info("m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2, "/some/file")
 
     out, err = capsys.readouterr()
 
@@ -138,18 +128,13 @@ def test_print_info_many_boards(capsys, mock_input, no_colour):
                    "All hostnames: /some/file\n"
                    "   Running on: m\n")
     assert err == ""
-    mock_input.assert_called_once_with("<Press enter to destroy job>")
+    mock_input.assert_called_once_with("<Press enter to exit>")
 
 
 def test_print_info_keyboard_interrupt(capsys, mock_input):
     # Make sure keyboard interrpt during input is handled gracefully
-    machine_info = JobMachineInfoTuple(width=1,
-                                       height=2,
-                                       connections={(0, 0): "foobar",
-                                                    (4, 8): "bazqux"},
-                                       machine_name="m")
     mock_input.side_effect = KeyboardInterrupt()
-    print_info(machine_info, "/some/file")
+    print_info("m", {(0, 0): "foobar"}, 1, 2, "/some/file")
 
 
 @pytest.mark.parametrize("args,expected",
@@ -164,24 +149,16 @@ def test_print_info_keyboard_interrupt(capsys, mock_input):
                           (["<{ethernet_ips}>"], ["</some/file>"]),
                           ])
 def test_run_command(mock_popen, args, expected):
-    machine_info = JobMachineInfoTuple(width=1,
-                                       height=2,
-                                       connections={(0, 0): "foobar",
-                                                    (4, 8): "bazqux"},
-                                       machine_name="m")
-    run_command(args, machine_info, "/some/file")
+    run_command(args, "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
+                "/some/file")
     mock_popen.assert_called_once_with(expected, shell=True)
 
 
 def test_run_command_kill_and_return(mock_popen):
-    machine_info = JobMachineInfoTuple(width=1,
-                                       height=2,
-                                       connections={(0, 0): "foobar",
-                                                    (4, 8): "bazqux"},
-                                       machine_name="m")
     mock_popen.return_value = Mock()
     mock_popen.return_value.wait.side_effect = [KeyboardInterrupt(), 2]
-    assert run_command([], machine_info, "/some/file") == 2
+    assert run_command([], "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
+                       "/some/file") == 2
     mock_popen.return_value.terminate.assert_called_once_with()
 
 
@@ -391,27 +368,39 @@ def test_command_args(basic_config_file, mock_working_job, mock_popen):
                           (JobState.destroyed, "Dunno.", 1),
                           (JobState.unknown, None, 2),
                           (-1, None, 3)])
-def test_failiure_modes(basic_config_file, mock_job, state, reason, retcode):
-    job = Mock()
-    mock_job.return_value = job
-    job.get_state.return_value = Mock(state=state,
-                                      reason=reason)
+def test_failiure_modes(basic_config_file, mock_working_job,
+                        state, reason, retcode):
+    mock_working_job.state = state
+    mock_working_job.reason = reason
+    mock_working_job.wait_for_state_change.side_effect = JobDestroyedError()
     assert main("".split()) == retcode
 
 
-def test_get_reason_fails(basic_config_file, mock_job):
-    job = Mock()
-    mock_job.return_value = job
-    job.get_state.side_effect = [Mock(state=JobState.destroyed,
-                                      reason=None),
-                                 IOError()]
+def test_get_reason_fails(basic_config_file, mock_working_job):
+    mock_working_job.state = JobState.destroyed
+    type(mock_working_job).reason = PropertyMock(side_effect=IOError())
     assert main("".split()) == 1
 
 
-def test_keyboard_interrupt(basic_config_file, mock_job):
-    job = Mock()
-    mock_job.return_value = job
-    job.get_state.return_value = Mock(state=JobState.queued)
-    job.wait_for_state_change.side_effect = KeyboardInterrupt()
+def test_keyboard_interrupt(basic_config_file, mock_working_job):
+    mock_working_job.state = JobState.queued
+    mock_working_job.wait_for_state_change.side_effect = KeyboardInterrupt()
     assert main("".split()) == 4
-    job.destroy.assert_called_once_with("Keyboard interrupt.")
+    mock_working_job.destroy.assert_called_once_with("Keyboard interrupt.")
+
+
+def test_no_destroy(basic_config_file, mock_working_job):
+    assert main("--no-destroy -c true".split()) == 0
+    assert len(mock_working_job.destroy.mock_calls) == 0
+    mock_working_job.close.assert_called_once_with()
+
+
+def test_resume(basic_config_file, mock_job, basic_job_kwargs):
+    assert main("--resume 123 -c true".split()) == 6
+    mock_job.assert_called_once_with(**{
+        "resume_job_id": 123,
+        "hostname": basic_job_kwargs["hostname"],
+        "port": basic_job_kwargs["port"],
+        "timeout": basic_job_kwargs["timeout"],
+        "reconnect_delay": basic_job_kwargs["reconnect_delay"],
+    })

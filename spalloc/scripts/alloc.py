@@ -40,46 +40,56 @@ def write_ips_to_csv(connections, ip_file_filename):
                         in sorted(iteritems(connections))))
 
 
-def print_info(machine_info, ip_file_filename):
+def print_info(machine_name, connections, width, height, ip_file_filename):
     """Print the current machine info in a human-readable form and wait for the
     user to press enter.
 
     Parameters
     ----------
-    machine_info : :py:class:`.JobMachineInfoTuple`
+    machine_name : str
+        The machine the job is running on.
+    connections : {(x, y): hostname, ...}
+        The connections to the boards.
+    width, height : int
+        The width and height of the machine in chips.
     ip_file_filename : str
     """
     t = Terminal()
 
     to_print = OrderedDict()
 
-    to_print["Hostname"] = t.bright(machine_info.connections[(0, 0)])
-    to_print["Width"] = machine_info.width
-    to_print["Height"] = machine_info.height
+    to_print["Hostname"] = t.bright(connections[(0, 0)])
+    to_print["Width"] = width
+    to_print["Height"] = height
 
-    if len(machine_info.connections) > 1:
-        to_print["Num boards"] = len(machine_info.connections)
+    if len(connections) > 1:
+        to_print["Num boards"] = len(connections)
         to_print["All hostnames"] = ip_file_filename
 
-    to_print["Running on"] = machine_info.machine_name
+    to_print["Running on"] = machine_name
 
     print(render_definitions(to_print))
 
     try:
-        input(t.dim("<Press enter to destroy job>"))
+        input(t.dim("<Press enter to exit>"))
     except KeyboardInterrupt:
         print("")
 
 
-def run_command(command, machine_info, ip_file_filename):
+def run_command(command, machine_name, connections, width, height,
+                ip_file_filename):
     """Run a user-specified command, substituting arguments for values taken
     from the allocated board.
 
     Parameters
     ----------
-    logger : :py:class:`logging.Logger`
     command : [command, arg, ...]
-    machine_info : :py:class:`.JobMachineInfoTuple`
+    machine_name : str
+        The machine the job is running on.
+    connections : {(x, y): hostname, ...}
+        The connections to the boards.
+    width, height : int
+        The width and height of the machine in chips.
     ip_file_filename : str
 
     Returns
@@ -88,22 +98,21 @@ def run_command(command, machine_info, ip_file_filename):
         The return code of the supplied command.
     """
 
-    root_hostname = machine_info.connections[(0, 0)]
+    root_hostname = connections[(0, 0)]
 
     # Print essential info in log
     logging.info("Allocated %d x %d chip machine in '%s'",
-                 machine_info.width, machine_info.height,
-                 machine_info.machine_name)
+                 width, height, machine_name)
     logging.info("Chip (0, 0) IP: %s", root_hostname)
     logging.info("All board IPs listed in: %s", ip_file_filename)
 
     # Make substitutions in command arguments
     command = [arg.format(root_hostname,
                           hostname=root_hostname,
-                          w=machine_info.width,
-                          width=machine_info.width,
-                          h=machine_info.height,
-                          height=machine_info.height,
+                          w=width,
+                          width=width,
+                          h=height,
+                          height=height,
                           ethernet_ips=ip_file_filename)
                for arg in command]
 
@@ -134,6 +143,9 @@ def main(argv=None):
     parser.add_argument("--debug", action="store_true",
                         default=False,
                         help="enable additional diagnostic information")
+    parser.add_argument("--no-destroy", "-D", action="store_true",
+                        default=False,
+                        help="do not destroy the job on exit")
 
     if MachineController is not None:
         parser.add_argument("--boot", "-B", action="store_true",
@@ -151,6 +163,11 @@ def main(argv=None):
                                       "SpiNN-5 boards and X Y Z requests a "
                                       "board the specified logical board "
                                       "coordinate.")
+    allocation_args.add_argument("--resume", "-r", type=int,
+                                 help="if given, resume keeping the "
+                                      "specified job alive rather than "
+                                      "creating a new job (all allocation "
+                                      "requirements will be ignored)")
     allocation_args.add_argument("--machine", "-m", nargs="?",
                                  default=cfg["machine"],
                                  help="only allocate boards which are part "
@@ -247,8 +264,8 @@ def main(argv=None):
 
     args = parser.parse_args(argv)
 
-    # Fail if no owner is defined
-    if not args.owner:
+    # Fail if no owner is defined (unless resuming)
+    if not args.owner and args.resume is None:
         parser.error(
             "--owner must be specified (typically your email address)")
 
@@ -256,30 +273,41 @@ def main(argv=None):
     if args.hostname is None:
         parser.error("--hostname of spalloc server must be specified")
 
-    # Make sure 'what' takes the right form
-    if len(args.what) not in (0, 1, 2, 3):
-        parser.error("expected either no arguments, one argument, NUM, "
-                     "two arguments, WIDTH HEIGHT, or three arguments X Y Z")
-
-    # Unpack arguments for the job and server
-    job_args = args.what
+    # Set universal job arguments
     job_kwargs = {
         "hostname": args.hostname,
         "port": args.port,
         "reconnect_delay":
             args.reconnect_delay if args.reconnect_delay >= 0.0 else None,
         "timeout": args.timeout if args.timeout >= 0.0 else None,
-        "owner": args.owner,
-        "keepalive": args.keepalive if args.keepalive >= 0.0 else None,
-        "machine": args.machine,
-        "tags": args.tags if args.machine is None else None,
-        "min_ratio": args.min_ratio,
-        "max_dead_boards":
-            args.max_dead_boards if args.max_dead_boards >= 0.0 else None,
-        "max_dead_links":
-            args.max_dead_links if args.max_dead_links >= 0.0 else None,
-        "require_torus": args.require_torus,
     }
+
+    if args.resume:
+        job_args = []
+        job_kwargs.update({
+            "resume_job_id": args.resume,
+        })
+    else:
+        # Make sure 'what' takes the right form
+        if len(args.what) not in (0, 1, 2, 3):
+            parser.error("expected either no arguments, one argument, NUM, "
+                         "two arguments, WIDTH HEIGHT, or three arguments "
+                         "X Y Z")
+
+        # Unpack arguments for the job and server
+        job_args = args.what
+        job_kwargs.update({
+            "owner": args.owner,
+            "keepalive": args.keepalive if args.keepalive >= 0.0 else None,
+            "machine": args.machine,
+            "tags": args.tags if args.machine is None else None,
+            "min_ratio": args.min_ratio,
+            "max_dead_boards":
+                args.max_dead_boards if args.max_dead_boards >= 0.0 else None,
+            "max_dead_links":
+                args.max_dead_links if args.max_dead_links >= 0.0 else None,
+            "require_torus": args.require_torus,
+        })
 
     # Set debug level
     if args.debug:
@@ -299,7 +327,6 @@ def main(argv=None):
         # Create the job
         try:
             job = Job(*job_args, **job_kwargs)
-            job.create()
         except (OSError, IOError) as e:
             info(t.red("Could not connect to server: {}".format(e)))
             return 6
@@ -307,7 +334,7 @@ def main(argv=None):
             # Wait for it to become ready, keeping the user informed along the
             # way
             old_state = None
-            cur_state = job.get_state().state
+            cur_state = job.state
             while True:
                 # Show debug info on state-change
                 if old_state != cur_state:
@@ -323,7 +350,7 @@ def main(argv=None):
                     elif cur_state == JobState.destroyed:
                         # Exit with error state
                         try:
-                            reason = job.get_state().reason
+                            reason = job.reason
                         except (IOError, OSError):
                             reason = None
 
@@ -351,34 +378,39 @@ def main(argv=None):
                 except KeyboardInterrupt:
                     # Gracefully terminate from keyboard interrupt
                     info(t.update(t.red(
-                        "Job {}: Destroyed by keyboard interrupt.".format(
+                        "Job {}: Keyboard interrupt.".format(
                             job.id))))
                     reason = "Keyboard interrupt."
                     return 4
 
             # Machine is now ready
-            machine_info = job.get_machine_info()
-            write_ips_to_csv(machine_info.connections, ip_file_filename)
+            write_ips_to_csv(job.connections, ip_file_filename)
 
             # Boot the machine if required
             if MachineController is not None and args.boot:
                 info(t.update(t.yellow(
                     "Job {}: Booting...".format(job.id))))
-                mc = MachineController(machine_info.connections[(0, 0)])
-                mc.boot(machine_info.width, machine_info.height)
+                mc = MachineController(job.hostname)
+                mc.boot(job.width, job.height)
 
             info(t.update(t.green("Job {}: Ready!".format(job.id))))
 
             # Either run the user's application or just print the details.
             if args.command:
-                return run_command(args.command, machine_info,
+                return run_command(args.command, job.machine_name,
+                                   job.connections, job.width, job.height,
                                    ip_file_filename)
+
             else:
-                print_info(machine_info, ip_file_filename)
+                print_info(job.machine_name, job.connections,
+                           job.width, job.height, ip_file_filename)
                 return 0
         finally:
             # Destroy job and disconnect client
-            job.destroy(reason)
+            if args.no_destroy:
+                job.close()
+            else:
+                job.destroy(reason)
     finally:
         # Delete IP address list file
         os.remove(ip_file_filename)

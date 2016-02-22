@@ -61,8 +61,8 @@ def basic_config_file(monkeypatch):
     fd, filename = tempfile.mkstemp()
     with open(filename, "w") as f:
         f.write("[spalloc]\n"
-                "hostname=servername\n"
-                "port=1234\n"
+                "hostname=localhost\n"
+                "port=22244\n"
                 "owner=me\n"
                 "keepalive=1.0\n"
                 "reconnect_delay=2.0\n"
@@ -85,8 +85,8 @@ def basic_config_file(monkeypatch):
 @pytest.fixture
 def basic_job_kwargs():
     # The kwargs set by the basic_config_file fixture
-    return dict(hostname="servername",
-                port=1234,
+    return dict(hostname="localhost",
+                port=22244,
                 reconnect_delay=2.0,
                 timeout=3.0,
                 owner="me",

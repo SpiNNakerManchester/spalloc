@@ -14,6 +14,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+VERSION_RANGE_START = (0, 0, 2)
+VERSION_RANGE_STOP = (2, 0, 0)
+
+
 class Job(object):
     """A context manager which will request a SpiNNaker machine from a spalloc
     server.
@@ -22,8 +26,30 @@ class Job(object):
     Attributes
     ----------
     id : int or None
-        The job ID allocated by the server to the job (or None if job hasn't
-        been created yet).
+        The job ID allocated by the server to the job.
+    state : :py:class:`.JobState`
+        The current state of the job.
+    power : bool or None
+        If boards have been allocated to the job, are they on (True) or off
+        (False). None if no boards are allocated to the job.
+    reason : str or None
+        If the job has been destroyed, gives the reason (which may be None), or
+        None if the job has not been destroyed.
+    hostname : str or None
+        The hostname of the SpiNNaker chip at (0, 0), or None if no boards have
+        been allocated to the job.
+    connections : {(x, y): hostname, ...} or None
+        The hostnames of all Ethernet-connected SpiNNaker chips, or None if no
+        boards have been allocated to the job.
+    width : int or None
+        The width of the SpiNNaker network in chips, or None if no boards have
+        been allocated to the job.
+    height : int or None
+        The height of the SpiNNaker network in chips, or None if no boards have
+        been allocated to the job.
+    machine_name : str or None
+        The name of the machine the boards are allocated in, or None if not yet
+        allocated.
     """
 
     def __init__(self, *args, **kwargs):
@@ -52,6 +78,9 @@ class Job(object):
             # Any torus-connected (full machine) 4x2 machine
             Job(4, 2, require_torus=True)
 
+            # Keep using (and keeping-alive) an existing allocation
+            Job(resume_job_id=123)
+
         The following keyword-only parameters are also defined and default to
         the values supplied in the local config file.
 
@@ -77,6 +106,9 @@ class Job(object):
 
         Other Parameters
         ----------------
+        resume_job_id : int or None
+            If supplied, rather than creating a new job, use an existing one,
+            keeping it alive as required by the original job.
         owner : str
             The name of the owner of the job. By convention this should be your
             email address. (Read from config file if not specified.)
@@ -130,29 +162,9 @@ class Job(object):
         if hostname is None:
             raise ValueError("A hostname must be specified.")
 
-        # Get job creation arguments
-        self._create_job_args = args
-        self._create_job_kwargs = {
-            "owner": owner,
-            "keepalive": kwargs.get("keepalive", config["keepalive"]),
-            "machine": kwargs.get("machine", config["machine"]),
-            "tags": kwargs.get("tags", config["tags"]),
-            "min_ratio": kwargs.get("min_ratio", config["min_ratio"]),
-            "max_dead_boards":
-                kwargs.get("max_dead_boards", config["max_dead_boards"]),
-            "max_dead_links":
-                kwargs.get("max_dead_links", config["max_dead_links"]),
-            "require_torus":
-                kwargs.get("require_torus", config["require_torus"]),
-            "timeout": self._timeout,
-        }
-        if self._create_job_kwargs["owner"] is None:
-            raise ValueError("An owner must be specified.")
-        if ((self._create_job_kwargs["tags"] is not None) and
-                (self._create_job_kwargs["machine"] is not None)):
-            raise ValueError("Only one of tags and machine may be specified.")
-
-        self._keepalive = self._create_job_kwargs["keepalive"]
+        # Cached responses of _get_state and _get_machine_info
+        self._last_state = None
+        self._last_machine_info = None
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
@@ -164,14 +176,75 @@ class Job(object):
             name="job-keepalive-thread")
         self._keepalive_thread.deamon = True
 
-        # Event fired when the keepalive thread should shut-down
+        # Event fired when the background thread should shut-down
         self._stop = threading.Event()
 
-        # Default job information attribute values
-        self.id = None
+        # Check version compatibility (fail fast if can't communicate with
+        # server)
+        self._client.connect(timeout=self._timeout)
+        self._assert_compatible_version()
+
+        # Resume/create the job
+        resume_job_id = kwargs.get("resume_job_id", None)
+        if resume_job_id:
+            self.id = resume_job_id
+
+            # If the job no longer exists, we can't get the keepalive interval
+            # (and there's nothing to keepalive) so just bail out.
+            job_state = self._get_state()
+            if (job_state.state == JobState.unknown or
+                    job_state.state == JobState.destroyed):
+                raise JobDestroyedError(
+                    "Job {} does not exist: {}{}{}".format(
+                        resume_job_id,
+                        job_state.state.name,
+                        ": " if job_state.reason is not None else "",
+                        job_state.reason
+                        if job_state.reason is not None else ""))
+
+            # Snag the keepalive interval from the job
+            self._keepalive = job_state.keepalive
+
+            logger.info("Resumed job %d", self.id)
+        else:
+            # Get job creation arguments
+            job_args = args
+            job_kwargs = {
+                "owner": owner,
+                "keepalive": kwargs.get("keepalive", config["keepalive"]),
+                "machine": kwargs.get("machine", config["machine"]),
+                "tags": kwargs.get("tags", config["tags"]),
+                "min_ratio": kwargs.get("min_ratio", config["min_ratio"]),
+                "max_dead_boards":
+                    kwargs.get("max_dead_boards", config["max_dead_boards"]),
+                "max_dead_links":
+                    kwargs.get("max_dead_links", config["max_dead_links"]),
+                "require_torus":
+                    kwargs.get("require_torus", config["require_torus"]),
+                "timeout": self._timeout,
+            }
+
+            # Sanity check arguments
+            if job_kwargs["owner"] is None:
+                raise ValueError("An owner must be specified.")
+            if ((job_kwargs["tags"] is not None) and
+                    (job_kwargs["machine"] is not None)):
+                raise ValueError(
+                    "Only one of tags and machine may be specified.")
+
+            self._keepalive = job_kwargs["keepalive"]
+
+            # Create the job (failing fast if can't communicate)
+            self.id = self._client.create_job(*job_args, **job_kwargs)
+
+            logger.info("Created job %d", self.id)
+
+        # Start keepalive thread now that everything is up
+        self._keepalive_thread.start()
 
     def __enter__(self):
-        """Convenience context manager for common case.
+        """Convenience context manager for common case where a new job is to be
+        created and then destroyed once some code has executed.
 
         Waits for machine to be ready before the context enters and frees the
         allocation when the context exits.
@@ -179,16 +252,12 @@ class Job(object):
         Example::
 
             with Job(...) as j:
-                # Now contex has entered, machine is ready to use
-                info = j.get_machine_info()
-                boot(info["connections"][(0, 0)],
-                     info["width"], info["height"])
-
+                # Now contex has entered, machine is allocated and powered on!
                 # Off we go!
 
-            # Job will now have been automatically destroyed!
+            # When exiting the block, the job will now have been automatically
+            # destroyed!
         """
-        self.create()
         logger.info("Waiting for boards to become ready...")
         try:
             self.wait_until_ready()
@@ -205,7 +274,7 @@ class Job(object):
         v = self._client.version(timeout=self._timeout)
         v_ints = tuple(map(int, v.split(".")[:3]))
 
-        if not ((0, 0, 2) <= v_ints < (2, 0, 0)):
+        if not (VERSION_RANGE_START <= v_ints < VERSION_RANGE_STOP):
             self._client.close()
             raise ValueError(
                 "Server version {} is not compatible with this client.".format(
@@ -249,36 +318,27 @@ class Job(object):
                         if not self._stop.wait(self._reconnect_delay):
                             self._reconnect()
 
-    def create(self):
-        """Attempt to create the job on the server.
+    def close(self):
+        """Disconnect from the server and stop keeping the job alive.
 
-        May only be called once. Once called, the job will be kept alive in a
-        background thread until :py:meth:`.destroy` is called.
-        """
-        self._client.connect(timeout=self._timeout)
-
-        # Check version compatibility (fail fast if can't communicate with
-        # server)
-        self._assert_compatible_version()
-
-        # Create the job (failing fast if can't communicate)
-        self.id = self._client.create_job(*self._create_job_args,
-                                          **self._create_job_kwargs)
-
-        logger.info("Created job %d", self.id)
-
-        # Start keepalive thread
-        self._keepalive_thread.start()
-
-    def destroy(self, reason=None):
-        """Destroy the job.
-
-        Must only be called once.
+        See also
+        --------
+        destroy: Disconnect and shut-down and destroy the job.
         """
         # Stop background thread
         self._stop.set()
         self._keepalive_thread.join()
 
+        # Disconnect
+        self._client.close()
+
+    def destroy(self, reason=None):
+        """Destroy the job and disconnect from the server.
+
+        See also
+        --------
+        close: Just disconnect from the server.
+        """
         # Attempt to inform the server that the job was destroyed, fail
         # quietly on failure since the server will eventually time-out the job
         # itself.
@@ -287,18 +347,18 @@ class Job(object):
         except (IOError, OSError, ProtocolTimeoutError) as e:
             logger.warning("Could not destroy job: %s", e)
 
-        self._client.close()
+        self.close()
 
-    def get_state(self):
+    def _get_state(self):
         """Get the state of the job.
 
         Returns
         -------
-        :py:class:`.JobStateTuple`
+        :py:class:`._JobStateTuple`
         """
         with self._client_lock:
             state = self._client.get_job_state(self.id, timeout=self._timeout)
-            return JobStateTuple(
+            return _JobStateTuple(
                 state=JobState(state["state"]),
                 power=state["power"],
                 keepalive=state["keepalive"],
@@ -337,7 +397,7 @@ class Job(object):
         """
         self.set_power(True)
 
-    def get_machine_info(self):
+    def _get_machine_info(self):
         """Get information about the boards allocated to the job, e.g. the IPs
         and system dimensions.
 
@@ -346,13 +406,13 @@ class Job(object):
 
         Returns
         -------
-        :py:class:`.JobMachineInfoTuple`
+        :py:class:`._JobMachineInfoTuple`
         """
         with self._client_lock:
             info = self._client.get_job_machine_info(
                 self.id, timeout=self._timeout)
 
-            return JobMachineInfoTuple(
+            return _JobMachineInfoTuple(
                 width=info["width"],
                 height=info["height"],
                 connections=({(x, y): hostname
@@ -362,6 +422,78 @@ class Job(object):
                              else None),
                 machine_name=info["machine_name"],
             )
+
+    @property
+    def state(self):
+        """The current state of the job."""
+        self._last_state = self._get_state()
+        return self._last_state.state
+
+    @property
+    def power(self):
+        """Are the boards powered/powering on or off?"""
+        self._last_state = self._get_state()
+        return self._last_state.power
+
+    @property
+    def reason(self):
+        """For what reason was the job destroyed (if any and if destroyed)."""
+        self._last_state = self._get_state()
+        return self._last_state.reason
+
+    @property
+    def connections(self):
+        """The list of Ethernet connected chips and their IPs.
+
+        Returns
+        -------
+        {(x, y): hostname, ...} or None
+        """
+        # Note that the connections for a job will never change once defined so
+        # only need to get this once.
+        if (self._last_machine_info is None or
+                self._last_machine_info.connections is None):
+            self._last_machine_info = self._get_machine_info()
+
+        return self._last_machine_info.connections
+
+    @property
+    def hostname(self):
+        """The hostname of chip 0, 0 (or None if not allocated yet)."""
+        return self.connections[(0, 0)]
+
+    @property
+    def width(self):
+        """The width of the allocated machine in chips (or None)."""
+        # Note that the dimensions of a job will never change once defined so
+        # only need to get this once.
+        if (self._last_machine_info is None or
+                self._last_machine_info.width is None):
+            self._last_machine_info = self._get_machine_info()
+
+        return self._last_machine_info.width
+
+    @property
+    def height(self):
+        """The height of the allocated machine in chips (or None)."""
+        # Note that the dimensions of a job will never change once defined so
+        # only need to get this once.
+        if (self._last_machine_info is None or
+                self._last_machine_info.height is None):
+            self._last_machine_info = self._get_machine_info()
+
+        return self._last_machine_info.height
+
+    @property
+    def machine_name(self):
+        """The name of the machine the job is allocated on (or None)."""
+        # Note that the machine will never change once defined so only need to
+        # get this once.
+        if (self._last_machine_info is None or
+                self._last_machine_info.machine_name is None):
+            self._last_machine_info = self._get_machine_info()
+
+        return self._last_machine_info.machine_name
 
     def wait_for_state_change(self, old_state, timeout=None):
         """Block until the job's state changes from the supplied state.
@@ -391,7 +523,7 @@ class Job(object):
                 # Wait for job state to change
                 while finish_time is None or finish_time > time.time():
                     # Has the job changed state?
-                    new_state = self.get_state().state
+                    new_state = self._get_state().state
                     if new_state != old_state:
                         return new_state
 
@@ -469,7 +601,7 @@ class Job(object):
             if cur_state is None:
                 # Get initial state (NB: done here such that the command is
                 # never sent if the timeout has already occurred)
-                cur_state = self.get_state().state
+                cur_state = self._get_state().state
 
             # Are we ready yet?
             if cur_state == JobState.ready:
@@ -481,7 +613,7 @@ class Job(object):
                 logger.info("Waiting for board power commands to complete.")
             elif cur_state == JobState.destroyed:
                 # In a state which can never become ready
-                raise JobDestroyedError(self.get_state().reason)
+                raise JobDestroyedError(self._get_state().reason)
             elif cur_state == JobState.unknown:
                 # Server has forgotten what this job even was...
                 raise JobDestroyedError("Server no longer recognises job.")
@@ -507,10 +639,10 @@ class JobDestroyedError(Exception):
     """
 
 
-class JobStateTuple(namedtuple("JobStateTuple",
-                               "state,power,keepalive,reason")):
+class _JobStateTuple(namedtuple("_JobStateTuple",
+                                "state,power,keepalive,reason")):
     """Tuple describing the state of a particular job, returned by
-    :py:meth:`.Controller.get_job_state`.
+    :py:meth:`.Job._get_state`.
 
     Parameters
     ----------
@@ -533,10 +665,11 @@ class JobStateTuple(namedtuple("JobStateTuple",
     __slots__ = tuple()
 
 
-class JobMachineInfoTuple(namedtuple("JobMachineInfoTuple",
-                                     "width,height,connections,machine_name")):
+class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
+                                      "width,height,connections,"
+                                      "machine_name")):
     """Tuple describing the machine alloated to a job, returned by
-    :py:meth:`.Controller.get_job_machine_info`.
+    :py:meth:`.Job._get_machine_info`.
 
     Parameters
 
