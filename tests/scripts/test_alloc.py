@@ -138,16 +138,18 @@ def test_print_info_keyboard_interrupt(capsys, mock_input):
 
 
 @pytest.mark.parametrize("args,expected",
-                         [([], []),
-                          (["foo", "bar"], ["foo", "bar"]),
-                          (["<{}>"], ["<foobar>"]),
-                          (["<{hostname}>"], ["<foobar>"]),
-                          (["<{w}>"], ["<1>"]),
-                          (["<{width}>"], ["<1>"]),
-                          (["<{h}>"], ["<2>"]),
-                          (["<{height}>"], ["<2>"]),
-                          (["<{ethernet_ips}>"], ["</some/file>"]),
-                          (["<{id}>"], ["<12>"]),
+                         [([], ""),
+                          (["foo", "bar"], "foo bar"),
+                          (["foo", "oh look a 'quote"],
+                           "foo 'oh look a '\"'\"'quote'"),
+                          (["<{}>"], "'<foobar>'"),
+                          (["<{hostname}>"], "'<foobar>'"),
+                          (["<{w}>"], "'<1>'"),
+                          (["<{width}>"], "'<1>'"),
+                          (["<{h}>"], "'<2>'"),
+                          (["<{height}>"], "'<2>'"),
+                          (["<{ethernet_ips}>"], "'</some/file>'"),
+                          (["<{id}>"], "'<12>'"),
                           ])
 def test_run_command(mock_popen, args, expected):
     run_command(args, 12, "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
@@ -361,7 +363,7 @@ def test_debug_args(basic_config_file, mock_job, monkeypatch, args, enable):
 
 def test_command_args(basic_config_file, mock_working_job, mock_popen):
     assert main("--command foo {} bar{w}x{h}".split()) == 123
-    mock_popen.assert_called_once_with(["foo", "foobar", "bar8x8"], shell=True)
+    mock_popen.assert_called_once_with("foo foobar bar8x8", shell=True)
 
 
 @pytest.mark.parametrize("state,reason,retcode",

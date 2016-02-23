@@ -106,7 +106,7 @@ import subprocess
 from collections import OrderedDict
 
 from six import iteritems
-from six.moves import input
+from six.moves import input, shlex_quote
 
 from spalloc import config
 from spalloc import Job, JobState, __version__
@@ -231,6 +231,9 @@ def run_command(command, job_id, machine_name, connections, width, height,
                           id=job_id)
                for arg in command]
 
+    # NB: When using shell=True, commands should be given as a string rather
+    # than the usual list of arguments.
+    command = " ".join(map(shlex_quote, command))
     p = subprocess.Popen(command, shell=True)
 
     # Pass through keyboard interrupts
