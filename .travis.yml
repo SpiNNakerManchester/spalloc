@@ -1,0 +1,25 @@
+sudo: false
+language: python
+python:
+        - 2.7
+        - 3.4
+        - 3.5
+install:
+        - python setup.py develop
+        - pip install -r requirements-test.txt
+        - pip install python-coveralls
+script:
+        - >
+            py.test tests/ \
+                    --cov spalloc \
+                    --cov tests \
+                    --durations=10
+        # Code quality check
+        - flake8 spalloc tests
+after_success:
+        - coveralls
+notifications:
+        email: false
+
+matrix:
+    fast_finish: true
