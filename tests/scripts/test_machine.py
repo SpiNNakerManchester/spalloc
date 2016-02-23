@@ -197,9 +197,9 @@ def test_no_hostname(no_config_files):
         main("".split())
 
 
-def test_compact_without_machine(basic_config_file):
+def test_detailed_without_machine(basic_config_file):
     with pytest.raises(SystemExit):
-        main("--compact".split())
+        main("--detailed".split())
 
 
 @pytest.mark.parametrize("version", [(0, 0, 0),

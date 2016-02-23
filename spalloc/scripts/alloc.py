@@ -1,3 +1,101 @@
+"""A command-line utility for creating jobs.
+
+.. note::
+
+    In the examples below, it is assumed that the spalloc server hostname and a
+    suitable owner name have been specified in a :py:mod:`~spalloc.config`
+    file.
+
+
+Basic usage
+-----------
+
+By default, the ``spalloc`` command allocates a job according to the
+command-line specification and then waits for boards to be allocated and
+powered on.
+
+.. note::
+
+    By default, allocated machines are powered on but not booted. If Rig_ is
+    installed, ``spalloc`` provides a ``--boot`` option which also boots the
+    allocated machine once it has been powered on.
+
+.. image:: _static/spalloc.gif
+    :alt: Animated GIF showing the typical execution of a spalloc call.
+
+The ``spalloc`` command can be called in one of the following styles though
+most users will probably only require the first two.
+
+=====================  ====================================================
+Invocation             Allocation
+=====================  ====================================================
+``spalloc``            A single SpiNN-5 board
+``spalloc 5``          A machine with *at least* 5 boards
+``spalloc 4 2``        A 4x2 *triad* machine.
+``spalloc 3 4 0``      A single SpiNN-5 board at logical position (3, 4, 0)
+=====================  ====================================================
+
+.. _Rig: https://github.com/project-rig/rig
+
+A range of additional command-line arguments are available to control various
+aspects of Job allocation, run ``spalloc --help`` for a complete listing.
+
+
+Wrapping other commands
+-----------------------
+
+The ``spalloc`` command can alternatively wrap an existing command, calling it
+once a SpiNNaker machine is allocated and cleaning up the job when the command
+exits::
+
+    $ spalloc 24 -c "rig-boot {} {w} {h} && python my_app.py {}"
+
+The example above attempts to allocate a 24-board machine and, once allocated
+and powered on, calls the command above, with the arguments in curly braces
+substituted for details of the allocated machine.
+
+The following substitutions are available:
+
+==================  =================================
+Token               Substitution
+==================  =================================
+``{}``              Chip 0, 0's hostname
+``{hostname}``      Chip 0, 0's hostname
+``{w}``             Width of the system (in chips)
+``{width}``         Width of the system (in chips)
+``{h}``             Height of the system (in chips)
+``{height}``        Height of the system (in chips)
+``{ethernet_ips}``  Filename of a CSV of Ethernet IPs
+``{id}``            The job ID
+==================  =================================
+
+Ethernet-connected chip hostname CSV Format
+-------------------------------------------
+
+Hostnames for all Ethernet-connected SpiNNaker chips in a machine are provided
+in a CSV file with three columns:: x, y and hostname. The CSV file is newline
+(``\\n``) delimited and the first row is a header.
+
+Disconnecting and resuming jobs
+-------------------------------
+
+.. warning::
+
+    This functionality is intended for advanced users only.
+
+By default, when the ``spalloc`` command exits, the job will be destroyed and
+any allocated boards freed. This behaviour can be disabled with the
+``--no-destroy`` argument, leaving the job allocated after the command exits.
+
+Such a job may be 'resumed' by calling ``spalloc`` with the ``--resume
+[JOB_ID]`` option.
+
+Note that by default, jobs require a 'keepalive' message to be sent to the
+server at a regular interval. While the ``spalloc`` command is running, these
+messages are sent automatically but after exiting the commands are no longer
+sent. Adding the ``--keepalive -1`` option when creating a job disables this.
+"""
+
 import os
 import sys
 import argparse
@@ -15,6 +113,7 @@ from spalloc import Job, JobState, __version__
 from spalloc.term import Terminal, render_definitions
 
 
+# Rig is used to implement the optional '--boot' facility.
 try:
     from rig.machine_control import MachineController
 except ImportError:  # pragma: no cover
@@ -71,15 +170,30 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
     print(render_definitions(to_print))
 
     try:
-        input(t.dim("<Press enter to exit>"))
+        input(t.dim("<Press enter when done>"))
     except (KeyboardInterrupt, EOFError):
         print("")
 
 
-def run_command(command, machine_name, connections, width, height,
+def run_command(command, job_id, machine_name, connections, width, height,
                 ip_file_filename):
     """Run a user-specified command, substituting arguments for values taken
     from the allocated board.
+
+    Arguments may include the following substitution tokens:
+
+    ==================  =================================
+    Token               Substitution
+    ==================  =================================
+    ``{}``              Chip 0, 0's hostname
+    ``{hostname}``      Chip 0, 0's hostname
+    ``{w}``             Width of the system (in chips)
+    ``{width}``         Width of the system (in chips)
+    ``{h}``             Height of the system (in chips)
+    ``{height}``        Height of the system (in chips)
+    ``{ethernet_ips}``  Filename of a CSV of Ethernet IPs
+    ``{id}``            The job ID
+    ==================  =================================
 
     Parameters
     ----------
@@ -113,7 +227,8 @@ def run_command(command, machine_name, connections, width, height,
                           width=width,
                           h=height,
                           height=height,
-                          ethernet_ips=ip_file_filename)
+                          ethernet_ips=ip_file_filename,
+                          id=job_id)
                for arg in command]
 
     p = subprocess.Popen(command, shell=True)
@@ -397,7 +512,7 @@ def main(argv=None):
 
             # Either run the user's application or just print the details.
             if args.command:
-                return run_command(args.command, job.machine_name,
+                return run_command(args.command, job.id, job.machine_name,
                                    job.connections, job.width, job.height,
                                    ip_file_filename)
 

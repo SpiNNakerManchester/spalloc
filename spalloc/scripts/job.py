@@ -1,3 +1,64 @@
+"""Command-line administrative job management interface.
+
+``spalloc-job`` may be called with a job ID, or if no arguments supplied your
+currently running job is shown by default. Various actions may be taken and
+each is described below.
+
+Displaying job information
+--------------------------
+
+By default, the command displays all known information about a job.
+
+The ``--watch`` option may be added which will cause the output to be updated
+in real-time as a job's state changes. For example::
+
+    $ spalloc-job --watch
+
+.. image:: _static/spalloc_job.gif
+    :alt: spalloc-job displaying job information.
+
+Controlling board power
+-----------------------
+
+The boards allocated to a job may be reset or powered on/off on demand (by
+anybody, at any time) by adding the ``--power-on``, ``--power-off`` or
+``--reset`` options. For example::
+
+    $ spalloc-job --reset
+
+.. note::
+
+    This command blocks until the action is completed.
+
+Listing board IP addresses
+--------------------------
+
+The hostnames of Ethernet-attached chips can be listed in CSV format by adding
+the --ethernet-ips argument::
+
+    $ spalloc-job --ethernet-ips
+    x,y,hostname
+    0,0,192.168.1.97
+    0,12,192.168.1.105
+    4,8,192.168.1.129
+    4,20,192.168.1.137
+    8,4,192.168.1.161
+    8,16,192.168.1.169
+
+Destroying/Cancelling Jobs
+--------------------------
+
+Jobs can be destroyed (by anybody, at any time) using the ``--destroy`` option
+which optionally accepts a human-readable explanation::
+
+    $ spalloc-job --destroy "Your job is taking too long..."
+
+.. warning::
+
+    That this "super power" should be used carefully since the user may not be
+    notified that their job was destroyed and the first sign of this will be
+    their boards being powered down and re-partitioned ready for another user.
+"""
 import sys
 import argparse
 import datetime
@@ -13,13 +74,31 @@ from spalloc.term import \
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES
 
 
+# The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
 
 
 def show_job_info(t, client, timeout, job_id):
+    """Print a human-readable overview of a Job's attributes.
 
-    # Get the complete full job information (if available)
+    Parameters
+    ----------
+    t : :py:class:`.Terminal`
+        An output styling object for stdout.
+    client : :py:class:`.ProtocolClient`
+        A connection to the server.
+    timeout : float or None
+        The timeout for server responses.
+    job_id : int
+        The job ID of interest.
+
+    Returns
+    -------
+    int
+        An error code, 0 for success.
+    """
+    # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
     job = [job for job in job_list if job["job_id"] == job_id]
 
@@ -84,6 +163,24 @@ def show_job_info(t, client, timeout, job_id):
 
 
 def watch_job(t, client, timeout, job_id):
+    """Re-print a job's information whenever the job changes.
+
+    Parameters
+    ----------
+    t : :py:class:`.Terminal`
+        An output styling object for stdout.
+    client : :py:class:`.ProtocolClient`
+        A connection to the server.
+    timeout : float or None
+        The timeout for server responses.
+    job_id : int
+        The job ID of interest.
+
+    Returns
+    -------
+    int
+        An error code, 0 for success.
+    """
     client.notify_job(job_id, timeout=timeout)
     while True:
         t.stream.write(t.clear_screen())
@@ -101,6 +198,26 @@ def watch_job(t, client, timeout, job_id):
 
 
 def power_job(client, timeout, job_id, power):
+    """Power a job's boards on/off and wait for the action to complete.
+
+    Parameters
+    ----------
+    client : :py:class:`.ProtocolClient`
+        A connection to the server.
+    timeout : float or None
+        The timeout for server responses.
+    job_id : int
+        The job ID of interest.
+    power : bool
+        True = turn on/reset, False = turn off.
+
+    Returns
+    -------
+    int
+        An error code, 0 for success. Fails if the job is not allocated any
+        boards or if waiting for the state change notification is interrupted
+        by the user.
+    """
     if power:
         client.power_on_job_boards(job_id, timeout=timeout)
     else:
@@ -132,6 +249,23 @@ def power_job(client, timeout, job_id, power):
 
 
 def list_ips(client, timeout, job_id):
+    """Print a CSV of board hostnames for all boards allocated to a job.
+
+    Parameters
+    ----------
+    client : :py:class:`.ProtocolClient`
+        A connection to the server.
+    timeout : float or None
+        The timeout for server responses.
+    job_id : int
+        The job ID of interest.
+
+    Returns
+    -------
+    int
+        An error code, 0 for success. Fails if the job is not allocated any
+        boards.
+    """
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = info["connections"]
     if connections is not None:
@@ -141,12 +275,30 @@ def list_ips(client, timeout, job_id):
         return 0
     else:
         sys.stderr.write(
-            "Job {} does not exist or is still queued.\n".format(
+            "Job {} is queued or does not exist.\n".format(
                 job_id))
         return 9
 
 
 def destroy_job(client, timeout, job_id, reason=None):
+    """Destroy a running job.
+
+    Parameters
+    ----------
+    client : :py:class:`.ProtocolClient`
+        A connection to the server.
+    timeout : float or None
+        The timeout for server responses.
+    job_id : int
+        The job ID of interest.
+    reason : str or None
+        The human-readable reason for destroying the job.
+
+    Returns
+    -------
+    int
+        An error code, 0 for success.
+    """
     client.destroy_job(job_id, reason, timeout=timeout)
     return 0
 
@@ -176,7 +328,7 @@ def main(argv=None):
     control_args.add_argument("--info", "-i", action="store_true",
                               help="Show basic job information (the default)")
     control_args.add_argument("--watch", "-w", action="store_true",
-                              help="Watch this job for state changes.")
+                              help="watch this job for state changes")
     control_args.add_argument("--power-on", "--reset", "-p", "-r",
                               action="store_true",
                               help="power-on or reset the job's boards")

@@ -1,4 +1,4 @@
-"""Fancy terminal colour shenanigans."""
+"""Utilities for generating ASCII/ANSI terminal graphics."""
 
 import os
 import sys
@@ -13,6 +13,9 @@ from enum import IntEnum
 
 
 class ANSIDisplayAttributes(IntEnum):
+    """Code numbers of ANSI display attributes for use with ESC[...m sequences.
+    """
+
     reset = 0
     bright = 1
     dim = 2
@@ -43,13 +46,13 @@ class ANSIDisplayAttributes(IntEnum):
 
 
 class Terminal(object):
-    """Fancy terminal colour shenanigans.
+    """ANSI terminal control shenanigans.
 
-    Utilities for printing colourful output on ANSI terminals and simple cursor
-    operations. When output is not directed to a tty, or when running under
+    Utilities for printing colourful output and re-printing the screen on ANSI
+    terminals. When output is not directed to a TTY, or when running under
     Windows, no ANSI control characters are produced.
 
-    Example::
+    Examples::
 
         t = Terminal()
 
@@ -168,16 +171,24 @@ class Terminal(object):
 
 
 def render_table(table, column_sep="  "):
-    """Render an ASCII table.
+    """Render an ASCII table with optional ANSI escape codes.
+
+    An example table::
+
+        Something   Another thing  Finally
+        some value  woah              1234
+        ace         duuued              -1
+        magic       rather good       9001
 
     Parameters
     ----------
     table : [row, ...]
         A table to render. Each row contains an iterable of column values which
         may be either values or a tuples (f, value) where value is the string
-        to print, or an integer to print right-aligned, and f is a formatting
-        function which is applied to the string before the table is finally
-        displayed.
+        to print, or an integer to print right-aligned. If a column is a tuple,
+        f is a formatting function which is applied to the string before the
+        table is finally displayed. Columns are padded to have matching widths
+        *before* any formatting functions are applied.
     column_sep : str
         String inserted between each column.
 
@@ -265,7 +276,10 @@ def render_definitions(definitions, seperator=": "):
 
 
 def _board_to_cartesian(x, y, z):
-    """Translate from logical board coordinates (x, y, z) into::
+    """Translate from logical board coordinates (x, y, z) into cartesian
+    coordinates for printing hexagons.
+
+    Example coordinates::
 
          ___     ___
         /-15\___/1 5\___
@@ -275,6 +289,16 @@ def _board_to_cartesian(x, y, z):
             \___/1 1\___/3 1\
             /0 0\___/2 0\___/
             \___/   \___/
+
+    Parameters
+    ----------
+    x, y, z : int
+        The logical baord coordinates.
+
+    Returns
+    -------
+    x, y : int
+        Equivilent cartesian coordinates.
     """
     cx = (2*x) - y + (1 if z == 1 else 0)
     cy = (3*y) + z
@@ -289,22 +313,28 @@ _LINK_TO_EDGE = {
     4: (+0, -1, 1),  # SW
     5: (+0, -1, 0),  # S
 }
-r"""Mapping from link direction to an edge number.
+r"""Mapping from link direction to board edge.
 
-{link: (dx, dy, edge), ...}
+We define and number a board's link directions as::
 
-Directions::
-        N
-       ___
-     W/   \ NE
-    SW\___/ E
-        S
+         N 2
+         ___
+     3 W/   \ NE 1
+    4 SW\___/ E 0
+         S 5
 
-Edge numbers::
+Boards have the following *three* edge numbers::
+
       ___
     2/   \
     1\___/
        0
+
+This means that, for example, the North 'edge' is actually represented as a
+South edge on the board above. As a result this lookup table maps each link
+direction to both a delta (in cartesian coordinates) and edge number.
+
+{link: (dx, dy, edge), ...}
 """
 
 _LINK_TO_DELTA = {
@@ -315,7 +345,7 @@ _LINK_TO_DELTA = {
     4: (-1, -1),  # SW
     5: (-0, -2),  # S
 }
-"""The offsets of the immediate neighbouring boards."""
+"""The cartesian offsets of the immediate neighbouring boards."""
 
 
 DEFAULT_BOARD_EDGES = ("___", "\\", "/")
@@ -327,21 +357,35 @@ def render_boards(board_groups, dead_links=set(),
                   blank_label="   ", blank_edge=("   ", " ", " ")):
     r"""Render an ASCII art diagram of a set of boards with sets of boards.
 
+    For example::
+
+         ___     ___     ___
+        / . \___/ . \___/ . \___
+        \___/ . \___/ . \___/ . \
+        / . \___/ . \___/ . \___/
+        \___/   \___/   \___/
+
     Parameters
     ----------
     board_groups : [([(x, y, z), ...], label, edge_inner, edge_outer), ...]
         Lists the groups of boards to display. Label is a 3-character string
         labelling the boards in the group, edge_inner and edge_outer are the
-        edge characters as a tuple ("___", "\\", "/") which are to be used for
-        the inner and outer board edges repsectively.
+        characters to use to draw board edges as a tuple ("___", "\\", "/")
+        which are to be used for the inner and outer board edges repsectively.
+        Board groups are drawn sequentially with later board groups obscuring
+        earlier ones when their edges or boards overlap.
     dead_links : set([(x, y, z, link), ...])
-        Enumeration of all dead links.
+        Enumeration of all dead links. These links are re-drawn in the style
+        defined by the dead_edge argument after all board groups have been
+        drawn.
     dead_edge : ("___", "\\", "/")
         The strings to use to draw dead links.
     blank_label : "   "
-        The 3-character string to use to label blank boards. (Blank by default)
+        The 3-character string to use to label non-existant boards. (Blank by
+        default)
     blank_edge : ("___", "\\", "/")
-        The characters to use to render blank board edges. (Blank by default)
+        The characters to use to render non-existant board edges. (Blank by
+        default)
     """
     # {(x, y): str, ...}
     board_labels = {}
@@ -391,15 +435,16 @@ def render_boards(board_groups, dead_links=set(),
     x_max, y_max = map(max, zip(*all_xy))
 
     # Render row-by-row
-    #   ___     ___            6 even
-    #  /-15\___/1 5\___        5 odd
-    #  \___/0 4\___/3 4\       4 even
-    #  /-13\___/1 3\___/       3 odd
-    #  \___/0 2\___/2 2\___    2 even
-    #  .   \___/1 1\___/3 1\   1 odd
-    #  .   /0 0\___/2 0\___/   0 even
-    #  .   \___/   \___/      -1 odd
+    #   ___     ___            6 Even
+    #  /-15\___/1 5\___        5 Odd
+    #  \___/0 4\___/3 4\       4 Even
+    #  /-13\___/1 3\___/       3 Odd
+    #  \___/0 2\___/2 2\___    2 Even
+    #  .   \___/1 1\___/3 1\   1 Odd
+    #  .   /0 0\___/2 0\___/   0 Even
+    #  .   \___/   \___/      -1 Odd
     # -1   0   1   2   3   4
+    #  Odd Evn Odd Evn Odd Evn
     out = []
     for y in range(y_max, y_min - 1, -1):
         even_row = (y % 2) == 0
@@ -420,6 +465,13 @@ def render_boards(board_groups, dead_links=set(),
 def render_cells(cells, width=80, col_spacing=2):
     """Given a list of short (~10 char) strings, display these aligned in
     columns.
+
+    Example output::
+
+        Something  like       this       can        be
+        used       to         neatly     arrange    long
+        sequences  of         values     in         a
+        compact    format.
 
     Parameters
     ----------

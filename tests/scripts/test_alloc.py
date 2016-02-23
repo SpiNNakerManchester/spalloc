@@ -113,7 +113,7 @@ def test_print_info_one_board(capsys, mock_input, no_colour):
                    "Running on: m\n")
     assert err == ""
 
-    mock_input.assert_called_once_with("<Press enter to exit>")
+    mock_input.assert_called_once_with("<Press enter when done>")
 
 
 def test_print_info_many_boards(capsys, mock_input, no_colour):
@@ -128,7 +128,7 @@ def test_print_info_many_boards(capsys, mock_input, no_colour):
                    "All hostnames: /some/file\n"
                    "   Running on: m\n")
     assert err == ""
-    mock_input.assert_called_once_with("<Press enter to exit>")
+    mock_input.assert_called_once_with("<Press enter when done>")
 
 
 def test_print_info_keyboard_interrupt(capsys, mock_input):
@@ -147,9 +147,10 @@ def test_print_info_keyboard_interrupt(capsys, mock_input):
                           (["<{h}>"], ["<2>"]),
                           (["<{height}>"], ["<2>"]),
                           (["<{ethernet_ips}>"], ["</some/file>"]),
+                          (["<{id}>"], ["<12>"]),
                           ])
 def test_run_command(mock_popen, args, expected):
-    run_command(args, "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
+    run_command(args, 12, "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
                 "/some/file")
     mock_popen.assert_called_once_with(expected, shell=True)
 
@@ -157,7 +158,7 @@ def test_run_command(mock_popen, args, expected):
 def test_run_command_kill_and_return(mock_popen):
     mock_popen.return_value = Mock()
     mock_popen.return_value.wait.side_effect = [KeyboardInterrupt(), 2]
-    assert run_command([], "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
+    assert run_command([], 12, "m", {(0, 0): "foobar", (4, 8): "bazqux"}, 1, 2,
                        "/some/file") == 2
     mock_popen.return_value.terminate.assert_called_once_with()
 

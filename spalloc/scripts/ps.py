@@ -1,3 +1,16 @@
+"""An administrative command-line process listing utility.
+
+By default, the ``spalloc-ps`` command lists all running and queued jobs.  For
+a real-time monitor of queued and running jobs, the ``--watch`` option may be
+added.
+
+.. image:: _static/spalloc_ps.png
+    :alt: Jobs being listed by spalloc-ps
+
+This list may be filtered by owner or machine with the ``--owner`` and
+``--machine`` arguments.
+"""
+
 import sys
 import argparse
 import datetime
@@ -8,6 +21,7 @@ from spalloc import \
 from spalloc.term import Terminal, render_table
 
 
+# The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
 
@@ -26,9 +40,6 @@ def render_job_list(t, jobs, machine=None, owner=None):
     owner : str or None
         If not None, only list jobs with this owner.
     """
-    # A list of table rows containing either strings or strings with a styling
-    # function.
-    # [((f, str), str, ...), ...]
     table = []
 
     # Add headings

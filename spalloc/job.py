@@ -19,35 +19,67 @@ VERSION_RANGE_STOP = (2, 0, 0)
 
 
 class Job(object):
-    """A context manager which will request a SpiNNaker machine from a spalloc
-    server.
+    """A high-level interface for requesting and managing allocations of
+    SpiNNaker boards.
 
+    Constructing a :py:class:`.Job` object connects to a `spalloc-server
+    <https://github.com/project-rig/spalloc_server>`_ and requests a number of
+    SpiNNaker boards. See the :py:meth:`constructor <.Job.__init__>` for
+    details of the types of requests which may be made. The job object may then
+    be used to monitor the state of the request, control the boards allocated
+    and determine their IP addresses.
+
+    In its simplest form, a :py:class:`.Job` can be used as a context manager
+    like so::
+
+        >>> from spalloc import Job
+        >>> with Job(6) as j:
+        ...     my_boot(j.hostname, j.width, j.height)
+        ...     my_application(j.hostname)
+
+    In this example a six-board machine is requested and the ``with`` context
+    is entered once the allocation has been made and the allocated boards are
+    fully powered on. When control leaves the block, the job is destroyed and
+    the boards shut down by the server ready for another job.
+
+    For more fine-grained control, the same functionality is available via
+    various methods::
+
+        >>> from spalloc import Job
+        >>> j = Job(6)
+        >>> j.wait_until_ready()
+        >>> my_boot(j.hostname, j.width, j.height)
+        >>> my_application(j.hostname)
+        >>> j.destroy()
+
+    :py:class:`.Job` objects have the following attributes which describe the
+    job and its allocated machines:
 
     Attributes
     ----------
-    id : int or None
+    job.id : int or None
         The job ID allocated by the server to the job.
-    state : :py:class:`.JobState`
+    job.state : :py:class:`.JobState`
         The current state of the job.
-    power : bool or None
+    job.power : bool or None
         If boards have been allocated to the job, are they on (True) or off
         (False). None if no boards are allocated to the job.
-    reason : str or None
+    job.reason : str or None
         If the job has been destroyed, gives the reason (which may be None), or
         None if the job has not been destroyed.
-    hostname : str or None
+    job.hostname : str or None
         The hostname of the SpiNNaker chip at (0, 0), or None if no boards have
         been allocated to the job.
-    connections : {(x, y): hostname, ...} or None
+    job.connections : {(x, y): hostname, ...} or None
         The hostnames of all Ethernet-connected SpiNNaker chips, or None if no
         boards have been allocated to the job.
-    width : int or None
+    job.width : int or None
         The width of the SpiNNaker network in chips, or None if no boards have
         been allocated to the job.
-    height : int or None
+    job.height : int or None
         The height of the SpiNNaker network in chips, or None if no boards have
         been allocated to the job.
-    machine_name : str or None
+    job.machine_name : str or None
         The name of the machine the boards are allocated in, or None if not yet
         allocated.
     """
@@ -57,38 +89,52 @@ class Job(object):
 
         A :py:class:`.Job` is constructed in one of the following styles::
 
-            # Any single (SpiNN-5) board
-            Job()
-            Job(1)
+            >>> # Any single (SpiNN-5) board
+            >>> Job()
+            >>> Job(1)
 
-            # Board x=3, y=2, z=1 on the machine named "m"
-            Job(3, 2, 1, machine="m")
+            >>> # Any machine with at least 4 boards
+            >>> Job(4)
 
-            # Any machine with at least 4 boards
-            Job(4)
+            >>> # Any 7-or-more board machine with an aspect ratio at least as
+            >>> # square as 1:2
+            >>> Job(7, min_ratio=0.5)
 
-            # Any 7-or-more board machine with an aspect ratio at least as
-            # square as 1:2
-            Job(7, min_ratio=0.5)
+            >>> # Any 4x5 triad segment of a machine (may or may-not be a
+            >>> # torus/full machine)
+            >>> Job(4, 5)
 
-            # Any 4x5 triad segment of a machine (may or may-not be a
-            # torus/full machine)
-            Job(4, 5)
+            >>> # Any torus-connected (full machine) 4x2 machine
+            >>> Job(4, 2, require_torus=True)
 
-            # Any torus-connected (full machine) 4x2 machine
-            Job(4, 2, require_torus=True)
+            >>> # Board x=3, y=2, z=1 on the machine named "m"
+            >>> Job(3, 2, 1, machine="m")
 
-            # Keep using (and keeping-alive) an existing allocation
-            Job(resume_job_id=123)
+            >>> # Keep using (and keeping-alive) an existing allocation
+            >>> Job(resume_job_id=123)
 
-        The following keyword-only parameters are also defined and default to
-        the values supplied in the local config file.
+        Once finished with a Job, the :py:meth:`.destroy` (or in unusual
+        applications :py:meth:`.Job.close`) method must be called to destroy
+        the job, close the connection to the server and terminate the
+        background keep-alive thread. Alternatively, a Job may be used as a
+        context manager which automatically calls :py:meth:`.destroy` on
+        exiting the block::
+
+            >>> with Job() as j:
+            ...     # ...for example...
+            ...     my_boot(j.hostname, j.width, j.height)
+            ...     my_application(j.hostname)
+
+        The following keyword-only parameters below are used both to specify
+        the server details as well as the job requirements. Most parameters
+        default to the values supplied in the local :py:mod:`~spalloc.config`
+        file allowing usage as in the examples above.
 
         Parameters
         ----------
         hostname : str
-            The name of the spalloc server to connect to. (Read from config
-            file if not specified.)
+            **Required.** The name of the spalloc server to connect to. (Read
+            from config file if not specified.)
         port : int
             The port number of the spalloc server to connect to. (Read from
             config file if not specified.)
@@ -107,36 +153,38 @@ class Job(object):
         Other Parameters
         ----------------
         resume_job_id : int or None
-            If supplied, rather than creating a new job, use an existing one,
-            keeping it alive as required by the original job.
+            If supplied, rather than creating a new job, take on an existing
+            one, keeping it alive as required by the original job. If this
+            argument is used, all other requirements are ignored.
         owner : str
-            The name of the owner of the job. By convention this should be your
-            email address. (Read from config file if not specified.)
+            **Required.** The name of the owner of the job. By convention this
+            should be your email address. (Read from config file if not
+            specified.)
         keepalive : float or None
             The number of seconds after which the server may consider the job
             dead if this client cannot communicate with it. If None, no timeout
             will be used and the job will run until explicitly destroyed. Use
             with extreme caution. (Read from config file if not specified.)
         machine : str or None
-            *Optional.* Specify the name of a machine which this job must be
-            executed on. If None, the first suitable machine available will be
-            used, according to the tags selected below. Must be None when tags
-            are given. (Read from config file if not specified.)
+            Specify the name of a machine which this job must be executed on.
+            If None, the first suitable machine available will be used,
+            according to the tags selected below. Must be None when tags are
+            given. (Read from config file if not specified.)
         tags : [str, ...] or None
-            *Optional.* The set of tags which any machine running this job must
-            have. If None is supplied, only machines with the "default" tag
-            will be used. If machine is given, this argument must be None.
-            (Read from config file if not specified.)
+            The set of tags which any machine running this job must have. If
+            None is supplied, only machines with the "default" tag will be
+            used. If machine is given, this argument must be None.  (Read from
+            config file if not specified.)
         min_ratio : float
             The aspect ratio (h/w) which the allocated region must be 'at least
             as square as'. Set to 0.0 for any allowable shape, 1.0 to be
             exactly square etc. Ignored when allocating single boards or
             specific rectangles of triads.
         max_dead_boards : int or None
-            *Optional.* The maximum number of broken or unreachable boards to
-            allow in the allocated region. If None, any number of dead boards
-            is permitted, as long as the board on the bottom-left corner is
-            alive. (Read from config file if not specified.)
+            The maximum number of broken or unreachable boards to allow in the
+            allocated region. If None, any number of dead boards is permitted,
+            as long as the board on the bottom-left corner is alive. (Read from
+            config file if not specified.)
         max_dead_links : int or None
             The maximum number of broken links allow in the allocated region.
             When require_torus is True this includes wrap-around links,
@@ -144,9 +192,9 @@ class Job(object):
             broken links is allowed. (Read from config file if not specified.).
         require_torus : bool
             If True, only allocate blocks with torus connectivity. In general
-            this will only succeed for requests to allocate an entire machine
-            (when the machine is otherwise not in use!). Must be False when
-            allocating boards. (Read from config file if not specified.)
+            this will only succeed for requests to allocate an entire machine.
+            Must be False when allocating boards. (Read from config file if not
+            specified.)
         """
         # Read configuration
         config_filenames = kwargs.pop("config_filenames", SEARCH_PATH)
@@ -251,12 +299,10 @@ class Job(object):
 
         Example::
 
-            with Job(...) as j:
-                # Now contex has entered, machine is allocated and powered on!
-                # Off we go!
-
-            # When exiting the block, the job will now have been automatically
-            # destroyed!
+            >>> from spalloc import Job
+            >>> with Job(6) as j:
+            ...     my_boot(j.hostname, j.width, j.height)
+            ...     my_application(j.hostname)
         """
         logger.info("Waiting for boards to become ready...")
         try:
@@ -318,26 +364,14 @@ class Job(object):
                         if not self._stop.wait(self._reconnect_delay):
                             self._reconnect()
 
-    def close(self):
-        """Disconnect from the server and stop keeping the job alive.
-
-        See also
-        --------
-        destroy: Disconnect and shut-down and destroy the job.
-        """
-        # Stop background thread
-        self._stop.set()
-        self._keepalive_thread.join()
-
-        # Disconnect
-        self._client.close()
-
     def destroy(self, reason=None):
         """Destroy the job and disconnect from the server.
 
-        See also
-        --------
-        close: Just disconnect from the server.
+        Parameters
+        ----------
+        reason : str or None
+            *Optional.* Gives a human-readable explanation for the destruction
+            of the job.
         """
         # Attempt to inform the server that the job was destroyed, fail
         # quietly on failure since the server will eventually time-out the job
@@ -348,6 +382,23 @@ class Job(object):
             logger.warning("Could not destroy job: %s", e)
 
         self.close()
+
+    def close(self):
+        """Disconnect from the server and stop keeping the job alive.
+
+        .. warning::
+
+            This method does not free the resources allocated by the job but
+            rather simply disconnects from the server and ceases sending
+            keep-alive messages. Most applications should use
+            :py:meth:`.destroy` instead.
+        """
+        # Stop background thread
+        self._stop.set()
+        self._keepalive_thread.join()
+
+        # Disconnect
+        self._client.close()
 
     def _get_state(self):
         """Get the state of the job.
@@ -368,10 +419,10 @@ class Job(object):
     def set_power(self, power):
         """Turn the boards allocated to the job on or off.
 
-        Does nothing if the job has not been allocated.
+        Does nothing if the job has not yet been allocated any boards.
 
         The :py:meth:`.wait_until_ready` method may be used to wait for the
-        power state change to complete.
+        boards to fully turn on or off.
 
         Parameters
         ----------
@@ -393,16 +444,13 @@ class Job(object):
         Does nothing if the job has not been allocated.
 
         The :py:meth:`.wait_until_ready` method may be used to wait for the
-        reset to complete.
+        boards to fully turn on or off.
         """
         self.set_power(True)
 
     def _get_machine_info(self):
         """Get information about the boards allocated to the job, e.g. the IPs
         and system dimensions.
-
-        The :py:meth:`.wait_until_ready` method may be used to wait for the
-        boards to become ready.
 
         Returns
         -------
@@ -500,7 +548,7 @@ class Job(object):
 
         Parameters
         ----------
-        old_state : int
+        old_state : :py:class:`~spalloc.JobState`
             The current state.
         timeout : float or None
             The number of seconds to wait for a change before timing out. If
@@ -508,8 +556,8 @@ class Job(object):
 
         Returns
         -------
-        int
-            The new state, or old state if we timed out.
+        :py:class:`~spalloc.JobState`
+            The new state, or old state if timed out.
         """
         finish_time = time.time() + timeout if timeout is not None else None
 
@@ -546,10 +594,13 @@ class Job(object):
                                     wait_timeout = min(self._keepalive / 2.0,
                                                        time_left)
                                 elif finish_time is None:
-                                    wait_timeout = self._keepalive / 2.0
+                                    if self._keepalive is None:
+                                        wait_timeout = None
+                                    else:
+                                        wait_timeout = self._keepalive / 2.0
                                 else:
                                     wait_timeout = finish_time - time.time()
-                                if wait_timeout >= 0.0:
+                                if wait_timeout is None or wait_timeout >= 0.0:
                                     self._client.wait_for_notification(
                                         wait_timeout)
                                     break
@@ -593,7 +644,7 @@ class Job(object):
         StateChangeTimeoutError
             If the timeout expired before the ready state was entered.
         JobDestroyedError
-            If the job was destroyed.
+            If the job was destroyed before becoming ready.
         """
         cur_state = None
         finish_time = time.time() + timeout if timeout is not None else None

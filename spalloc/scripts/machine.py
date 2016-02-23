@@ -1,3 +1,20 @@
+"""Command-line administrative machine management interface.
+
+When called with no arguments the ``spalloc-machine`` command lists all
+available machines and a summary of their current load.
+
+If a specific machine is given as an argument, the current allocation of jobs
+to machines is displayed:
+
+.. image:: _static/spalloc_machine.png
+    :alt: spalloc-machine showing jobs allocated on a machine.
+
+Adding the ``--detailed`` option displays additional information about jobs
+running on a machine.
+
+If the ``--watch`` option is given, the information displayed is updated in
+real-time.
+"""
 import sys
 import argparse
 
@@ -13,6 +30,7 @@ from spalloc.term import \
     DEFAULT_BOARD_EDGES
 
 
+# The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
 
@@ -31,6 +49,21 @@ def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
 
 
 def list_machines(t, machines, jobs):
+    """Display a table summarising the available machines and their load.
+
+    Parameters
+    ----------
+    t : :py:class:`.Terminal`
+        An output styling object for stdout.
+    machines : [{...}, ...]
+        The list of machines and their properties returned from the server.
+    jobs : [{...}, ...]
+        The list of jobs and their properties returned from the server.
+
+    Returns
+    -------
+        An error code: 0 on success.
+    """
     machine_jobs = defaultdict(list)
     for job in jobs:
         machine_jobs[job["allocated_machine_name"]].append(job)
@@ -59,6 +92,26 @@ def list_machines(t, machines, jobs):
 
 
 def show_machine(t, machines, jobs, machine_name, compact=False):
+    """Display a more detailed overview of an individual machine.
+
+    Parameters
+    ----------
+    t : :py:class:`.Terminal`
+        An output styling object for stdout.
+    machines : [{...}, ...]
+        The list of machines and their properties returned from the server.
+    jobs : [{...}, ...]
+        The list of jobs and their properties returned from the server.
+    machine_name : str
+        The machine of interest.
+    compact : bool
+        If True, display the listing of jobs on the machine in a more compact
+        format.
+
+    Returns
+    -------
+        An error code: 0 on success.
+    """
     # Find the machine requested
     for machine in machines:
         if machine["name"] == machine_name:
@@ -164,8 +217,8 @@ def main(argv=None):
     parser.add_argument("--watch", "-w", action="store_true", default=False,
                         help="update the output when things change.")
 
-    parser.add_argument("--compact", "-c", action="store_true", default=False,
-                        help="use compact machine job listing")
+    parser.add_argument("--detailed", "-d", action="store_true", default=False,
+                        help="list detailed job information")
 
     server_args = parser.add_argument_group("spalloc server arguments")
 
@@ -187,10 +240,10 @@ def main(argv=None):
     if args.hostname is None:
         parser.error("--hostname of spalloc server must be specified")
 
-    # Fail if --compact used without specifying machine
-    if args.machine is None and args.compact:
+    # Fail if --detailed used without specifying machine
+    if args.machine is None and args.detailed:
         parser.error(
-            "--compact only works when a specific machine is specified")
+            "--detailed only works when a specific machine is specified")
 
     client = ProtocolClient(args.hostname, args.port)
     try:
@@ -220,7 +273,7 @@ def main(argv=None):
                 retval = list_machines(t, machines, jobs)
             else:
                 retval = show_machine(t, machines, jobs, args.machine,
-                                      args.compact)
+                                      not args.detailed)
 
             # Wait for changes (if required)
             if retval != 0 or not args.watch:

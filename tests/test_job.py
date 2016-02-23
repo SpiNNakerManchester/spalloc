@@ -339,6 +339,29 @@ class TestWaitForStateChange(object):
 
         j.close()
 
+    def test_no_timeout_or_keepalive(self, no_config_files, client):
+        # Make sure that the timeout argument works when presented with a
+        # no state-changes. In this instance we verify the timeout given is
+        # sensible.
+        j = Job(hostname="localhost", owner="me", keepalive=None)
+
+        client.get_job_state.side_effect = [
+            {
+                "state": int(state),
+                "power": True,
+                "keepalive": 60.0,
+                "reason": None,
+            }
+            for state in [JobState.power, JobState.ready]
+        ]
+
+        assert j.wait_for_state_change(
+            JobState.power, timeout=None) == JobState.ready
+        assert len(client.wait_for_notification.mock_calls) == 1
+        assert client.wait_for_notification.mock_calls[0][1][0] is None
+
+        j.close()
+
     def test_server_timeout(self, no_config_files, client):
         # Make sure that if the server dies, the timeout is still respected
         client.get_job_state.side_effect = IOError()

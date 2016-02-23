@@ -10,20 +10,18 @@ from collections import deque
 
 
 class ProtocolTimeoutError(Exception):
-    """Thrown upon a timeout.
-
-    Defined for Python 2 compatibility.
-    """
+    """Thrown upon a protocol-level timeout."""
 
 
 class ProtocolClient(object):
-    """A simple `spalloc-server
-    <https://github.com/project-rig/spalloc_server>`_ protocol client
-    implementation.
+    """A simple (blocking) client implementation of the `spalloc-server
+    <https://github.com/project-rig/spalloc_server>`_ protocol.
 
-    This minimal blocking implementation is not intended to be truly general
-    purpose but rather serve as an example of a simple client implementation
-    and form the basis of the basic 'spalloc' command-line tools.
+    This minimal implementation is intended to serve both simple applications
+    and as an example implementation of the protocol for other applications.
+    This implementation simply implements the protocol, presenting an RPC-like
+    interface to the server. For a higher-level interface built on top of this
+    client, see :py:class:`spalloc.Job`.
 
     Usage examples::
 
@@ -32,10 +30,10 @@ class ProtocolClient(object):
         c.connect()
 
         # Call commands by name
-        print(c.call("version"))  # '0.0.2'
+        print(c.call("version"))  # '0.1.0'
 
         # Call commands as if they were methods
-        c.notify_job([1, 2, 3])
+        print(c.version())  # '0.1.0'
 
         # Wait an event to be received
         print(c.wait_for_notification())  # {"jobs_changed": [1, 3]}
@@ -45,7 +43,12 @@ class ProtocolClient(object):
     """
 
     def __init__(self, hostname, port=22244):
-        """
+        """Define a new connection.
+
+        .. note::
+
+            Does not connect to the server until :py:meth:`.connect` is called.
+
         Parameters
         ----------
         hostname : str
@@ -70,7 +73,7 @@ class ProtocolClient(object):
 
         Raises
         ------
-        OSError
+        OSError, IOError
             If a connection failure occurs.
         """
         # Close any existing connection
@@ -193,7 +196,7 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        OSError
+        IOError, OSError
             If the connection is unavailable or is closed.
         """
         timeout = kwargs.pop("timeout", None)
@@ -246,7 +249,7 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        OSError
+        IOError, OSError
             If the socket is unusable or becomes disconnected.
         """
         # If we already have a notification, return it
