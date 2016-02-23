@@ -124,15 +124,17 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     # Extract list of jobs running on the machine
     displayed_jobs = []
     job_key_generator = iter(generate_keys())
-    job_colour_generator = iter(cycle([
-        t.green, t.blue, t.magenta,
-        t.yellow, t.cyan,
-    ]))
+    job_colours = [
+        t.green, t.blue, t.magenta, t.yellow, t.cyan,
+        t.dim_green, t.dim_blue, t.dim_magenta, t.dim_yellow, t.dim_cyan,
+        t.bright_green, t.bright_blue, t.bright_magenta, t.bright_yellow,
+        t.bright_cyan,
+    ]
     for job in jobs:
         if job["allocated_machine_name"] == machine_name:
             displayed_jobs.append(job)
             job["key"] = next(job_key_generator)
-            job["colour"] = next(job_colour_generator)
+            job["colour"] = job_colours[job["job_id"] % len(job_colours)]
 
     # Calculate machine stats
     num_boards = ((machine["width"] * machine["height"] * 3) -
