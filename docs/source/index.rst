@@ -48,13 +48,14 @@ three-board machine::
 
 .. note::
 
-    The dimensions of a machine may not be what you're used to and may
-    change from allocation to allocation, even for the same number of baords.
+    The dimensions of a machine may not be what you're used to and may change
+    from allocation to allocation, even for the same number of boards.
 
 .. note::
 
-    When you're finished with the boards you were allocated, pressing enter
-    will automatically shut them down and allow them to be used by others.
+    When you're finished with the boards you were allocated, pressing enter (or
+    exiting the ``with`` block in the Python version) will automatically shut
+    them down and allow them to be used by others.
 
 .. _Rig: https://github.com/project-rig/rig
 
@@ -79,6 +80,10 @@ Configuration file format and defaults
 ``spalloc-machine``: List available machines and their running jobs
 -------------------------------------------------------------------
 .. automodule:: spalloc.scripts.machine
+
+``spalloc-where-is``: Query the server for the physical/logical locations of boards/chips
+-----------------------------------------------------------------------------------------
+.. automodule:: spalloc.scripts.where_is
 
 
 Python library

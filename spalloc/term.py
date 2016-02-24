@@ -293,12 +293,12 @@ def _board_to_cartesian(x, y, z):
     Parameters
     ----------
     x, y, z : int
-        The logical baord coordinates.
+        The logical board coordinates.
 
     Returns
     -------
     x, y : int
-        Equivilent cartesian coordinates.
+        Equivalent Cartesian coordinates.
     """
     cx = (2*x) - y + (1 if z == 1 else 0)
     cy = (3*y) + z

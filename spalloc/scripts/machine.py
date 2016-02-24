@@ -19,7 +19,6 @@ import sys
 import argparse
 
 from collections import defaultdict, OrderedDict
-from itertools import cycle
 
 from six import next
 
