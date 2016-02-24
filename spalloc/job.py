@@ -14,7 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-VERSION_RANGE_START = (0, 0, 2)
+VERSION_RANGE_START = (0, 4, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
 
 
@@ -52,6 +52,21 @@ class Job(object):
         >>> my_application(j.hostname)
         >>> j.destroy()
 
+    .. note::
+
+        More complex applications may wish to log the following attributes of
+        their job to support later debugging efforts:
+
+        * ``job.id`` -- May be used to query the state of the job and find out
+          its fate if cancelled or destroyed. The ``spalloc-job`` command can
+          be used to discover the state/fate of the job and
+          ``spalloc-where-is`` may be used to find out what boards problem
+          chips reside on.
+        * ``job.machine_name`` and ``job.boards`` together give a complete
+          record of the hardware used by the job. The ``spalloc-where-is``
+          command may be used to find out the physical locations of the boards
+          used.
+
     :py:class:`.Job` objects have the following attributes which describe the
     job and its allocated machines:
 
@@ -81,6 +96,9 @@ class Job(object):
         been allocated to the job.
     job.machine_name : str or None
         The name of the machine the boards are allocated in, or None if not yet
+        allocated.
+    job.boards : [[x, y, z], ...] or None
+        The logical coordinates allocated to the job, or None if not yet
         allocated.
     """
 
@@ -469,6 +487,7 @@ class Job(object):
                              if info["connections"] is not None
                              else None),
                 machine_name=info["machine_name"],
+                boards=info["boards"],
             )
 
     @property
@@ -542,6 +561,17 @@ class Job(object):
             self._last_machine_info = self._get_machine_info()
 
         return self._last_machine_info.machine_name
+
+    @property
+    def boards(self):
+        """The coordinates of the boards allocated for the job (or None)."""
+        # Note that the machine will never change once defined so only need to
+        # get this once.
+        if (self._last_machine_info is None or
+                self._last_machine_info.machine_name is None):
+            self._last_machine_info = self._get_machine_info()
+
+        return self._last_machine_info.boards
 
     def wait_for_state_change(self, old_state, timeout=None):
         """Block until the job's state changes from the supplied state.
@@ -718,7 +748,7 @@ class _JobStateTuple(namedtuple("_JobStateTuple",
 
 class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
                                       "width,height,connections,"
-                                      "machine_name")):
+                                      "machine_name,boards")):
     """Tuple describing the machine alloated to a job, returned by
     :py:meth:`.Job._get_machine_info`.
 
@@ -735,6 +765,9 @@ class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
     machine_name : str or None
         The name of the machine the job is allocated on or None if no machine
         allocated.
+    boards : [[x, y, z], ...] or None
+        The logical board coordinates of all boards allocated to the job or
+        None if none allocated yet.
     """
 
     # Python 3.4 Workaround: https://bugs.python.org/issue24931

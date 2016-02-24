@@ -230,11 +230,13 @@ def test_get_machine_info(no_config_files, j, allocated, client):
             "width": 8, "height": 8,
             "connections": [((0, 0), "localhost")],
             "machine_name": "m",
+            "boards": [[0, 0, 0]],
         }
     else:
         client.get_job_machine_info.return_value = {
             "width": None, "height": None,
             "connections": None, "machine_name": None,
+            "boards": None,
         }
 
     info = j._get_machine_info()
@@ -244,11 +246,13 @@ def test_get_machine_info(no_config_files, j, allocated, client):
             width=8, height=8,
             connections={(0, 0): "localhost"},
             machine_name="m",
+            boards=[[0, 0, 0]],
         )
     else:
         assert info == _JobMachineInfoTuple(
             width=None, height=None,
             connections=None, machine_name=None,
+            boards=None,
         )
 
 
@@ -488,6 +492,7 @@ def test_attributes(j, client):
         "width": 8, "height": 9,
         "connections": [((0, 0), "localhost")],
         "machine_name": "m",
+        "boards": [[0, 0, 0]],
     }
 
     # Each of these should result in the job-state being requested every time
@@ -536,3 +541,9 @@ def test_attributes(j, client):
     assert len(client.get_job_machine_info.mock_calls) == 5
     assert j.machine_name == "m"
     assert len(client.get_job_machine_info.mock_calls) == 5
+
+    j._last_machine_info = None
+    assert j.boards == [[0, 0, 0]]
+    assert len(client.get_job_machine_info.mock_calls) == 6
+    assert j.boards == [[0, 0, 0]]
+    assert len(client.get_job_machine_info.mock_calls) == 6
