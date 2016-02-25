@@ -7,7 +7,7 @@ from functools import partial
 from itertools import chain
 from collections import defaultdict
 
-from six import iteritems
+from six import iteritems, string_types
 
 from enum import IntEnum
 
@@ -201,7 +201,7 @@ def render_table(table, column_sep="  "):
     column_widths = defaultdict(lambda: 0)
     for row in table:
         for i, column in enumerate(row):
-            if isinstance(column, str):
+            if isinstance(column, string_types):
                 string = column
             elif isinstance(column, int):
                 string = str(column)
@@ -216,7 +216,7 @@ def render_table(table, column_sep="  "):
         out.append(rendered_row)
         for i, column in enumerate(row):
             # Get string length and formatted string
-            if isinstance(column, str):
+            if isinstance(column, string_types):
                 string = column
                 length = len(string)
                 right_align = False
@@ -224,7 +224,7 @@ def render_table(table, column_sep="  "):
                 string = str(column)
                 length = len(string)
                 right_align = True
-            elif isinstance(column[1], str):
+            elif isinstance(column[1], string_types):
                 f, string = column
                 length = len(string)
                 right_align = False
@@ -387,7 +387,7 @@ def render_boards(board_groups, dead_links=set(),
         The characters to use to render non-existant board edges. (Blank by
         default)
     """
-    # {(x, y): str, ...}
+    # {(x, y): string_types, ...}
     board_labels = {}
     # {(x, y, edge): str, ...}
     board_edges = {}
