@@ -34,7 +34,7 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["six>=1.8.0", "appdirs"],
+    install_requires=["six>=1.8.0", "appdirs", "enum-compat"],
 
     # Scripts
     entry_points={
