@@ -240,7 +240,7 @@ class Job(object):
         self._keepalive_thread = threading.Thread(
             target=self._keepalive_thread,
             name="job-keepalive-thread")
-        self._keepalive_thread.deamon = True
+        self._keepalive_thread.daemon = True
 
         # Event fired when the background thread should shut-down
         self._stop = threading.Event()
