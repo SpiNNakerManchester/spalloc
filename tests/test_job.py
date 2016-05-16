@@ -159,9 +159,9 @@ class TestKeepalive(object):
 
     def test_normal_operation(self, client, no_config_files):
         # Make sure that the keepalive is sent out at the correct interval by
-        # the background thread.
-        client.job_keepalive
+        # the background thread (and make sure this thread is daemonic
         j = Job(hostname="localhost", owner="me", keepalive=0.2)
+        assert j._keepalive_thread.daemon is True
         time.sleep(0.5)
         j.close()
 
