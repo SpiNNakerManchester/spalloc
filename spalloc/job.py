@@ -13,6 +13,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# In Python 2, no default handler exists for software which doesn't configure
+# its own logging so we must add one ourselves as per
+# https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
+logger.addHandler(logging.StreamHandler())
+
 
 VERSION_RANGE_START = (0, 4, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
@@ -271,7 +276,7 @@ class Job(object):
             # Snag the keepalive interval from the job
             self._keepalive = job_state.keepalive
 
-            logger.info("Resumed job %d", self.id)
+            logger.info("Spalloc resumed job %d", self.id)
         else:
             # Get job creation arguments
             job_args = args
@@ -303,7 +308,7 @@ class Job(object):
             # Create the job (failing fast if can't communicate)
             self.id = self._client.create_job(*job_args, **job_kwargs)
 
-            logger.info("Created job %d", self.id)
+            logger.info("Created spalloc job %d", self.id)
 
         # Start keepalive thread now that everything is up
         self._keepalive_thread.start()
@@ -353,11 +358,12 @@ class Job(object):
         try:
             self._client.connect(self._timeout)
             self._assert_compatible_version()
-            logger.info("Reconnected successfully.")
+            logger.info("Reconnected to spalloc server successfully.")
         except (IOError, OSError) as e:
             # Connect/version command failed... Leave the socket clearly
             # broken so that we retry again
-            logger.warning("Reconnect attempt failed: %s", e)
+            logger.warning(
+                "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
     def _keepalive_thread(self):
@@ -397,7 +403,7 @@ class Job(object):
         try:
             self._client.destroy_job(self.id, reason)
         except (IOError, OSError, ProtocolTimeoutError) as e:
-            logger.warning("Could not destroy job: %s", e)
+            logger.warning("Could not destroy spalloc job: %s", e)
 
         self.close()
 
@@ -689,7 +695,7 @@ class Job(object):
                 # Now in the ready state!
                 return
             elif cur_state == JobState.queued:
-                logger.info("Job has been queued by the server.")
+                logger.info("Job has been queued by the spalloc server.")
             elif cur_state == JobState.power:
                 logger.info("Waiting for board power commands to complete.")
             elif cur_state == JobState.destroyed:
@@ -697,7 +703,8 @@ class Job(object):
                 raise JobDestroyedError(self._get_state().reason)
             elif cur_state == JobState.unknown:
                 # Server has forgotten what this job even was...
-                raise JobDestroyedError("Server no longer recognises job.")
+                raise JobDestroyedError(
+                    "Spalloc server no longer recognises job.")
 
             # Wait for a state change...
             if finish_time is None:

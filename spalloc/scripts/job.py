@@ -63,6 +63,9 @@ import sys
 import argparse
 import datetime
 
+from pytz import utc
+from tzlocal import get_localzone
+
 from collections import OrderedDict
 
 from six import iteritems
@@ -122,8 +125,10 @@ def show_job_info(t, client, timeout, job_id):
         info["Owner"] = job["owner"]
         info["State"] = JobState(job["state"]).name
         if job["start_time"] is not None:
-            info["Start time"] = datetime.datetime.fromtimestamp(
-                job["start_time"]).strftime('%d/%m/%Y %H:%M:%S')
+            utc_timestamp = datetime.datetime.fromtimestamp(
+                job["start_time"], utc)
+            local_timestamp = utc_timestamp.astimezone(get_localzone())
+            info["Start time"] = local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
         info["Keepalive"] = job["keepalive"]
 
         args = job["args"]

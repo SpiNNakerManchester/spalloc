@@ -15,6 +15,9 @@ import sys
 import argparse
 import datetime
 
+from pytz import utc
+from tzlocal import get_localzone
+
 from spalloc import config
 from spalloc import \
     __version__, ProtocolClient, ProtocolTimeoutError, JobState
@@ -87,8 +90,10 @@ def render_job_list(t, jobs, machine=None, owner=None):
             num_boards = ""
 
         # Format start time
-        timestamp = datetime.datetime.fromtimestamp(
-            job["start_time"]).strftime('%d/%m/%Y %H:%M:%S')
+        utc_timestamp = datetime.datetime.fromtimestamp(
+            job["start_time"], utc)
+        local_timestamp = utc_timestamp.astimezone(get_localzone())
+        timestamp = local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
 
         if job["allocated_machine_name"] is not None:
             machine_name = job["allocated_machine_name"]
