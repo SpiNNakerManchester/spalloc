@@ -5,7 +5,7 @@ Spalloc is a Python library and set of command-line programs for requesting
 SpiNNaker_ machines from a spalloc `server`_.
 
 .. _SpiNNaker: http://apt.cs.manchester.ac.uk/projects/SpiNNaker/
-.. _server: https://github.com/project-rig/spalloc_server
+.. _server: https://github.com/SpiNNakerManchester/spalloc_server
 
 
 Quick-start
@@ -57,7 +57,7 @@ three-board machine::
     exiting the ``with`` block in the Python version) will automatically shut
     them down and allow them to be used by others.
 
-.. _Rig: https://github.com/project-rig/rig
+.. _Rig: https://github.com/SpiNNakerManchester/rig
 
 Configuration file format and defaults
 --------------------------------------

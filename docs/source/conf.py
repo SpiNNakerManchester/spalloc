@@ -142,7 +142,7 @@ import spalloc
 
 local_module_path = spalloc.__file__
 github_module_path = "spalloc/"
-github_repo = "project-rig/spalloc"
+github_repo = "SpiNNakerManchester/spalloc"
 
 def linkcode_resolve(domain, info):
     """Determine the URL corresponding to Python object on GitHub
