@@ -325,7 +325,7 @@ class ProtocolClient(object):
         return self.call("get_board_at_position", machine_name, x, y, z)
 
     def where_is(self, **kwargs):
-        # Test for whether 
+        # Test for whether sane arguments are passed.
         acceptable = frozenset([
             frozenset("machine x y z".split()),
             frozenset("machine cabinet frame board".split()),
