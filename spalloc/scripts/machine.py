@@ -279,13 +279,12 @@ def main(argv=None):
             # Wait for changes (if required)
             if retval != 0 or not args.watch:
                 return retval
-            else:
-                try:
-                    client.wait_for_notification()
-                    print("")
-                except KeyboardInterrupt:
-                    print("")
-                    return 0
+            try:
+                client.wait_for_notification()
+                print("")
+            except KeyboardInterrupt:
+                print("")
+                return 0
 
     except (IOError, OSError, ProtocolTimeoutError) as e:
         sys.stderr.write("Error communicating with server: {}\n".format(e))

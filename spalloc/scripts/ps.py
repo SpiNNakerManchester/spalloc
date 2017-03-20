@@ -179,24 +179,23 @@ def main(argv=None):
             if args.watch:
                 sys.stdout.write(t.clear_screen())
 
-            print(render_job_list(
-                t, jobs, args.machine, args.owner))
+            print(render_job_list(t, jobs, args.machine, args.owner))
 
             # Exit or wait for changes, if requested
             if not args.watch:
                 return 0
-            else:
-                # Wait for state change
-                try:
-                    client.wait_for_notification()
-                except KeyboardInterrupt:
-                    # Gracefully exit
-                    print("")
-                    return 0
 
-                # Print a newline to separate old table from the new table when
-                # it gets printed if ANSI screen clearing is not possible.
+            # Wait for state change
+            try:
+                client.wait_for_notification()
+            except KeyboardInterrupt:
+                # Gracefully exit
                 print("")
+                return 0
+
+            # Print a newline to separate old table from the new table when
+            # it gets printed if ANSI screen clearing is not possible.
+            print("")
 
     except (IOError, OSError, ProtocolTimeoutError) as e:
         sys.stderr.write("Error communicating with server: {}\n".format(e))

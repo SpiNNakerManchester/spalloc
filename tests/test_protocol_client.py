@@ -10,6 +10,7 @@ import logging
 from spalloc import ProtocolClient, ProtocolTimeoutError
 
 from common import MockServer
+from spalloc.protocol_client import SpallocServerException
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -177,6 +178,12 @@ def test_call(c, s, bg_accept):
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert 0.1 < after - before < 0.2
     assert list(c._notifications) == [{"notification": 3}]
+
+    # Exceptions should transfer
+    s.send({"exception": "something informative"})
+    with pytest.raises(SpallocServerException) as e:
+        c.call("foo")
+    assert "something informative" in str(e)
 
 
 def test_wait_for_notification(c, s, bg_accept):

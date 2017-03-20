@@ -2,15 +2,20 @@
 
 import socket
 import json
-import time
-
 from functools import partial
-
 from collections import deque
+from spalloc._utils import time_left, timed_out, make_timeout
 
 
 class ProtocolTimeoutError(Exception):
     """Thrown upon a protocol-level timeout."""
+
+
+class SpallocServerException(Exception):
+    """Thrown when something went wrong on the server side that caused us to
+    be sent a message.
+    """
+    pass
 
 
 class ProtocolClient(object):
@@ -82,8 +87,7 @@ class ProtocolClient(object):
 
         # Try to (re)connect to the server
         try:
-            self._sock = socket.socket(socket.AF_INET,
-                                       socket.SOCK_STREAM)
+            self._sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self._sock.settimeout(timeout)
             self._sock.connect((self._hostname, self._port))
             # Success!
@@ -200,30 +204,22 @@ class ProtocolClient(object):
             If the connection is unavailable or is closed.
         """
         timeout = kwargs.pop("timeout", None)
-
-        finish_time = time.time() + timeout if timeout is not None else None
+        finish_time = make_timeout(timeout)
 
         # Construct the command message
-        command = {"command": name,
-                   "args": args,
-                   "kwargs": kwargs}
-
+        command = {"command": name, "args": args, "kwargs": kwargs}
         self._send_json(command, timeout=timeout)
 
         # Command sent! Attempt to receive the response...
-        while finish_time is None or finish_time > time.time():
-            if finish_time is None:
-                time_left = None
-            else:
-                time_left = max(finish_time - time.time(), 0.0)
-
-            obj = self._recv_json(timeout=time_left)
+        while not timed_out(finish_time):
+            obj = self._recv_json(timeout=time_left(finish_time))
             if "return" in obj:
                 # Success!
                 return obj["return"]
-            else:
-                # Got a notification, keep trying...
-                self._notifications.append(obj)
+            if "exception" in obj:
+                raise SpallocServerException(obj["exception"])
+            # Got a notification, keep trying...
+            self._notifications.append(obj)
 
     def wait_for_notification(self, timeout=None):
         """Return the next notification to arrive.
@@ -256,11 +252,12 @@ class ProtocolClient(object):
         if self._notifications:
             return self._notifications.popleft()
 
-        # Otherwise, wait for a notification to arrive
-        if timeout is None or timeout >= 0.0:
-            return self._recv_json(timeout)
-        else:
+        # Check for a duff timeout
+        if timeout is not None and timeout < 0.0:
             return None
+
+        # Otherwise, wait for a notification to arrive
+        return self._recv_json(timeout)
 
     def __getattr__(self, name):
         """:py:meth:`.call` commands by calling 'methods' of this object.
@@ -272,5 +269,70 @@ class ProtocolClient(object):
         """
         if name.startswith("_"):
             raise AttributeError(name)
-        else:
-            return partial(self.call, name)
+        return partial(self.call, name)
+
+    # Make these explicit; simplifies use from IDEs
+    def version(self):
+        return self.call("version")
+
+    def create_job(self, *args, **kwargs):
+        # If no owner, don't bother with the call
+        if "owner" not in kwargs:
+            raise SpallocServerException(
+                "owner must be specified for all jobs.")
+        return self.call("create_job", *args, **kwargs)
+
+    def job_keepalive(self, job_id):
+        return self.call("job_keepalive", job_id)
+
+    def get_job_state(self, job_id):
+        return self.call("get_job_state", job_id)
+
+    def get_job_machine_info(self, job_id):
+        return self.call("get_job_machine_info", job_id)
+
+    def power_on_job_boards(self, job_id):
+        return self.call("power_on_job_boards", job_id)
+
+    def power_off_job_boards(self, job_id):
+        return self.call("power_off_job_boards", job_id)
+
+    def destroy_job(self, job_id, reason=None):
+        return self.call("destroy_job", job_id, reason)
+
+    def notify_job(self, job_id=None):
+        return self.call("notify_job", job_id)
+
+    def no_notify_job(self, job_id=None):
+        return self.call("no_notify_job", job_id)
+
+    def notify_machine(self, machine_name=None):
+        return self.call("notify_machine", machine_name)
+
+    def no_notify_machine(self, machine_name=None):
+        return self.call("no_notify_machine", machine_name)
+
+    def list_jobs(self):
+        return self.call("list_jobs")
+
+    def list_machines(self):
+        return self.call("list_machines")
+
+    def get_board_position(self, machine_name, x, y, z):
+        return self.call("get_board_position", machine_name, x, y, z)
+
+    def get_board_at_position(self, machine_name, x, y, z):
+        return self.call("get_board_at_position", machine_name, x, y, z)
+
+    def where_is(self, **kwargs):
+        # Test for whether 
+        acceptable = frozenset([
+            frozenset("machine x y z".split()),
+            frozenset("machine cabinet frame board".split()),
+            frozenset("machine chip_x chip_y".split()),
+            frozenset("job_id chip_x chip_y".split())])
+        keywords = frozenset(kwargs)
+        if keywords not in acceptable:
+            raise SpallocServerException(
+                "Invalid arguments: {}".format(", ".join(keywords)))
+        return self.call("where_is", **kwargs)
