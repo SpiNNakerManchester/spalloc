@@ -273,16 +273,14 @@ def list_ips(client, timeout, job_id):
     """
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = info["connections"]
-    if connections is not None:
-        print("x,y,hostname")
-        for ((x, y), hostname) in sorted(connections):
-            print("{},{},{}".format(x, y, hostname))
-        return 0
-    else:
-        sys.stderr.write(
-            "Job {} is queued or does not exist.\n".format(
-                job_id))
+    if connections is None:
+        sys.stderr.write("Job {} is queued or does not exist.\n".format(
+            job_id))
         return 9
+    print("x,y,hostname")
+    for ((x, y), hostname) in sorted(connections):
+        print("{},{},{}".format(x, y, hostname))
+    return 0
 
 
 def destroy_job(client, timeout, job_id, reason=None):

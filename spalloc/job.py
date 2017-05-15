@@ -265,13 +265,11 @@ class Job(object):
             job_state = self._get_state()
             if (job_state.state == JobState.unknown or
                     job_state.state == JobState.destroyed):
-                raise JobDestroyedError(
-                    "Job {} does not exist: {}{}{}".format(
-                        resume_job_id,
-                        job_state.state.name,
-                        ": " if job_state.reason is not None else "",
-                        job_state.reason
-                        if job_state.reason is not None else ""))
+                raise JobDestroyedError("Job {} does not exist: {}{}{}".format(
+                    resume_job_id,
+                    job_state.state.name,
+                    ": " if job_state.reason is not None else "",
+                    job_state.reason if job_state.reason is not None else ""))
 
             # Snag the keepalive interval from the job
             self._keepalive = job_state.keepalive
@@ -713,8 +711,8 @@ class Job(object):
                     "Spalloc server no longer recognises job.")
 
             # Wait for a state change...
-            cur_state = self.wait_for_state_change(cur_state,
-                                                   time_left(finish_time))
+            cur_state = self.wait_for_state_change(
+                cur_state, time_left(finish_time))
 
         # Timed out!
         raise StateChangeTimeoutError()

@@ -281,10 +281,10 @@ def main(argv=None):
                 return retval
             try:
                 client.wait_for_notification()
-                print("")
             except KeyboardInterrupt:
-                print("")
                 return 0
+            finally:
+                print("")
 
     except (IOError, OSError, ProtocolTimeoutError) as e:
         sys.stderr.write("Error communicating with server: {}\n".format(e))
