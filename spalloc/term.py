@@ -305,6 +305,7 @@ def _board_to_cartesian(x, y, z):
 
     return (cx, cy)
 
+
 _LINK_TO_EDGE = {
     0: (+1, -1, 2),  # E
     1: (+1, +0, 1),  # NE
