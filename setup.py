@@ -1,7 +1,8 @@
 from setuptools import setup, find_packages
 
-with open("spalloc/version.py", "r") as f:
-    exec(f.read())
+__version__ = None
+exec(open("spynnaker7/_version.py").read())
+assert __version__
 
 setup(
     name="spalloc",
@@ -11,7 +12,8 @@ setup(
     # Metadata for PyPi
     url="https://github.com/SpiNNakerManchester/spalloc",
     author="Jonathan Heathcote",
-    description="A client for the spalloc_server SpiNNaker machine partitioning and allocation system.",
+    description="A client for the spalloc_server SpiNNaker machine "
+                "partitioning and allocation system.",
     license="GPLv2",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -34,7 +36,11 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["six>=1.8.0", "appdirs", "enum-compat", "pytz", "tzlocal"],
+    install_requires=["six>=1.8.0",
+                      "appdirs",
+                      "enum-compat",
+                      "pytz",
+                      "tzlocal"],
 
     # Scripts
     entry_points={

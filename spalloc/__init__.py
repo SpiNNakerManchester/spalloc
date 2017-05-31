@@ -1,6 +1,7 @@
-from spalloc.version import __version__
+from spalloc.version import __version__  # noqa
 
 # Alias useful objects
-from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
-from spalloc.job import Job, JobDestroyedError, StateChangeTimeoutError
-from spalloc.states import JobState
+from spalloc.protocol_client import ProtocolClient  # noqa
+from spalloc.protocol_client import ProtocolTimeoutError  # noqa
+from spalloc.job import Job, JobDestroyedError, StateChangeTimeoutError  # noqa
+from spalloc.states import JobState  # noqa
