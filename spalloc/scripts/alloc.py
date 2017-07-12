@@ -272,113 +272,89 @@ def main(argv=None):
 
     allocation_args = parser.add_argument_group(
         "allocation requirement arguments")
-    allocation_args.add_argument("what", nargs="*", default=[], type=int,
-                                 metavar="WHAT",
-                                 help="what to allocate: nothing or 1 "
-                                      "requests 1 SpiNN-5 board, NUM requests "
-                                      "at least NUM SpiNN-5 boards, WIDTH "
-                                      "HEIGHT means WIDTHxHEIGHT triads of "
-                                      "SpiNN-5 boards and X Y Z requests a "
-                                      "board the specified logical board "
-                                      "coordinate.")
-    allocation_args.add_argument("--resume", "-r", type=int,
-                                 help="if given, resume keeping the "
-                                      "specified job alive rather than "
-                                      "creating a new job (all allocation "
-                                      "requirements will be ignored)")
-    allocation_args.add_argument("--machine", "-m", nargs="?",
-                                 default=cfg["machine"],
-                                 help="only allocate boards which are part "
-                                      "of a specific machine, or any machine "
-                                      "if no machine is given "
-                                      "(default: %(default)s)")
-    allocation_args.add_argument("--tags", "-t", nargs="*", metavar="TAG",
-                                 default=cfg["tags"] or ["default"],
-                                 help="only allocate boards which have (at "
-                                      "least) the specified flags "
-                                      "(default: {})".format(
-                                          " ".join(cfg["tags"] or [])))
-    allocation_args.add_argument("--min-ratio", type=float, metavar="RATIO",
-                                 default=cfg["min_ratio"],
-                                 help="when allocating by number of boards, "
-                                      "require that the allocation be at "
-                                      "least as square as this ratio "
-                                      "(default: %(default)s)")
-    allocation_args.add_argument("--max-dead-boards", type=int, metavar="NUM",
-                                 default=(-1 if cfg["max_dead_boards"] is None
-                                          else cfg["max_dead_boards"]),
-                                 help="boards allowed to be "
-                                      "dead in the allocation, or -1 to allow "
-                                      "any number of dead boards "
-                                      "(default: %(default)s)")
-    allocation_args.add_argument("--max-dead-links", type=int, metavar="NUM",
-                                 default=(-1 if cfg["max_dead_links"] is None
-                                          else cfg["max_dead_links"]),
-                                 help="inter-board links allowed to be "
-                                      "dead in the allocation, or -1 to allow "
-                                      "any number of dead links "
-                                      "(default: %(default)s)")
-    allocation_args.add_argument("--require-torus", "-w", action="store_true",
-                                 default=cfg["require_torus"],
-                                 help="require that the allocation contain "
-                                      "torus (a.k.a. wrap-around) "
-                                      "links {}".format(
-                                          "(default)" if cfg["require_torus"]
-                                          else ""
-                                      ))
-    allocation_args.add_argument("--no-require-torus", "-W",
-                                 action="store_false", dest="require_torus",
-                                 help="do not require that the allocation "
-                                      "contain torus (a.k.a. wrap-around) "
-                                      "links {}".format(
-                                          "" if cfg["require_torus"]
-                                          else "(default)"
-                                      ))
+    allocation_args.add_argument(
+        "what", nargs="*", default=[], type=int, metavar="WHAT",
+        help="what to allocate: nothing or 1 requests 1 SpiNN-5 board, NUM "
+        "requests at least NUM SpiNN-5 boards, WIDTH HEIGHT means "
+        "WIDTHxHEIGHT triads of SpiNN-5 boards and X Y Z requests a "
+        "board the specified logical board coordinate.")
+    allocation_args.add_argument(
+        "--resume", "-r", type=int,
+        help="if given, resume keeping the specified job alive rather than "
+        "creating a new job (all allocation requirements will be ignored)")
+    allocation_args.add_argument(
+        "--machine", "-m", nargs="?", default=cfg["machine"],
+        help="only allocate boards which are part of a specific machine, or "
+        "any machine if no machine is given (default: %(default)s)")
+    allocation_args.add_argument(
+        "--tags", "-t", nargs="*", metavar="TAG",
+        default=cfg["tags"] or ["default"],
+        help="only allocate boards which have (at least) the specified flags "
+        "(default: {})".format(" ".join(cfg["tags"] or [])))
+    allocation_args.add_argument(
+        "--min-ratio", type=float, metavar="RATIO", default=cfg["min_ratio"],
+        help="when allocating by number of boards, require that the "
+        "allocation be at least as square as this ratio (default: "
+        "%(default)s)")
+    allocation_args.add_argument(
+        "--max-dead-boards", type=int, metavar="NUM", default=(
+            -1 if cfg["max_dead_boards"] is None else cfg["max_dead_boards"]),
+        help="boards allowed to be dead in the allocation, or -1 to allow "
+        "any number of dead boards (default: %(default)s)")
+    allocation_args.add_argument(
+        "--max-dead-links", type=int, metavar="NUM", default=(
+            -1 if cfg["max_dead_links"] is None else cfg["max_dead_links"]),
+        help="inter-board links allowed to be dead in the allocation, or -1 "
+        "to allow any number of dead links (default: %(default)s)")
+    allocation_args.add_argument(
+        "--require-torus", "-w", action="store_true",
+        default=cfg["require_torus"],
+        help="require that the allocation contain torus (a.k.a. wrap-around) "
+        "links {}".format("(default)" if cfg["require_torus"] else ""))
+    allocation_args.add_argument(
+        "--no-require-torus", "-W", action="store_false", dest="require_torus",
+        help="do not require that the allocation contain torus (a.k.a. "
+        "wrap-around) links {}".format(
+            "" if cfg["require_torus"] else "(default)"))
 
     command_args = parser.add_argument_group("command wrapping arguments")
-    command_args.add_argument("--command", "-c", nargs=argparse.REMAINDER,
-                              help="execute the specified command once boards "
-                                   "have been allocated and deallocate the "
-                                   "boards when the application exits ({} and "
-                                   "{hostname} are substituted for the chip "
-                                   "chip at (0, 0)'s hostname, {w} and "
-                                   "{h} give the dimensions of the SpiNNaker "
-                                   "machine in chips, {ethernet_ips} is a "
-                                   "temporary file containing a CSV with "
-                                   "three columns: x, y and hostname giving "
-                                   "the hostname of each Ethernet connected "
-                                   "SpiNNaker chip)")
+    command_args.add_argument(
+        "--command", "-c", nargs=argparse.REMAINDER,
+        help="execute the specified command once boards have been allocated "
+        "and deallocate the boards when the application exits ({} and "
+        "{hostname} are substituted for the chip chip at (0, 0)'s hostname, "
+        "{w} and {h} give the dimensions of the SpiNNaker machine in chips, "
+        "{ethernet_ips} is a temporary file containing a CSV with three "
+        "columns: x, y and hostname giving the hostname of each Ethernet "
+        "connected SpiNNaker chip)")
 
     server_args = parser.add_argument_group("spalloc server arguments")
 
-    server_args.add_argument("--owner", default=cfg["owner"],
-                             help="by convention, the email address of the "
-                                  "owner of the job (default: %(default)s)")
-    server_args.add_argument("--hostname", "-H", default=cfg["hostname"],
-                             help="hostname or IP of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--port", "-P", default=cfg["port"],
-                             type=int,
-                             help="port number of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--keepalive", type=int, metavar="SECONDS",
-                             default=(-1 if cfg["keepalive"] is None
-                                      else cfg["keepalive"]),
-                             help="the interval at which to require "
-                                  "keepalive messages to be sent to "
-                                  "prevent the server cancelling the "
-                                  "job, or -1 to not require keepalive "
-                                  "messages (default: %(default)s)")
-    server_args.add_argument("--reconnect-delay",
-                             default=cfg["reconnect_delay"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait before "
-                                  "reconnecting to the server if the "
-                                  "connection is lost (default: %(default)s)")
-    server_args.add_argument("--timeout", default=cfg["timeout"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait for a response "
-                                  "from the server (default: %(default)s)")
+    server_args.add_argument(
+        "--owner", default=cfg["owner"],
+        help="by convention, the email address of the owner of the job "
+        "(default: %(default)s)")
+    server_args.add_argument(
+        "--hostname", "-H", default=cfg["hostname"],
+        help="hostname or IP of the spalloc server (default: %(default)s)")
+    server_args.add_argument(
+        "--port", "-P", default=cfg["port"], type=int,
+        help="port number of the spalloc server (default: %(default)s)")
+    server_args.add_argument(
+        "--keepalive", type=int, metavar="SECONDS",
+        default=(-1 if cfg["keepalive"] is None else cfg["keepalive"]),
+        help="the interval at which to require keepalive messages to be "
+        "sent to prevent the server cancelling the job, or -1 to not "
+        "require keepalive messages (default: %(default)s)")
+    server_args.add_argument(
+        "--reconnect-delay", default=cfg["reconnect_delay"], type=float,
+        metavar="SECONDS",
+        help="seconds to wait before reconnecting to the server if the "
+        "connection is lost (default: %(default)s)")
+    server_args.add_argument(
+        "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
+        help="seconds to wait for a response from the server "
+        "(default: %(default)s)")
 
     args = parser.parse_args(argv)
 
@@ -408,9 +384,9 @@ def main(argv=None):
     else:
         # Make sure 'what' takes the right form
         if len(args.what) not in (0, 1, 2, 3):
-            parser.error("expected either no arguments, one argument, NUM, "
-                         "two arguments, WIDTH HEIGHT, or three arguments "
-                         "X Y Z")
+            parser.error(
+                "expected either no arguments, one argument, NUM, two "
+                "arguments, WIDTH HEIGHT, or three arguments, X Y Z")
 
         # Unpack arguments for the job and server
         job_args = args.what
@@ -438,9 +414,64 @@ def main(argv=None):
         if not args.quiet:
             t.stream.write("{}\n".format(msg))
 
-    # Reason for destroying the job
-    reason = None
+    def wait_for_job_ready():
+        # Wait for it to become ready, keeping the user informed along the
+        # way
+        old_state = None
+        cur_state = job.state
+        reason = None
+        while True:
+            # Show debug info on state-change
+            if old_state != cur_state:
+                if cur_state == JobState.queued:
+                    info(t.update(t.yellow(
+                        "Job {}: Waiting in queue...".format(job.id))))
+                elif cur_state == JobState.power:
+                    info(t.update(t.yellow(
+                        "Job {}: Waiting for power on...".format(job.id))))
+                elif cur_state == JobState.ready:
+                    # Here we go!
+                    break
+                elif cur_state == JobState.destroyed:
+                    # Exit with error state
+                    try:
+                        reason = job.reason
+                    except (IOError, OSError):
+                        reason = None
+    
+                    if reason is not None:
+                        info(t.update(t.red(
+                            "Job {}: Destroyed: {}".format(
+                                job.id, reason))))
+                    else:
+                        info(t.red("Job {}: Destroyed.".format(job.id)))
+                    return 1, reason
+                elif cur_state == JobState.unknown:
+                    info(t.update(t.red(
+                        "Job {}: Job not recognised by server.".format(
+                            job.id))))
+                    return 2, reason
+                else:
+                    info(t.update(t.red(
+                        "Job {}: Entered an unrecognised state {}.".format(
+                            job.id, cur_state))))
+                    return 3, reason
+    
+            try:
+                old_state = cur_state
+                cur_state = job.wait_for_state_change(cur_state)
+            except KeyboardInterrupt:
+                # Gracefully terminate from keyboard interrupt
+                info(t.update(t.red(
+                    "Job {}: Keyboard interrupt.".format(
+                        job.id))))
+                reason = "Keyboard interrupt."
+                return 4, reason
+        return 0, reason
 
+    # Reason for destroying the job
+
+    reason = None
     try:
         # Create the job
         try:
@@ -451,55 +482,9 @@ def main(argv=None):
         try:
             # Wait for it to become ready, keeping the user informed along the
             # way
-            old_state = None
-            cur_state = job.state
-            while True:
-                # Show debug info on state-change
-                if old_state != cur_state:
-                    if cur_state == JobState.queued:
-                        info(t.update(t.yellow(
-                            "Job {}: Waiting in queue...".format(job.id))))
-                    elif cur_state == JobState.power:
-                        info(t.update(t.yellow(
-                            "Job {}: Waiting for power on...".format(job.id))))
-                    elif cur_state == JobState.ready:
-                        # Here we go!
-                        break
-                    elif cur_state == JobState.destroyed:
-                        # Exit with error state
-                        try:
-                            reason = job.reason
-                        except (IOError, OSError):
-                            reason = None
-
-                        if reason is not None:
-                            info(t.update(t.red(
-                                "Job {}: Destroyed: {}".format(
-                                    job.id, reason))))
-                        else:
-                            info(t.red("Job {}: Destroyed.".format(job.id)))
-                        return 1
-                    elif cur_state == JobState.unknown:
-                        info(t.update(t.red(
-                            "Job {}: Job not recognised by server.".format(
-                                job.id))))
-                        return 2
-                    else:
-                        info(t.update(t.red(
-                            "Job {}: Entered an unrecognised state {}.".format(
-                                job.id, cur_state))))
-                        return 3
-
-                try:
-                    old_state = cur_state
-                    cur_state = job.wait_for_state_change(cur_state)
-                except KeyboardInterrupt:
-                    # Gracefully terminate from keyboard interrupt
-                    info(t.update(t.red(
-                        "Job {}: Keyboard interrupt.".format(
-                            job.id))))
-                    reason = "Keyboard interrupt."
-                    return 4
+            code, reason = wait_for_job_ready()
+            if code != 0:
+                return code
 
             # Machine is now ready
             write_ips_to_csv(job.connections, ip_file_filename)
