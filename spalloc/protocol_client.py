@@ -5,6 +5,8 @@ import json
 import time
 from threading import current_thread, RLock, local
 from collections import deque
+import errno
+import sys
 
 
 class ProtocolTimeoutError(Exception):
@@ -63,13 +65,16 @@ class ProtocolClient(object):
         self._local = local()
         # A queue of unprocessed notifications
         self._notifications = deque()
-        self._dead = False
+        self._dead = True
         self._socks_lock = RLock()
         self._notifications_lock = RLock()
 
     def _get_connection(self, timeout):
         if self._dead:
-            return None
+            if sys.version_info[0] > 2:
+                raise OSError(errno.ENOTCONN, "not connected")
+            else:
+                raise socket.error(errno.ENOTCONN, "not connected")
         connect_needed = False
         key = current_thread()
         with self._socks_lock:
@@ -84,12 +89,31 @@ class ProtocolClient(object):
             # A buffer for incoming, but incomplete, lines of data
             self._local.buffer = b""
             self._local.sock = sock
-            # Partially reentrant (returns to this method) but won't get here
-            # twice in any thread.
-            self._connect(timeout)
+            sock.settimeout(timeout)
+            if not self._do_connect(sock):
+                self._close(key)
+                return self._get_connection(timeout)
 
         sock.settimeout(timeout)
         return sock
+
+    def _do_connect(self, sock):
+        try:
+            sock.connect((self._hostname, self._port))
+            return True
+        except OSError as e:
+            if e.errno != errno.EISCONN:
+                raise
+            return False
+        except socket.error as e:
+            if e[0] != errno.EISCONN:
+                raise
+            return False
+
+    def _has_open_socket(self):
+        if "sock" not in self._local.__dict__:
+            return False
+        return self._local.sock is not None
 
     def connect(self, timeout=None):
         """(Re)connect to the server.
@@ -100,7 +124,7 @@ class ProtocolClient(object):
             If a connection failure occurs.
         """
         # Close any existing connection
-        if self._local.sock is not None:
+        if self._has_open_socket():
             self._close()
         self._dead = False
         self._connect(timeout)
@@ -108,10 +132,7 @@ class ProtocolClient(object):
     def _connect(self, timeout):
         """Try to (re)connect to the server."""
         try:
-            sock = self._get_connection(timeout)
-            sock.connect((self._hostname, self._port))
-            # Success!
-            return
+            return self._get_connection(timeout)
         except (IOError, OSError):
             # Failure, try again...
             self._close()
@@ -126,9 +147,9 @@ class ProtocolClient(object):
             if sock is None:
                 return
             del self._socks[key]
-            if key == current_thread():
-                self._local.sock = None
-                self._local.buffer = b""
+        if key == current_thread():
+            self._local.sock = None
+            self._local.buffer = b""
         sock.close()
 
     def close(self):
@@ -348,5 +369,5 @@ class ProtocolClient(object):
         return self.call("get_board_at_position", machine_name, x, y, z,
                          timeout=timeout)
 
-    def where_is(self, **kwargs):
-        return self.call("where_is", **kwargs)
+    def where_is(self, *args, **kwargs):
+        return self.call("where_is", *args, **kwargs)
