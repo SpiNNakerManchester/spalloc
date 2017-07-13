@@ -3,9 +3,6 @@
 import socket
 import json
 import time
-
-from functools import partial
-
 from collections import deque
 
 
@@ -262,15 +259,57 @@ class ProtocolClient(object):
         else:
             return None
 
-    def __getattr__(self, name):
-        """:py:meth:`.call` commands by calling 'methods' of this object.
+    # The bindings of the Spalloc protocol methods themselves
 
-        For example, the following lines are equivilent::
+    def version(self, timeout=None):
+        return self.call("version", timeout=timeout)
 
-            c.call("foo", 1, bar=2, on_return=f)
-            c.foo(1, bar=2, on_return=f)
-        """
-        if name.startswith("_"):
-            raise AttributeError(name)
-        else:
-            return partial(self.call, name)
+    def create_job(self, *args, **kwargs):
+        return self.call("create_job", *args, **kwargs)
+
+    def job_keepalive(self, job_id, timeout=None):
+        return self.call("job_keepalive", job_id, timeout=timeout)
+
+    def get_job_state(self, job_id, timeout=None):
+        return self.call("get_job_state", job_id, timeout=timeout)
+
+    def get_job_machine_info(self, job_id, timeout=None):
+        return self.call("get_job_machine_info", job_id, timeout=timeout)
+
+    def power_on_job_boards(self, job_id, timeout=None):
+        return self.call("power_on_job_boards", job_id, timeout=timeout)
+
+    def power_off_job_boards(self, job_id, timeout=None):
+        return self.call("power_off_job_boards", job_id, timeout=timeout)
+
+    def destroy_job(self, job_id, reason=None, timeout=None):
+        return self.call("destroy_job", job_id, reason, timeout=timeout)
+
+    def notify_job(self, job_id=None, timeout=None):
+        return self.call("notify_job", job_id, timeout=timeout)
+
+    def no_notify_job(self, job_id=None, timeout=None):
+        return self.call("no_notify_job", job_id, timeout=timeout)
+
+    def notify_machine(self, machine_name=None, timeout=None):
+        return self.call("notify_machine", machine_name, timeout=timeout)
+
+    def no_notify_machine(self, machine_name=None, timeout=None):
+        return self.call("no_notify_machine", machine_name, timeout=timeout)
+
+    def list_jobs(self, timeout=None):
+        return self.call("list_jobs", timeout=timeout)
+
+    def list_machines(self, timeout=None):
+        return self.call("list_machines", timeout=timeout)
+
+    def get_board_position(self, machine_name, x, y, z, timeout=None):
+        return self.call("get_board_position", machine_name, x, y, z,
+                         timeout=timeout)
+
+    def get_board_at_position(self, machine_name, x, y, z, timeout=None):
+        return self.call("get_board_at_position", machine_name, x, y, z,
+                         timeout=timeout)
+
+    def where_is(self, **kwargs):
+        return self.call("where_is", **kwargs)
