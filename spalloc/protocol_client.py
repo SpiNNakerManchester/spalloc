@@ -386,10 +386,11 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, **kwargs):
+    def where_is(self, timeout=None, **kwargs):
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)
         if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
             raise SpallocServerException(
                 "Invalid arguments: {}".format(", ".join(keywords)))
+        kwargs["timeout"] = timeout
         return self.call("where_is", **kwargs)
