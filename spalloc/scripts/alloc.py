@@ -438,7 +438,7 @@ def main(argv=None):
                         reason = job.reason
                     except (IOError, OSError):
                         reason = None
-    
+
                     if reason is not None:
                         info(t.update(t.red(
                             "Job {}: Destroyed: {}".format(
@@ -456,7 +456,7 @@ def main(argv=None):
                         "Job {}: Entered an unrecognised state {}.".format(
                             job.id, cur_state))))
                     return 3, reason
-    
+
             try:
                 old_state = cur_state
                 cur_state = job.wait_for_state_change(cur_state)
