@@ -1,15 +1,14 @@
 """A high-level Python interface for allocating SpiNNaker boards."""
 
-import threading
 from collections import namedtuple
 import logging
-
-from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
-from spalloc.config import read_config, SEARCH_PATH
-from spalloc.states import JobState
-from spalloc._utils import time_left, timed_out, make_timeout
+import threading
 import time
 
+from .protocol_client import ProtocolClient, ProtocolTimeoutError
+from .config import read_config, SEARCH_PATH
+from .states import JobState
+from ._utils import time_left, timed_out, make_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +16,6 @@ logger = logging.getLogger(__name__)
 # its own logging so we must add one ourselves as per
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 logger.addHandler(logging.StreamHandler())
-
 
 VERSION_RANGE_START = (0, 4, 0)
 VERSION_RANGE_STOP = (2, 0, 0)
@@ -239,7 +237,6 @@ class Job(object):
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
-        self._client_lock = threading.RLock()
 
         # Set-up (but don't start) background keepalive thread
         self._keepalive_thread = threading.Thread(
@@ -333,8 +330,8 @@ class Job(object):
             self.destroy()
             raise
 
-    def __exit__(self, type=None, value=None,  # @ReservedAssignment
-                 traceback=None):
+    def __exit__(self, type=None,  # @ReservedAssignment
+                 value=None, traceback=None):  # @UnusedVariable
         self.destroy()
         return False
 
@@ -373,20 +370,18 @@ class Job(object):
         if keepalive is not None:
             keepalive /= 2.0
         while not self._stop.wait(keepalive):
-            with self._client_lock:
-                # Keep trying to send the keep-alive packet, if this fails,
-                # keep trying to reconnect until it succeeds.
-                while not self._stop.is_set():
-                    try:
-                        self._client.job_keepalive(
-                            self.id, timeout=self._timeout)
-                        break
-                    except (ProtocolTimeoutError, IOError, OSError):
-                        # Something went wrong, reconnect, after a delay which
-                        # may be interrupted by the thread being stopped
-                        self._client.close()
-                        if not self._stop.wait(self._reconnect_delay):
-                            self._reconnect()
+            # Keep trying to send the keep-alive packet, if this fails,
+            # keep trying to reconnect until it succeeds.
+            while not self._stop.is_set():
+                try:
+                    self._client.job_keepalive(self.id, timeout=self._timeout)
+                    break
+                except (ProtocolTimeoutError, IOError, OSError):
+                    # Something went wrong, reconnect, after a delay which
+                    # may be interrupted by the thread being stopped
+                    self._client._close()
+                    if not self._stop.wait(self._reconnect_delay):
+                        self._reconnect()
 
     def destroy(self, reason=None):
         """Destroy the job and disconnect from the server.
@@ -431,14 +426,12 @@ class Job(object):
         -------
         :py:class:`._JobStateTuple`
         """
-        with self._client_lock:
-            state = self._client.get_job_state(self.id, timeout=self._timeout)
-            return _JobStateTuple(
-                state=JobState(state["state"]),
-                power=state["power"],
-                keepalive=state["keepalive"],
-                reason=state["reason"],
-            )
+        state = self._client.get_job_state(self.id, timeout=self._timeout)
+        return _JobStateTuple(
+            state=JobState(state["state"]),
+            power=state["power"],
+            keepalive=state["keepalive"],
+            reason=state["reason"])
 
     def set_power(self, power):
         """Turn the boards allocated to the job on or off.
@@ -454,13 +447,10 @@ class Job(object):
             True to power on the boards, False to power off. If the boards are
             already turned on, setting power to True will reset them.
         """
-        with self._client_lock:
-            if power:
-                self._client.power_on_job_boards(
-                    self.id, timeout=self._timeout)
-            else:
-                self._client.power_off_job_boards(
-                    self.id, timeout=self._timeout)
+        if power:
+            self._client.power_on_job_boards(self.id, timeout=self._timeout)
+        else:
+            self._client.power_off_job_boards(self.id, timeout=self._timeout)
 
     def reset(self):
         """Reset (power-cycle) the boards allocated to the job.
@@ -480,20 +470,18 @@ class Job(object):
         -------
         :py:class:`._JobMachineInfoTuple`
         """
-        with self._client_lock:
-            info = self._client.get_job_machine_info(
-                self.id, timeout=self._timeout)
+        info = self._client.get_job_machine_info(
+            self.id, timeout=self._timeout)
 
-            return _JobMachineInfoTuple(
-                width=info["width"],
-                height=info["height"],
-                connections=({(x, y): hostname
-                              for (x, y), hostname in info["connections"]}
-                             if info["connections"] is not None
-                             else None),
-                machine_name=info["machine_name"],
-                boards=info["boards"],
-            )
+        return _JobMachineInfoTuple(
+            width=info["width"],
+            height=info["height"],
+            connections=({(x, y): hostname
+                          for (x, y), hostname in info["connections"]}
+                         if info["connections"] is not None
+                         else None),
+            machine_name=info["machine_name"],
+            boards=info["boards"])
 
     @property
     def state(self):
@@ -600,8 +588,7 @@ class Job(object):
         while not timed_out(finish_time):
             try:
                 # Watch for changes in this Job's state
-                with self._client_lock:
-                    self._client.notify_job(self.id)
+                self._client.notify_job(self.id)
 
                 # Wait for job state to change
                 while not timed_out(finish_time):
@@ -628,47 +615,44 @@ class Job(object):
     def _do_wait_for_a_change(self, finish_time):
         """Wait for a state change and keep the job alive.
         """
-        with self._client_lock:
-            # Since we're about to block holding the client lock, we must be
-            # responsible for keeping everything alive.
-            while not timed_out(finish_time):
-                self._client.job_keepalive(self.id, timeout=self._timeout)
+        # Since we're about to block holding the client lock, we must be
+        # responsible for keeping everything alive.
+        while not timed_out(finish_time):
+            self._client.job_keepalive(self.id, timeout=self._timeout)
 
-                # Wait for the job to change
-                try:
-                    # Block waiting for the job to change no-longer than the
-                    # user-specified timeout or half the keepalive interval.
-                    if finish_time is not None and self._keepalive is not None:
-                        wait_timeout = min(self._keepalive / 2.0,
-                                           time_left(finish_time))
-                    elif finish_time is None:
-                        wait_timeout = None if self._keepalive is None \
-                            else self._keepalive / 2.0
-                    else:
-                        wait_timeout = time_left(finish_time)
-                    if wait_timeout is None or wait_timeout >= 0.0:
-                        self._client.wait_for_notification(wait_timeout)
-                        return True
-                except ProtocolTimeoutError:
-                    # Its been a while, send a keep-alive since we're still
-                    # holding the lock
-                    pass
-            else:
-                # The user's timeout expired while waiting for a state change
-                return False
+            # Wait for the job to change
+            try:
+                # Block waiting for the job to change no-longer than the
+                # user-specified timeout or half the keepalive interval.
+                if finish_time is not None and self._keepalive is not None:
+                    wait_timeout = min(self._keepalive / 2.0,
+                                       time_left(finish_time))
+                elif finish_time is None:
+                    wait_timeout = None if self._keepalive is None \
+                        else self._keepalive / 2.0
+                else:
+                    wait_timeout = time_left(finish_time)
+                if wait_timeout is None or wait_timeout >= 0.0:
+                    self._client.wait_for_notification(wait_timeout)
+                    return True
+            except ProtocolTimeoutError:
+                # Its been a while, send a keep-alive since we're still
+                # holding the lock
+                pass
+        # The user's timeout expired while waiting for a state change
+        return False
 
     def _do_reconnect(self, finish_time):
         """Reconnect after the reconnection delay (or timeout, whichever
         came first).
         """
-        with self._client_lock:
-            self._client.close()
-            if finish_time is not None:
-                delay = min(time_left(finish_time), self._reconnect_delay)
-            else:
-                delay = self._reconnect_delay
-            time.sleep(max(0.0, delay))
-            self._reconnect()
+        self._client.close()
+        if finish_time is not None:
+            delay = min(time_left(finish_time), self._reconnect_delay)
+        else:
+            delay = self._reconnect_delay
+        time.sleep(max(0.0, delay))
+        self._reconnect()
 
     def wait_until_ready(self, timeout=None):
         """Block until the job is allocated and ready.
