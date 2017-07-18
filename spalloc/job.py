@@ -711,7 +711,7 @@ class Job(object):
         :return: tuple of (cabinet, frame, board)
         """
         result = self._client.where_is(
-            job_id=self._id, chip_x=chip_x, chip_y=chip_y)
+            job_id=self.id, chip_x=chip_x, chip_y=chip_y)
         if result is None:
             raise ValueError("received None instead of machine location")
         return result['physical']
