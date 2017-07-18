@@ -3,10 +3,10 @@
 import socket
 import json
 import time
-
-from functools import partial
-
+from threading import current_thread, RLock, local
 from collections import deque
+import errno
+import sys
 
 
 class ProtocolTimeoutError(Exception):
@@ -58,15 +58,62 @@ class ProtocolClient(object):
         """
         self._hostname = hostname
         self._port = port
-
-        # The socket connected to the server or None if disconnected.
-        self._sock = None
-
-        # A buffer for incoming, but incomplete, lines of data
-        self._buf = b""
-
+        # Mapping from threads to sockets. Kept because we need to have way to
+        # shut down all sockets at once.
+        self._socks = dict()
+        # Thread local variables
+        self._local = local()
         # A queue of unprocessed notifications
         self._notifications = deque()
+        self._dead = True
+        self._socks_lock = RLock()
+        self._notifications_lock = RLock()
+
+    def _get_connection(self, timeout):
+        if self._dead:
+            if sys.version_info[0] > 2:
+                raise OSError(errno.ENOTCONN, "not connected")
+            else:
+                raise socket.error(errno.ENOTCONN, "not connected")
+        connect_needed = False
+        key = current_thread()
+        with self._socks_lock:
+            sock = self._socks.get(key, None)
+            if sock is None:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                # The socket connected to the server or None if disconnected.
+                self._socks[key] = sock
+                connect_needed = True
+
+        if connect_needed:
+            # A buffer for incoming, but incomplete, lines of data
+            self._local.buffer = b""
+            self._local.sock = sock
+            sock.settimeout(timeout)
+            if not self._do_connect(sock):  # pragma: no cover
+                self._close(key)
+                return self._get_connection(timeout)
+
+        sock.settimeout(timeout)
+        return sock
+
+    def _do_connect(self, sock):
+        success = False
+        try:
+            sock.connect((self._hostname, self._port))
+            success = True
+        except OSError as e:
+            if e.errno != errno.EISCONN:
+                raise
+        except socket.error as e:
+            if e[0] != errno.EISCONN:
+                raise
+        return success
+
+    def _has_open_socket(self):
+        if "sock" not in self._local.__dict__:
+            return False
+        return self._local.sock is not None
 
     def connect(self, timeout=None):
         """(Re)connect to the server.
@@ -77,33 +124,45 @@ class ProtocolClient(object):
             If a connection failure occurs.
         """
         # Close any existing connection
-        if self._sock is not None:
-            self.close()
+        if self._has_open_socket():
+            self._close()
+        self._dead = False
+        self._connect(timeout)
 
-        # Try to (re)connect to the server
+    def _connect(self, timeout):
+        """Try to (re)connect to the server."""
         try:
-            self._sock = socket.socket(socket.AF_INET,
-                                       socket.SOCK_STREAM)
-            self._sock.settimeout(timeout)
-            self._sock.connect((self._hostname, self._port))
-            # Success!
-            return
+            return self._get_connection(timeout)
         except (IOError, OSError):
-            # Failiure, try again...
-            self.close()
-
+            # Failure, try again...
+            self._close()
             # Pass on the exception
             raise
 
+    def _close(self, key=None):
+        if key is None:
+            key = current_thread()
+        with self._socks_lock:
+            sock = self._socks.get(key, None)
+            if sock is None:  # pragma: no cover
+                return
+            del self._socks[key]
+        if key == current_thread():
+            self._local.sock = None
+            self._local.buffer = b""
+        sock.close()
+
     def close(self):
         """Disconnect from the server."""
-        if self._sock is not None:
-            self._sock.close()
-        self._sock = None
-        self._buf = b""
+        self._dead = True
+        with self._socks_lock:
+            keys = list(self._socks.keys())
+        for key in keys:
+            self._close(key)
+        self._local = local()
 
     def _recv_json(self, timeout=None):
-        """Recieve a line of JSON from the server.
+        """Receive a line of JSON from the server.
 
         Parameters
         ----------
@@ -123,14 +182,12 @@ class ProtocolClient(object):
         OSError
             If the socket is unusable or becomes disconnected.
         """
-        if self._sock is None:
-            raise OSError("Not connected!")
+        sock = self._get_connection(timeout)
 
         # Wait for some data to arrive
-        while b"\n" not in self._buf:
+        while b"\n" not in self._local.buffer:
             try:
-                self._sock.settimeout(timeout)
-                data = self._sock.recv(1024)
+                data = sock.recv(1024)
             except socket.timeout:
                 raise ProtocolTimeoutError("recv timed out.")
 
@@ -138,10 +195,10 @@ class ProtocolClient(object):
             if len(data) == 0:
                 raise OSError("Connection closed.")
 
-            self._buf += data
+            self._local.buffer += data
 
         # Unpack and return the JSON
-        line, _, self._buf = self._buf.partition(b"\n")
+        line, _, self._local.buffer = self._local.buffer.partition(b"\n")
         return json.loads(line.decode("utf-8"))
 
     def _send_json(self, obj, timeout=None):
@@ -162,15 +219,12 @@ class ProtocolClient(object):
         OSError
             If the socket is unusable or becomes disconnected.
         """
-        # Connect if not already connected
-        if self._sock is None:
-            raise OSError("Not connected!")
+        sock = self._get_connection(timeout)
 
         # Send the line
-        self._sock.settimeout(timeout)
         data = json.dumps(obj).encode("utf-8") + b"\n"
         try:
-            if self._sock.send(data) != len(data):
+            if sock.send(data) != len(data):
                 # XXX: If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
         except socket.timeout:
@@ -221,8 +275,8 @@ class ProtocolClient(object):
             if "return" in obj:
                 # Success!
                 return obj["return"]
-            else:
-                # Got a notification, keep trying...
+            # Got a notification, keep trying...
+            with self._notifications_lock:
                 self._notifications.append(obj)
 
     def wait_for_notification(self, timeout=None):
@@ -253,8 +307,9 @@ class ProtocolClient(object):
             If the socket is unusable or becomes disconnected.
         """
         # If we already have a notification, return it
-        if self._notifications:
-            return self._notifications.popleft()
+        with self._notifications_lock:
+            if self._notifications:
+                return self._notifications.popleft()
 
         # Otherwise, wait for a notification to arrive
         if timeout is None or timeout >= 0.0:
@@ -262,15 +317,62 @@ class ProtocolClient(object):
         else:
             return None
 
-    def __getattr__(self, name):
-        """:py:meth:`.call` commands by calling 'methods' of this object.
+    # The bindings of the Spalloc protocol methods themselves
 
-        For example, the following lines are equivilent::
+    def version(self, timeout=None):  # pragma: no cover
+        return self.call("version", timeout=timeout)
 
-            c.call("foo", 1, bar=2, on_return=f)
-            c.foo(1, bar=2, on_return=f)
-        """
-        if name.startswith("_"):
-            raise AttributeError(name)
-        else:
-            return partial(self.call, name)
+    def create_job(self, *args, **kwargs):  # pragma: no cover
+        return self.call("create_job", *args, **kwargs)
+
+    def job_keepalive(self, job_id, timeout=None):  # pragma: no cover
+        return self.call("job_keepalive", job_id, timeout=timeout)
+
+    def get_job_state(self, job_id, timeout=None):  # pragma: no cover
+        return self.call("get_job_state", job_id, timeout=timeout)
+
+    def get_job_machine_info(self, job_id, timeout=None):  # pragma: no cover
+        return self.call("get_job_machine_info", job_id, timeout=timeout)
+
+    def power_on_job_boards(self, job_id, timeout=None):  # pragma: no cover
+        return self.call("power_on_job_boards", job_id, timeout=timeout)
+
+    def power_off_job_boards(self, job_id, timeout=None):  # pragma: no cover
+        return self.call("power_off_job_boards", job_id, timeout=timeout)
+
+    def destroy_job(self, job_id, reason=None,
+                    timeout=None):  # pragma: no cover
+        return self.call("destroy_job", job_id, reason, timeout=timeout)
+
+    def notify_job(self, job_id=None, timeout=None):  # pragma: no cover
+        return self.call("notify_job", job_id, timeout=timeout)
+
+    def no_notify_job(self, job_id=None, timeout=None):  # pragma: no cover
+        return self.call("no_notify_job", job_id, timeout=timeout)
+
+    def notify_machine(self, machine_name=None,
+                       timeout=None):  # pragma: no cover
+        return self.call("notify_machine", machine_name, timeout=timeout)
+
+    def no_notify_machine(self, machine_name=None,
+                          timeout=None):  # pragma: no cover
+        return self.call("no_notify_machine", machine_name, timeout=timeout)
+
+    def list_jobs(self, timeout=None):  # pragma: no cover
+        return self.call("list_jobs", timeout=timeout)
+
+    def list_machines(self, timeout=None):  # pragma: no cover
+        return self.call("list_machines", timeout=timeout)
+
+    def get_board_position(self, machine_name, x, y, z,
+                           timeout=None):  # pragma: no cover
+        return self.call("get_board_position", machine_name, x, y, z,
+                         timeout=timeout)
+
+    def get_board_at_position(self, machine_name, x, y, z,
+                              timeout=None):  # pragma: no cover
+        return self.call("get_board_at_position", machine_name, x, y, z,
+                         timeout=timeout)
+
+    def where_is(self, *args, **kwargs):
+        return self.call("where_is", *args, **kwargs)

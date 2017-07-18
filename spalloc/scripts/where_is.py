@@ -165,21 +165,21 @@ def main(argv=None):
         if location is None:
             sys.stderr.write("No boards at the specified location.\n")
             return 4
-        else:
-            out = OrderedDict()
-            out["Machine"] = location["machine"]
-            out["Physical location"] = "Cabinet {}, Frame {}, Board {}".format(
-                *location["physical"])
-            out["Board coordinate"] = tuple(location["logical"])
-            out["Machine chip coordinates"] = tuple(location["chip"])
-            if show_board_chip:
-                out["Coordinates within board"] = tuple(location["board_chip"])
-            out["Job using board"] = location["job_id"]
-            if location["job_id"]:
-                out["Coordinates within job"] = tuple(location["job_chip"])
 
-            print(render_definitions(out))
-            return 0
+        out = OrderedDict()
+        out["Machine"] = location["machine"]
+        out["Physical location"] = "Cabinet {}, Frame {}, Board {}".format(
+            *location["physical"])
+        out["Board coordinate"] = tuple(location["logical"])
+        out["Machine chip coordinates"] = tuple(location["chip"])
+        if show_board_chip:
+            out["Coordinates within board"] = tuple(location["board_chip"])
+        out["Job using board"] = location["job_id"]
+        if location["job_id"]:
+            out["Coordinates within job"] = tuple(location["job_chip"])
+
+        print(render_definitions(out))
+        return 0
 
     except (IOError, OSError, ProtocolTimeoutError) as e:
         sys.stderr.write("Error communicating with server: {}\n".format(e))
