@@ -2,8 +2,8 @@ import pytest
 
 from mock import Mock
 
-from spalloc.scripts.where_is import \
-    main, VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc.scripts.where_is import main
+from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
 
 
 @pytest.fixture
@@ -19,10 +19,8 @@ def client(monkeypatch):
         "job_id": 11,
         "job_chip": [13, 12],
     }
-
-    import spalloc.scripts.where_is
-    monkeypatch.setattr(spalloc.scripts.where_is,
-                        "ProtocolClient",
+    monkeypatch.setattr(main,
+                        "clientFactory",
                         Mock(return_value=client))
     return client
 

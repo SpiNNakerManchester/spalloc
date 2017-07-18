@@ -7,17 +7,16 @@ import datetime
 from spalloc import JobState
 from spalloc.term import Terminal
 from spalloc.scripts.job import \
-    show_job_info, watch_job, power_job, list_ips, destroy_job, main, \
+    show_job_info, watch_job, power_job, list_ips, destroy_job, main
+from spalloc.scripts.support import \
     VERSION_RANGE_START, VERSION_RANGE_STOP
 
 
 @pytest.fixture
 def mock_protocol_client(monkeypatch):
     mock_protocol_client = Mock()
-
-    import spalloc.scripts.job
-    monkeypatch.setattr(spalloc.scripts.job,
-                        "ProtocolClient",
+    monkeypatch.setattr(main,
+                        "clientFactory",
                         mock_protocol_client)
     return mock_protocol_client
 

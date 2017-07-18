@@ -1,11 +1,10 @@
+import collections
+import datetime
+from mock import Mock
 import pytest
 
-from mock import Mock
-
-import datetime
-
-from spalloc.scripts.ps import \
-    main, render_job_list, VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc.scripts.ps import main, ProcessListScript
+from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
 from spalloc.term import Terminal
 from spalloc import JobState
 
@@ -104,7 +103,8 @@ def test_render_job_list(machine, owner):
         },
     ]
 
-    assert render_job_list(t, jobs, machine, owner) == (
+    nt = collections.namedtuple("args", "machine,owner")
+    assert ProcessListScript.render_job_list(t, jobs, nt(machine, owner)) == (
         "ID  State  Power  Boards  Machine  Created at           Keepalive  Owner\n" +  # noqa
         (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me\n"      # noqa
          if not owner else "") +

@@ -5,7 +5,8 @@ from mock import Mock
 from spalloc.term import Terminal
 
 from spalloc.scripts.machine import \
-    main, generate_keys, list_machines, show_machine, \
+    main, generate_keys, list_machines, show_machine
+from spalloc.scripts.support import \
     VERSION_RANGE_START, VERSION_RANGE_STOP
 
 
@@ -13,9 +14,8 @@ from spalloc.scripts.machine import \
 def client(monkeypatch):
     client = Mock()
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
-    import spalloc.scripts.machine
-    monkeypatch.setattr(spalloc.scripts.machine,
-                        "ProtocolClient",
+    monkeypatch.setattr(main,
+                        "clientFactory",
                         Mock(return_value=client))
     return client
 
