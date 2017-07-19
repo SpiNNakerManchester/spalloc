@@ -1,13 +1,37 @@
+import collections
+import datetime
+from mock import Mock, MagicMock
 import pytest
 
-from mock import Mock
-
-import datetime
-
-from spalloc.scripts.ps import \
-    main, render_job_list, VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc.scripts.ps import main, render_job_list
+from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
 from spalloc.term import Terminal
 from spalloc import JobState
+
+
+@pytest.fixture
+def clientFactory(monkeypatch):
+    mock = Mock()
+    monkeypatch.setattr(main, "clientFactory", mock)
+    return mock
+
+
+@pytest.fixture
+def client(clientFactory):
+    client = MagicMock()
+    client.__enter__.return_value = client
+    client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
+    client.__exit__.return_value = False
+    clientFactory.return_value = client
+    return client
+
+
+@pytest.fixture
+def faux_render(monkeypatch):
+    import spalloc.scripts.ps
+    render_job_list = Mock()
+    monkeypatch.setattr(spalloc.scripts.ps, "render_job_list", render_job_list)
+    return render_job_list
 
 
 @pytest.mark.parametrize("machine", [None, "a"])
@@ -104,7 +128,8 @@ def test_render_job_list(machine, owner):
         },
     ]
 
-    assert render_job_list(t, jobs, machine, owner) == (
+    nt = collections.namedtuple("args", "machine,owner")
+    assert render_job_list(t, jobs, nt(machine, owner)) == (
         "ID  State  Power  Boards  Machine  Created at           Keepalive  Owner\n" +  # noqa
         (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me\n"      # noqa
          if not owner else "") +
@@ -125,81 +150,48 @@ def test_args_no_hostname(no_config_files):
         main("".split())
 
 
-def test_args_from_file(basic_config_file, basic_job_kwargs, monkeypatch):
-    # Mock out the ProtocolClient
-    import spalloc.scripts.ps
-    pc = Mock()
-    PC = Mock(return_value=pc)
-    pc.version.return_value = ".".join(map(str, VERSION_RANGE_START))
-    pc.list_jobs.return_value = []
-    monkeypatch.setattr(spalloc.scripts.ps, "ProtocolClient", PC)
-    render_job_list = Mock()
-    monkeypatch.setattr(spalloc.scripts.ps, "render_job_list", render_job_list)
-
+def test_args_from_file(basic_config_file, basic_job_kwargs, clientFactory,
+                        client, faux_render):
+    client.list_jobs.return_value = []
     assert main("".split()) == 0
+    clientFactory.assert_called_once_with(basic_job_kwargs["hostname"],
+                                          basic_job_kwargs["port"])
+    assert faux_render.mock_calls[0][1][1] == []
+    assert faux_render.mock_calls[0][1][2].machine is None
+    assert faux_render.mock_calls[0][1][2].owner is None
 
-    PC.assert_called_once_with(basic_job_kwargs["hostname"],
-                               basic_job_kwargs["port"])
-    assert render_job_list.mock_calls[0][1][1] == []
-    assert render_job_list.mock_calls[0][1][2] is None
-    assert render_job_list.mock_calls[0][1][3] is None
 
-
-def test_args(basic_config_file, basic_job_kwargs, monkeypatch):
-    # Mock out the ProtocolClient
-    import spalloc.scripts.ps
-    pc = Mock()
-    PC = Mock(return_value=pc)
-    pc.version.return_value = ".".join(map(str, VERSION_RANGE_START))
-    pc.list_jobs.return_value = []
-    pc.wait_for_notification.side_effect = KeyboardInterrupt()
-    monkeypatch.setattr(spalloc.scripts.ps, "ProtocolClient", PC)
-    render_job_list = Mock()
-    monkeypatch.setattr(spalloc.scripts.ps, "render_job_list", render_job_list)
-
+def test_args(basic_config_file, basic_job_kwargs, clientFactory, client,
+              faux_render):
+    client.list_jobs.return_value = []
+    client.wait_for_notification.side_effect = KeyboardInterrupt()
     assert main("--hostname pstastic --port 10 --timeout 9.0 "
                 "--machine foo --owner bar --watch".split()) == 0
+    clientFactory.assert_called_once_with("pstastic", 10)
+    client.wait_for_notification.assert_called_once_with()
+    assert faux_render.mock_calls[0][1][1] == []
+    assert faux_render.mock_calls[0][1][2].machine == "foo"
+    assert faux_render.mock_calls[0][1][2].owner == "bar"
 
-    PC.assert_called_once_with("pstastic", 10)
-    pc.wait_for_notification.assert_called_once_with()
-    assert render_job_list.mock_calls[0][1][1] == []
-    assert render_job_list.mock_calls[0][1][2] == "foo"
-    assert render_job_list.mock_calls[0][1][3] == "bar"
 
-
-def test_connection_error(basic_config_file, monkeypatch):
-    # Mock out the ProtocolClient
-    import spalloc.scripts.ps
-    pc = Mock()
-    PC = Mock(return_value=pc)
-    pc.connect.side_effect = IOError()
-    monkeypatch.setattr(spalloc.scripts.ps, "ProtocolClient", PC)
+def test_connection_error(basic_config_file, client):
+    client.list_jobs.side_effect = IOError
 
     assert main("".split()) == 1
 
 
 @pytest.mark.parametrize("version", [(0, 0, 0), VERSION_RANGE_STOP])
-def test_version_error(basic_config_file, version, monkeypatch):
-    # Mock out the ProtocolClient
-    import spalloc.scripts.ps
-    pc = Mock()
-    PC = Mock(return_value=pc)
-    pc.version.return_value = ".".join(map(str, version))
-    monkeypatch.setattr(spalloc.scripts.ps, "ProtocolClient", PC)
-
-    assert main("".split()) == 2
+def test_version_error(basic_config_file, version, client):
+    client.version.return_value = ".".join(map(str, version))
+    with pytest.raises(SystemExit) as exn:
+        main("".split())
+    assert exn.value.code == 2
 
 
-def test_watch(basic_config_file, basic_job_kwargs, monkeypatch):
-    # Mock out the ProtocolClient
-    import spalloc.scripts.ps
-    pc = Mock()
-    PC = Mock(return_value=pc)
-    pc.version.return_value = ".".join(map(str, VERSION_RANGE_START))
-    pc.list_jobs.return_value = []
-    pc.wait_for_notification.side_effect = [None, KeyboardInterrupt]
-    monkeypatch.setattr(spalloc.scripts.ps, "ProtocolClient", PC)
+def test_watch(basic_config_file, basic_job_kwargs, client):
+    client.list_jobs.return_value = []
+    client.wait_for_notification.side_effect = [None, KeyboardInterrupt]
 
     assert main("--watch".split()) == 0
 
-    assert len(pc.list_jobs.mock_calls) == 2
+    assert len(client.list_jobs.mock_calls) == 2

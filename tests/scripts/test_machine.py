@@ -1,21 +1,24 @@
 import pytest
 
-from mock import Mock
+from mock import Mock, MagicMock
 
 from spalloc.term import Terminal
 
 from spalloc.scripts.machine import \
-    main, generate_keys, list_machines, show_machine, \
-    VERSION_RANGE_START, VERSION_RANGE_STOP
+    main, generate_keys, list_machines, show_machine
+from spalloc.scripts.support import \
+    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate
+from spalloc.protocol_client import ProtocolError
 
 
 @pytest.fixture
 def client(monkeypatch):
-    client = Mock()
+    client = MagicMock()
+    client.__enter__.return_value = client
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
-    import spalloc.scripts.machine
-    monkeypatch.setattr(spalloc.scripts.machine,
-                        "ProtocolClient",
+    client.__exit__.return_value = False
+    monkeypatch.setattr(main,
+                        "clientFactory",
                         Mock(return_value=client))
     return client
 
@@ -62,7 +65,7 @@ def test_list_machines(capsys):
          "allocated_machine_name": None, "boards": None},
     ]
 
-    assert list_machines(t, machines, jobs) == 0
+    list_machines(t, machines, jobs)
 
     out, err = capsys.readouterr()
     assert out == (
@@ -105,7 +108,7 @@ def test_show_machine(capsys):
          "allocated_machine_name": None, "boards": None},
     ]
 
-    assert show_machine(t, machines, jobs, "m1") == 0
+    show_machine(t, machines, jobs, "m1")
 
     out, err = capsys.readouterr()
     assert out == (
@@ -158,7 +161,7 @@ def test_show_machine_compact(capsys):
          "allocated_machine_name": None, "boards": None},
     ]
 
-    assert show_machine(t, machines, jobs, "m1", True) == 0
+    show_machine(t, machines, jobs, "m1", True)
 
     out, err = capsys.readouterr()
     assert out == (
@@ -189,7 +192,9 @@ def test_show_machine_fail():
 
     jobs = []
 
-    assert show_machine(t, machines, jobs, "missing") == 6
+    with pytest.raises(Terminate) as exn:
+        show_machine(t, machines, jobs, "missing")
+    assert exn.value._code == 6
 
 
 def test_no_hostname(no_config_files):
@@ -206,11 +211,13 @@ def test_detailed_without_machine(basic_config_file):
                                      VERSION_RANGE_STOP])
 def test_bad_version(basic_config_file, client, version):
     client.version.return_value = ".".join(map(str, version))
-    assert main("".split()) == 2
+    with pytest.raises(SystemExit) as exn:
+        main("".split())
+    assert exn.value.code == 2
 
 
 def test_io_error(basic_config_file, client):
-    client.version.side_effect = IOError()
+    client.version.side_effect = ProtocolError()
     assert main("".split()) == 1
 
 
@@ -239,7 +246,9 @@ def test_specify_missing_machine(basic_config_file, client):
          "dead_links": []},
     ]
     client.list_jobs.return_value = []
-    assert main("n".split()) == 6
+    with pytest.raises(SystemExit) as exn:
+        main("n".split())
+    assert exn.value.code == 6
 
 
 @pytest.mark.parametrize("args", ["-w", "m -w"])
@@ -262,5 +271,7 @@ def test_watch_fail(basic_config_file, client):
     client.list_jobs.return_value = []
 
     client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
-    assert main("m -w".split()) == 6
+    with pytest.raises(SystemExit) as exn:
+        main("m -w".split())
+    assert exn.value.code == 6
     assert len(client.wait_for_notification.mock_calls) == 0

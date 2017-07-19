@@ -55,116 +55,82 @@ import argparse
 
 from collections import OrderedDict
 
-from spalloc import config
-from spalloc import __version__, ProtocolClient, ProtocolTimeoutError
+from spalloc import __version__
 from spalloc.term import render_definitions
+from .support import Terminate, Script
 
 
-# The acceptable range of server version numbers
-VERSION_RANGE_START = (0, 3, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
+class WhereIsScript(Script):
+    def get_parser(self, cfg):  # @UnusedVariable
+        parser = argparse.ArgumentParser(
+            description="Find out the location (physical or logical) of a "
+                        "chip or board.")
+        parser.add_argument(
+            "--version", "-V", action="version", version=__version__)
+        control_args = parser.add_mutually_exclusive_group(required=True)
+        control_args.add_argument(
+            "--board", "-b", "--logical", "-l", nargs=4,
+            metavar=("MACHINE", "X", "Y", "Z"),
+            help="specify the logical board coordinate")
+        control_args.add_argument(
+            "--physical", "-p", nargs=4,
+            metavar=("MACHINE", "CABINET", "FRAME", "BOARD"),
+            help="specify a board's physical location")
+        control_args.add_argument(
+            "--chip", "-c", nargs=3, metavar=("MACHINE", "X", "Y"),
+            help="specify a board by chip coordinates (as if the whole "
+            "machine is being used)")
+        control_args.add_argument(
+            "--job-chip", "-j", nargs=3, metavar=("JOB_ID", "X", "Y"),
+            help="specify the chip coordinates of a chip within a job's "
+            "boards")
+        self.parser = parser
+        return parser
 
-
-def main(argv=None):
-    cfg = config.read_config()
-
-    parser = argparse.ArgumentParser(
-        description="Find out the location (physical or logical) "
-                    "of a chip or board.")
-
-    parser.add_argument("--version", "-V", action="version",
-                        version=__version__)
-
-    control_args = parser.add_mutually_exclusive_group(required=True)
-    control_args.add_argument("--board", "-b", "--logical", "-l", nargs=4,
-                              metavar=("MACHINE", "X", "Y", "Z"),
-                              help="specify the logical board coordinate")
-    control_args.add_argument("--physical", "-p", nargs=4,
-                              metavar=("MACHINE", "CABINET", "FRAME", "BOARD"),
-                              help="specify a board's physical location")
-    control_args.add_argument("--chip", "-c", nargs=3,
-                              metavar=("MACHINE", "X", "Y"),
-                              help="specify a board by chip coordinates (as "
-                                   "if the whole machine is being used)")
-    control_args.add_argument("--job-chip", "-j", nargs=3,
-                              metavar=("JOB_ID", "X", "Y"),
-                              help="specify the chip coordinates of a chip "
-                                   "within a job's boards")
-
-    server_args = parser.add_argument_group("spalloc server arguments")
-
-    server_args.add_argument("--hostname", "-H", default=cfg["hostname"],
-                             help="hostname or IP of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--port", "-P", default=cfg["port"],
-                             type=int,
-                             help="port number of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--timeout", default=cfg["timeout"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait for a response "
-                                  "from the server (default: %(default)s)")
-
-    args = parser.parse_args(argv)
-
-    # Fail if server not specified
-    if args.hostname is None:
-        parser.error("--hostname of spalloc server must be specified")
-
-    client = ProtocolClient(args.hostname, args.port)
-    try:
-        # Connect to server and ensure compatible version
-        client.connect()
-        version = tuple(
-            map(int, client.version(timeout=args.timeout).split(".")))
-        if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-            sys.stderr.write("Incompatible server version ({}).\n".format(
-                ".".join(map(str, version))))
-            return 2
-
-        # Work out what the user asked for
+    def verify_arguments(self, args):
         try:
-            show_board_chip = False
             if args.board:
                 machine, x, y, z = args.board
-                where_is_kwargs = {
+                self.where_is_kwargs = {
                     "machine": machine,
                     "x": int(x),
                     "y": int(y),
                     "z": int(z),
                 }
+                self.show_board_chip = False
             elif args.physical:
                 machine, c, f, b = args.physical
-                where_is_kwargs = {
+                self.where_is_kwargs = {
                     "machine": machine,
                     "cabinet": int(c),
                     "frame": int(f),
                     "board": int(b),
                 }
+                self.show_board_chip = False
             elif args.chip:
                 machine, x, y = args.chip
-                where_is_kwargs = {
+                self.where_is_kwargs = {
                     "machine": machine,
                     "chip_x": int(x),
                     "chip_y": int(y),
                 }
-                show_board_chip = True
+                self.show_board_chip = True
             elif args.job_chip:
                 job_id, x, y = args.job_chip
-                where_is_kwargs = {
+                self.where_is_kwargs = {
                     "job_id": int(job_id),
                     "chip_x": int(x),
                     "chip_y": int(y),
                 }
-                show_board_chip = True
+                self.show_board_chip = True
         except ValueError as e:
-            parser.error("Error: {}".format(e))
+            self.parser.error("Error: {}".format(e))
 
+    def body(self, client, args):  # @UnusedVariable
         # Ask the server
-        location = client.where_is(**where_is_kwargs)
+        location = client.where_is(**self.where_is_kwargs)
         if location is None:
-            sys.stderr.write("No boards at the specified location.\n")
-            return 4
+            raise Terminate(4, "No boards at the specified location")
 
         out = OrderedDict()
         out["Machine"] = location["machine"]
@@ -172,21 +138,14 @@ def main(argv=None):
             *location["physical"])
         out["Board coordinate"] = tuple(location["logical"])
         out["Machine chip coordinates"] = tuple(location["chip"])
-        if show_board_chip:
+        if self.show_board_chip:
             out["Coordinates within board"] = tuple(location["board_chip"])
         out["Job using board"] = location["job_id"]
         if location["job_id"]:
             out["Coordinates within job"] = tuple(location["job_chip"])
-
         print(render_definitions(out))
-        return 0
-
-    except (IOError, OSError, ProtocolTimeoutError) as e:
-        sys.stderr.write("Error communicating with server: {}\n".format(e))
-        return 1
-    finally:
-        client.close()
 
 
+main = WhereIsScript()
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

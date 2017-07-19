@@ -9,15 +9,18 @@ import errno
 import sys
 
 
+class ProtocolError(Exception):
+    """Thrown when a network-level problem occurs during protocol handling."""
+
+
 class ProtocolTimeoutError(Exception):
     """Thrown upon a protocol-level timeout."""
 
 
 class SpallocServerException(Exception):
-    """Thrown when something went wrong on the server side that caused us to
+    """Thrown when something went wrong on the server side that caused us to\
     be sent a message.
     """
-    pass
 
 
 class ProtocolClient(object):
@@ -33,23 +36,20 @@ class ProtocolClient(object):
     Usage examples::
 
         # Connect to a spalloc_server
-        c = ProtocolClient("hostname")
-        c.connect()
+        with ProtocolClient("hostname") as c:
+            # Call commands by name
+            print(c.call("version"))  # '0.1.0'
 
-        # Call commands by name
-        print(c.call("version"))  # '0.1.0'
+            # Call commands as if they were methods
+            print(c.version())  # '0.1.0'
 
-        # Call commands as if they were methods
-        print(c.version())  # '0.1.0'
-
-        # Wait an event to be received
-        print(c.wait_for_notification())  # {"jobs_changed": [1, 3]}
+            # Wait an event to be received
+            print(c.wait_for_notification())  # {"jobs_changed": [1, 3]}
 
         # Done!
-        c.close()
     """
 
-    def __init__(self, hostname, port=22244):
+    def __init__(self, hostname, port=22244, timeout=None):
         """Define a new connection.
 
         .. note::
@@ -75,6 +75,15 @@ class ProtocolClient(object):
         self._dead = True
         self._socks_lock = RLock()
         self._notifications_lock = RLock()
+        self._default_timeout = timeout
+
+    def __enter__(self):
+        self.connect(self._default_timeout)
+        return self
+
+    def __exit__(self, type, value, tb):  # @UnusedVariable @ReservedAssignment
+        self.close()
+        return False
 
     def _get_connection(self, timeout):
         if self._dead:
@@ -257,27 +266,30 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        IOError, OSError
+        ProtocolError
             If the connection is unavailable or is closed.
         """
-        timeout = kwargs.pop("timeout", None)
-        finish_time = make_timeout(timeout)
+        try:
+            timeout = kwargs.pop("timeout", None)
+            finish_time = make_timeout(timeout)
 
-        # Construct the command message
-        command = {"command": name, "args": args, "kwargs": kwargs}
-        self._send_json(command, timeout=timeout)
+            # Construct the command message
+            command = {"command": name, "args": args, "kwargs": kwargs}
+            self._send_json(command, timeout=timeout)
 
-        # Command sent! Attempt to receive the response...
-        while not timed_out(finish_time):
-            obj = self._recv_json(timeout=time_left(finish_time))
-            if "return" in obj:
-                # Success!
-                return obj["return"]
-            if "exception" in obj:
-                raise SpallocServerException(obj["exception"])
-            # Got a notification, keep trying...
-            with self._notifications_lock:
-                self._notifications.append(obj)
+            # Command sent! Attempt to receive the response...
+            while not timed_out(finish_time):
+                obj = self._recv_json(timeout=time_left(finish_time))
+                if "return" in obj:
+                    # Success!
+                    return obj["return"]
+                if "exception" in obj:
+                    raise SpallocServerException(obj["exception"])
+                # Got a notification, keep trying...
+                with self._notifications_lock:
+                    self._notifications.append(obj)
+        except (IOError, OSError) as e:
+            raise ProtocolError(str(e))
 
     def wait_for_notification(self, timeout=None):
         """Return the next notification to arrive.
@@ -303,7 +315,7 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        IOError, OSError
+        ProtocolError
             If the socket is unusable or becomes disconnected.
         """
         # If we already have a notification, return it
@@ -316,7 +328,10 @@ class ProtocolClient(object):
             return None
 
         # Otherwise, wait for a notification to arrive
-        return self._recv_json(timeout)
+        try:
+            return self._recv_json(timeout)
+        except (IOError, OSError) as e:
+            raise ProtocolError(str(e))
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.

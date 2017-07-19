@@ -11,25 +11,18 @@ This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
 
-import sys
 import argparse
 import datetime
-
 from pytz import utc
+import sys
 from tzlocal import get_localzone
 
-from spalloc import config
-from spalloc import \
-    __version__, ProtocolClient, ProtocolTimeoutError, JobState
+from spalloc import __version__, JobState
 from spalloc.term import Terminal, render_table
+from .support import Script
 
 
-# The acceptable range of server version numbers
-VERSION_RANGE_START = (0, 1, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
-
-
-def render_job_list(t, jobs, machine=None, owner=None):
+def render_job_list(t, jobs, args):
     """Return a human-readable process listing.
 
     Parameters
@@ -57,9 +50,10 @@ def render_job_list(t, jobs, machine=None, owner=None):
 
     for job in jobs:
         # Filter jobs
-        if machine is not None and job["allocated_machine_name"] != machine:
+        if args.machine is not None and \
+                job["allocated_machine_name"] != args.machine:
             continue
-        if owner is not None and job["owner"] != owner:
+        if args.owner is not None and job["owner"] != args.owner:
             continue
 
         # Colourise job states
@@ -74,20 +68,13 @@ def render_job_list(t, jobs, machine=None, owner=None):
 
         # Colourise power states
         if job["power"] is not None:
-            if job["power"]:
-                power_state = (t.green, "on")
-            else:
-                power_state = (t.red, "off")
-
+            power_state = (t.green, "on") if job["power"] else (t.red, "off")
             if job["state"] == JobState.power:
                 power_state = (t.yellow, power_state[1])
         else:
             power_state = ""
 
-        if job["boards"] is not None:
-            num_boards = len(job["boards"])
-        else:
-            num_boards = ""
+        num_boards = "" if job["boards"] is None else len(job["boards"])
 
         # Format start time
         utc_timestamp = datetime.datetime.fromtimestamp(
@@ -110,96 +97,54 @@ def render_job_list(t, jobs, machine=None, owner=None):
             str(job["keepalive"]),
             job["owner"],
         ))
-
-    # Format the table
     return render_table(table)
 
 
-def main(argv=None):
-    t = Terminal(stream=sys.stderr)
+class ProcessListScript(Script):
+    def get_parser(self, cfg):  # @UnusedVariable
+        parser = argparse.ArgumentParser(description="List all active jobs.")
+        parser.add_argument(
+            "--version", "-V", action="version", version=__version__)
+        parser.add_argument(
+            "--watch", "-w", action="store_true", default=False,
+            help="watch the list of live jobs in real time")
+        filter_args = parser.add_argument_group("filtering arguments")
+        filter_args.add_argument(
+            "--machine", "-m", help="list only jobs on the specified machine")
+        filter_args.add_argument(
+            "--owner", "-o",
+            help="list only jobs belonging to a particular owner")
+        return parser
 
-    cfg = config.read_config()
+    def one_shot(self, client, args):
+        t = Terminal(stream=sys.stderr)
+        jobs = client.list_jobs(timeout=args.timeout)
+        print(render_job_list(t, jobs, args))
 
-    parser = argparse.ArgumentParser(
-        description="List all active jobs.")
-
-    parser.add_argument("--version", "-V", action="version",
-                        version=__version__)
-
-    parser.add_argument("--watch", "-w", action="store_true", default=False,
-                        help="watch the list of live jobs in real time")
-
-    filter_args = parser.add_argument_group("filtering arguments")
-
-    filter_args.add_argument("--machine", "-m",
-                             help="list only jobs on the specified "
-                                  "machine")
-    filter_args.add_argument("--owner", "-o",
-                             help="list only jobs belonging to a particular "
-                                  "owner")
-
-    server_args = parser.add_argument_group("spalloc server arguments")
-
-    server_args.add_argument("--hostname", "-H", default=cfg["hostname"],
-                             help="hostname or IP of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--port", "-P", default=cfg["port"],
-                             type=int,
-                             help="port number of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--timeout", default=cfg["timeout"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait for a response "
-                                  "from the server (default: %(default)s)")
-
-    args = parser.parse_args(argv)
-
-    # Fail if server not specified
-    if args.hostname is None:
-        parser.error("--hostname of spalloc server must be specified")
-
-    client = ProtocolClient(args.hostname, args.port)
-    try:
-        # Connect to server and ensure compatible version
-        client.connect()
-        version = tuple(
-            map(int, client.version(timeout=args.timeout).split(".")))
-        if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-            sys.stderr.write("Incompatible server version ({}).\n".format(
-                ".".join(map(str, version))))
-            return 2
-
-        if args.watch:
-            client.notify_job(timeout=args.timeout)
-
+    def recurring(self, client, args):
+        client.notify_job(timeout=args.timeout)
+        t = Terminal(stream=sys.stderr)
         while True:
             jobs = client.list_jobs(timeout=args.timeout)
-
             # Clear the screen before reprinting the table
-            if args.watch:
-                sys.stdout.write(t.clear_screen())
-
-            print(render_job_list(t, jobs, args.machine, args.owner))
-
-            # Exit or wait for changes, if requested
-            if not args.watch:
-                return 0
-
+            sys.stdout.write(t.clear_screen())
+            print(render_job_list(t, jobs, args))
             # Wait for state change
             try:
                 client.wait_for_notification()
             except KeyboardInterrupt:
                 # Gracefully exit
-                return 0
+                return
             finally:
                 print("")
 
-    except (IOError, OSError, ProtocolTimeoutError) as e:
-        sys.stderr.write("Error communicating with server: {}\n".format(e))
-        return 1
-    finally:
-        client.close()
+    def body(self, client, args):
+        if args.watch:
+            self.recurring(client, args)
+        else:
+            self.one_shot(client, args)
 
 
+main = ProcessListScript()
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

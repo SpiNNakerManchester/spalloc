@@ -96,22 +96,20 @@ messages are sent automatically but after exiting the commands are no longer
 sent. Adding the ``--keepalive -1`` option when creating a job disables this.
 """
 
-import os
-import sys
 import argparse
-import tempfile
-import logging
-import subprocess
-
 from collections import OrderedDict
-
+import logging
+import os
 from six import iteritems
-from six.moves import input, shlex_quote
+from six.moves import input, shlex_quote  # @UnresolvedImport
+import subprocess
+import sys
+import tempfile
 
 from spalloc import config
 from spalloc import Job, JobState, __version__
 from spalloc.term import Terminal, render_definitions
-
+from spalloc import ProtocolError, ProtocolTimeoutError, SpallocServerException
 
 # Rig is used to implement the optional '--boot' facility.
 try:
@@ -244,17 +242,13 @@ def run_command(command, job_id, machine_name, connections, width, height,
             p.terminate()
 
 
-def main(argv=None):
-    t = Terminal(stream=sys.stderr)
-
+def parse_argv(argv):
     cfg = config.read_config()
 
     parser = argparse.ArgumentParser(
         description="Request (and allocate) a SpiNNaker machine.")
-
     parser.add_argument("--version", "-V", action="version",
                         version=__version__)
-
     parser.add_argument("--quiet", "-q", action="store_true",
                         default=False,
                         help="suppress informational messages")
@@ -264,7 +258,6 @@ def main(argv=None):
     parser.add_argument("--no-destroy", "-D", action="store_true",
                         default=False,
                         help="do not destroy the job on exit")
-
     if MachineController is not None:
         parser.add_argument("--boot", "-B", action="store_true",
                             default=False,
@@ -329,7 +322,6 @@ def main(argv=None):
         "connected SpiNNaker chip)")
 
     server_args = parser.add_argument_group("spalloc server arguments")
-
     server_args.add_argument(
         "--owner", default=cfg["owner"],
         help="by convention, the email address of the owner of the job "
@@ -355,8 +347,12 @@ def main(argv=None):
         "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
         help="seconds to wait for a response from the server "
         "(default: %(default)s)")
+    return parser, parser.parse_args(argv)
 
-    args = parser.parse_args(argv)
+
+def main(argv=None):
+    parser, args = parse_argv(argv)
+    t = Terminal(stream=sys.stderr)
 
     # Fail if no owner is defined (unless resuming)
     if not args.owner and args.resume is None:
@@ -476,7 +472,7 @@ def main(argv=None):
         # Create the job
         try:
             job = Job(*job_args, **job_kwargs)
-        except (OSError, IOError) as e:
+        except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
             info(t.red("Could not connect to server: {}".format(e)))
             return 6
         try:
@@ -503,7 +499,6 @@ def main(argv=None):
                 return run_command(args.command, job.id, job.machine_name,
                                    job.connections, job.width, job.height,
                                    ip_file_filename)
-
             else:
                 print_info(job.machine_name, job.connections,
                            job.width, job.height, ip_file_filename)
@@ -514,6 +509,9 @@ def main(argv=None):
                 job.close()
             else:
                 job.destroy(reason)
+    except SpallocServerException as e:
+        info(t.red("Error from server: {}".format(e)))
+        return 6
     finally:
         # Delete IP address list file
         os.remove(ip_file_filename)
