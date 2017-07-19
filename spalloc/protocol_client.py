@@ -77,11 +77,12 @@ class ProtocolClient(object):
         self._notifications_lock = RLock()
         self._default_timeout = timeout
 
-    def __enter__(self):
+    def __enter__(self):  # pragma: no cover
         self.connect(self._default_timeout)
         return self
 
-    def __exit__(self, type, value, tb):  # @UnusedVariable @ReservedAssignment
+    def __exit__(self, type,  # @ReservedAssignment # pragma: no cover
+                 value, tb):  # @UnusedVariable # pragma: no cover
         self.close()
         return False
 
@@ -330,7 +331,7 @@ class ProtocolClient(object):
         # Otherwise, wait for a notification to arrive
         try:
             return self._recv_json(timeout)
-        except (IOError, OSError) as e:
+        except (IOError, OSError) as e:  # pragma: no cover
             raise ProtocolError(str(e))
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use

@@ -509,7 +509,7 @@ def main(argv=None):
                 job.close()
             else:
                 job.destroy(reason)
-    except SpallocServerException as e:
+    except SpallocServerException as e:  # pragma: no cover
         info(t.red("Error from server: {}".format(e)))
         return 6
     finally:
