@@ -75,7 +75,7 @@ class Script(object):
                 version_verify(client, args.timeout)
                 self.body(client, args)
                 return 0
-        except (ProtocolError, ProtocolTimeoutError) as e:
+        except (IOError, OSError, ProtocolError, ProtocolTimeoutError) as e:
             sys.stderr.write("Error communicating with server: {}\n".format(e))
             return 1
         except SpallocServerException as srv_exn:

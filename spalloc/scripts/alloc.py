@@ -241,6 +241,7 @@ def run_command(command, job_id, machine_name, connections, width, height,
         except KeyboardInterrupt:
             p.terminate()
 
+
 def parse_argv(argv):
     cfg = config.read_config()
 
@@ -347,6 +348,7 @@ def parse_argv(argv):
         help="seconds to wait for a response from the server "
         "(default: %(default)s)")
     return parser, parser.parse_args(argv)
+
 
 def main(argv=None):
     parser, args = parse_argv(argv)

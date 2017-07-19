@@ -1,15 +1,18 @@
 import pytest
 
-from mock import Mock
+from mock import Mock, MagicMock
 
 from spalloc.scripts.where_is import main
 from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc.protocol_client import ProtocolError
 
 
 @pytest.fixture
 def client(monkeypatch):
-    client = Mock()
+    client = MagicMock()
+    client.__enter__.return_value = client
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
+    client.__exit__.return_value = False
     client.where_is.return_value = {
         "machine": "m",
         "logical": [3, 2, 1],
@@ -19,9 +22,7 @@ def client(monkeypatch):
         "job_id": 11,
         "job_chip": [13, 12],
     }
-    monkeypatch.setattr(main,
-                        "clientFactory",
-                        Mock(return_value=client))
+    monkeypatch.setattr(main, "clientFactory", Mock(return_value=client))
     return client
 
 
@@ -33,7 +34,9 @@ def test_no_hostname(no_config_files):
 @pytest.mark.parametrize("version", [VERSION_RANGE_STOP, (0, 0, 0)])
 def test_bad_version(basic_config_file, client, version):
     client.version.return_value = ".".join(map(str, version))
-    assert main("-b m 1 2 3".split()) == 2
+    with pytest.raises(SystemExit) as exn:
+        main("-b m 1 2 3".split())
+    assert exn.value.code == 2
 
 
 @pytest.mark.parametrize("args",
@@ -47,7 +50,7 @@ def test_bad_args(basic_config_file, client, args):
 
 
 def test_server_error(basic_config_file, client):
-    client.where_is.side_effect = IOError()
+    client.where_is.side_effect = ProtocolError()
     assert main("--board name 3 2 1".split()) == 1
 
 
@@ -112,4 +115,6 @@ def test_formatting_no_job(basic_config_file, client, capsys):
 
 def test_no_boards(basic_config_file, client, capsys):
     client.where_is.return_value = None
-    assert main("--board m 3 2 1".split()) == 4
+    with pytest.raises(SystemExit) as exn:
+        main("--board m 3 2 1".split())
+    assert exn.value.code == 4

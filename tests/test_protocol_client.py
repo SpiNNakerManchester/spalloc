@@ -5,10 +5,10 @@ import threading
 import time
 import logging
 
-from spalloc import ProtocolClient, ProtocolTimeoutError
+from spalloc import ProtocolClient
+from spalloc import SpallocServerException, ProtocolTimeoutError, ProtocolError
 
-from common import MockServer
-from spalloc.protocol_client import SpallocServerException
+from common import MockServer  # @UnresolvedImport
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -234,9 +234,9 @@ def test_where_is_sanity(c):
         c.where_is(foo=1, bar=2)
     with pytest.raises(SpallocServerException):
         c.where_is(machine=1, x=2, y=3, z=4, foo=5)
-    with pytest.raises((IOError, OSError)):
+    with pytest.raises(ProtocolError):
         c.where_is(machine=1, x=2, y=3, z=4)
-    with pytest.raises((IOError, OSError)):
+    with pytest.raises(ProtocolError):
         c.where_is(machine=1, x=2, y=3, z=4, timeout=5)
-    with pytest.raises((IOError, OSError)):
+    with pytest.raises(ProtocolError):
         c.where_is(machine=1, x=2, y=3, z=4, timeout=None)
