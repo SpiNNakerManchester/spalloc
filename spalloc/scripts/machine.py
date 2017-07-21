@@ -15,18 +15,16 @@ running on a machine.
 If the ``--watch`` option is given, the information displayed is updated in
 real-time.
 """
-import sys
 import argparse
-
 from collections import defaultdict, OrderedDict
-
 from six import next
+import sys
 
-from spalloc import config
-from spalloc import __version__, ProtocolClient, ProtocolTimeoutError
+from spalloc import __version__
 from spalloc.term import \
     Terminal, render_table, render_definitions, render_boards, render_cells, \
     DEFAULT_BOARD_EDGES
+from .support import Terminate, Script
 
 
 # The acceptable range of server version numbers
@@ -87,8 +85,6 @@ def list_machines(t, machines, jobs):
 
     print(render_table(table))
 
-    return 0
-
 
 def show_machine(t, machines, jobs, machine_name, compact=False):
     """Display a more detailed overview of an individual machine.
@@ -117,8 +113,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
             break
     else:
         # No matching machine
-        sys.stderr.write("No machine '{}' was found.\n".format(machine_name))
-        return 6
+        raise Terminate(6, "No machine '{}' was found", machine_name)
 
     # Extract list of jobs running on the machine
     displayed_jobs = []
@@ -198,100 +193,75 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
         print("")
         print(render_table(job_table))
 
-    return 0
 
+class ListMachinesScript(Script):
+    def get_and_display_machine_info(self, client, args, t):
+        # Get all information
+        machines = client.list_machines(timeout=args.timeout)
+        jobs = client.list_jobs(timeout=args.timeout)
 
-def main(argv=None):
-    t = Terminal()
+        # Display accordingly
+        if args.machine is None:
+            list_machines(t, machines, jobs)
+        else:
+            show_machine(t, machines, jobs, args.machine, not args.detailed)
 
-    cfg = config.read_config()
+    def get_parser(self, cfg):  # @UnusedVariable
+        parser = argparse.ArgumentParser(
+            description="Get the state of individual machines.")
+        parser.add_argument(
+            "--version", "-V", action="version", version=__version__)
+        parser.add_argument(
+            "machine", nargs="?",
+            help="if given, specifies the machine to inspect")
+        parser.add_argument(
+            "--watch", "-w", action="store_true", default=False,
+            help="update the output when things change.")
+        parser.add_argument(
+            "--detailed", "-d", action="store_true", default=False,
+            help="list detailed job information")
+        self.parser = parser
+        return parser
 
-    parser = argparse.ArgumentParser(
-        description="Get the state of individual machines.")
+    def verify_arguments(self, args):
+        # Fail if --detailed used without specifying machine
+        if args.machine is None and args.detailed:
+            self.parser.error(
+                "--detailed only works when a specific machine is specified")
 
-    parser.add_argument("--version", "-V", action="version",
-                        version=__version__)
+    def one_shot(self, client, args):
+        t = Terminal()
+        # Get all information and display accordingly
+        self.get_and_display_machine_info(client, args, t)
 
-    parser.add_argument("machine", nargs="?",
-                        help="if given, specifies the machine to inspect")
-
-    parser.add_argument("--watch", "-w", action="store_true", default=False,
-                        help="update the output when things change.")
-
-    parser.add_argument("--detailed", "-d", action="store_true", default=False,
-                        help="list detailed job information")
-
-    server_args = parser.add_argument_group("spalloc server arguments")
-
-    server_args.add_argument("--hostname", "-H", default=cfg["hostname"],
-                             help="hostname or IP of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--port", "-P", default=cfg["port"],
-                             type=int,
-                             help="port number of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--timeout", default=cfg["timeout"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait for a response "
-                                  "from the server (default: %(default)s)")
-
-    args = parser.parse_args(argv)
-
-    # Fail if server not specified
-    if args.hostname is None:
-        parser.error("--hostname of spalloc server must be specified")
-
-    # Fail if --detailed used without specifying machine
-    if args.machine is None and args.detailed:
-        parser.error(
-            "--detailed only works when a specific machine is specified")
-
-    client = ProtocolClient(args.hostname, args.port)
-    try:
-        # Connect to server and ensure compatible version
-        client.connect()
-        version = tuple(
-            map(int, client.version(timeout=args.timeout).split(".")))
-        if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-            sys.stderr.write("Incompatible server version ({}).\n".format(
-                ".".join(map(str, version))))
-            return 2
-
+    def recurring(self, client, args):
+        t = Terminal()
         while True:
-            if args.watch:
-                client.notify_machine(args.machine, timeout=args.timeout)
-                t.stream.write(t.clear_screen())
-                # Prevent errors on stderr being cleared away due to clear
-                # being buffered
-                t.stream.flush()
+            client.notify_machine(args.machine, timeout=args.timeout)
+            t.stream.write(t.clear_screen())
+            # Prevent errors on stderr being cleared away due to clear being
+            # buffered
+            t.stream.flush()
 
-            # Get all information
-            machines = client.list_machines(timeout=args.timeout)
-            jobs = client.list_jobs(timeout=args.timeout)
+            # Get all information and display accordingly
+            self.get_and_display_machine_info(client, args, t)
 
-            # Display accordingly
-            if args.machine is None:
-                retval = list_machines(t, machines, jobs)
-            else:
-                retval = show_machine(t, machines, jobs, args.machine,
-                                      not args.detailed)
-
-            # Wait for changes (if required)
-            if retval != 0 or not args.watch:
-                return retval
+            # Wait for changes
             try:
                 client.wait_for_notification()
-                print("")
             except KeyboardInterrupt:
+                return
+            finally:
                 print("")
-                return 0
 
-    except (IOError, OSError, ProtocolTimeoutError) as e:
-        sys.stderr.write("Error communicating with server: {}\n".format(e))
-        return 1
-    finally:
-        client.close()
+    def body(self, client, args):
+        if args.watch:
+            self.recurring(client, args)
+        else:
+            self.one_shot(client, args)
+        return 0
 
 
+main = ListMachinesScript()
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())
