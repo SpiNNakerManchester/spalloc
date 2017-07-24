@@ -2,15 +2,25 @@
 
 import socket
 import json
-import time
 from threading import current_thread, RLock, local
 from collections import deque
+from spalloc._utils import time_left, timed_out, make_timeout
 import errno
 import sys
 
 
+class ProtocolError(Exception):
+    """Thrown when a network-level problem occurs during protocol handling."""
+
+
 class ProtocolTimeoutError(Exception):
     """Thrown upon a protocol-level timeout."""
+
+
+class SpallocServerException(Exception):
+    """Thrown when something went wrong on the server side that caused us to\
+    be sent a message.
+    """
 
 
 class ProtocolClient(object):
@@ -26,23 +36,20 @@ class ProtocolClient(object):
     Usage examples::
 
         # Connect to a spalloc_server
-        c = ProtocolClient("hostname")
-        c.connect()
+        with ProtocolClient("hostname") as c:
+            # Call commands by name
+            print(c.call("version"))  # '0.1.0'
 
-        # Call commands by name
-        print(c.call("version"))  # '0.1.0'
+            # Call commands as if they were methods
+            print(c.version())  # '0.1.0'
 
-        # Call commands as if they were methods
-        print(c.version())  # '0.1.0'
-
-        # Wait an event to be received
-        print(c.wait_for_notification())  # {"jobs_changed": [1, 3]}
+            # Wait an event to be received
+            print(c.wait_for_notification())  # {"jobs_changed": [1, 3]}
 
         # Done!
-        c.close()
     """
 
-    def __init__(self, hostname, port=22244):
+    def __init__(self, hostname, port=22244, timeout=None):
         """Define a new connection.
 
         .. note::
@@ -68,6 +75,16 @@ class ProtocolClient(object):
         self._dead = True
         self._socks_lock = RLock()
         self._notifications_lock = RLock()
+        self._default_timeout = timeout
+
+    def __enter__(self):  # pragma: no cover
+        self.connect(self._default_timeout)
+        return self
+
+    def __exit__(self, type,  # @ReservedAssignment # pragma: no cover
+                 value, tb):  # @UnusedVariable # pragma: no cover
+        self.close()
+        return False
 
     def _get_connection(self, timeout):
         if self._dead:
@@ -250,34 +267,30 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        IOError, OSError
+        ProtocolError
             If the connection is unavailable or is closed.
         """
-        timeout = kwargs.pop("timeout", None)
+        try:
+            timeout = kwargs.pop("timeout", None)
+            finish_time = make_timeout(timeout)
 
-        finish_time = time.time() + timeout if timeout is not None else None
+            # Construct the command message
+            command = {"command": name, "args": args, "kwargs": kwargs}
+            self._send_json(command, timeout=timeout)
 
-        # Construct the command message
-        command = {"command": name,
-                   "args": args,
-                   "kwargs": kwargs}
-
-        self._send_json(command, timeout=timeout)
-
-        # Command sent! Attempt to receive the response...
-        while finish_time is None or finish_time > time.time():
-            if finish_time is None:
-                time_left = None
-            else:
-                time_left = max(finish_time - time.time(), 0.0)
-
-            obj = self._recv_json(timeout=time_left)
-            if "return" in obj:
-                # Success!
-                return obj["return"]
-            # Got a notification, keep trying...
-            with self._notifications_lock:
-                self._notifications.append(obj)
+            # Command sent! Attempt to receive the response...
+            while not timed_out(finish_time):
+                obj = self._recv_json(timeout=time_left(finish_time))
+                if "return" in obj:
+                    # Success!
+                    return obj["return"]
+                if "exception" in obj:
+                    raise SpallocServerException(obj["exception"])
+                # Got a notification, keep trying...
+                with self._notifications_lock:
+                    self._notifications.append(obj)
+        except (IOError, OSError) as e:
+            raise ProtocolError(str(e))
 
     def wait_for_notification(self, timeout=None):
         """Return the next notification to arrive.
@@ -303,7 +316,7 @@ class ProtocolClient(object):
         ------
         ProtocolTimeoutError
             If a timeout occurs.
-        IOError, OSError
+        ProtocolError
             If the socket is unusable or becomes disconnected.
         """
         # If we already have a notification, return it
@@ -311,18 +324,27 @@ class ProtocolClient(object):
             if self._notifications:
                 return self._notifications.popleft()
 
-        # Otherwise, wait for a notification to arrive
-        if timeout is None or timeout >= 0.0:
-            return self._recv_json(timeout)
-        else:
+        # Check for a duff timeout
+        if timeout is not None and timeout < 0.0:
             return None
 
-    # The bindings of the Spalloc protocol methods themselves
+        # Otherwise, wait for a notification to arrive
+        try:
+            return self._recv_json(timeout)
+        except (IOError, OSError) as e:  # pragma: no cover
+            raise ProtocolError(str(e))
+
+    # The bindings of the Spalloc protocol methods themselves; simplifies use
+    # from IDEs.
 
     def version(self, timeout=None):  # pragma: no cover
         return self.call("version", timeout=timeout)
 
     def create_job(self, *args, **kwargs):  # pragma: no cover
+        # If no owner, don't bother with the call
+        if "owner" not in kwargs:
+            raise SpallocServerException(
+                "owner must be specified for all jobs.")
         return self.call("create_job", *args, **kwargs)
 
     def job_keepalive(self, job_id, timeout=None):  # pragma: no cover
@@ -374,5 +396,17 @@ class ProtocolClient(object):
         return self.call("get_board_at_position", machine_name, x, y, z,
                          timeout=timeout)
 
-    def where_is(self, *args, **kwargs):
-        return self.call("where_is", *args, **kwargs)
+    _acceptable_kwargs_for_where_is = frozenset([
+        frozenset("machine x y z".split()),
+        frozenset("machine cabinet frame board".split()),
+        frozenset("machine chip_x chip_y".split()),
+        frozenset("job_id chip_x chip_y".split())])
+
+    def where_is(self, timeout=None, **kwargs):
+        # Test for whether sane arguments are passed.
+        keywords = frozenset(kwargs)
+        if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
+            raise SpallocServerException(
+                "Invalid arguments: {}".format(", ".join(keywords)))
+        kwargs["timeout"] = timeout
+        return self.call("where_is", **kwargs)

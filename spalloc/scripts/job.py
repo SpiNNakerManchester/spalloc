@@ -59,27 +59,18 @@ which optionally accepts a human-readable explanation::
     notified that their job was destroyed and the first sign of this will be
     their boards being powered down and re-partitioned ready for another user.
 """
-import sys
 import argparse
+from collections import OrderedDict
 import datetime
-
 from pytz import utc
+from six import iteritems
+import sys
 from tzlocal import get_localzone
 
-from collections import OrderedDict
-
-from six import iteritems
-
-from spalloc import config
-from spalloc import \
-    __version__, ProtocolClient, ProtocolTimeoutError, JobState
+from spalloc import __version__, JobState
 from spalloc.term import \
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES
-
-
-# The acceptable range of server version numbers
-VERSION_RANGE_START = (0, 1, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
+from .support import Terminate, Script
 
 
 def show_job_info(t, client, timeout, job_id):
@@ -104,24 +95,21 @@ def show_job_info(t, client, timeout, job_id):
     # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
     job = [job for job in job_list if job["job_id"] == job_id]
+    info = OrderedDict()
+    info["Job ID"] = job_id
 
     if not job:
         # Job no longer exists, just print basic info
         job = client.get_job_state(job_id, timeout=timeout)
 
-        info = OrderedDict()
-        info["Job ID"] = job_id
         info["State"] = JobState(job["state"]).name
         if job["reason"] is not None:
             info["Reason"] = job["reason"]
-        print(render_definitions(info))
     else:
         # Job is enqueued, show all info
         machine_info = client.get_job_machine_info(job_id, timeout=timeout)
         job = job[0]
 
-        info = OrderedDict()
-        info["Job ID"] = job_id
         info["Owner"] = job["owner"]
         info["State"] = JobState(job["state"]).name
         if job["start_time"] is not None:
@@ -162,9 +150,7 @@ def show_job_info(t, client, timeout, job_id):
         if job["allocated_machine_name"] is not None:
             info["Running on"] = job["allocated_machine_name"]
 
-        print(render_definitions(info))
-
-    return 0
+    print(render_definitions(info))
 
 
 def watch_job(t, client, timeout, job_id):
@@ -193,13 +179,11 @@ def watch_job(t, client, timeout, job_id):
 
         try:
             client.wait_for_notification()
-            print("")
         except KeyboardInterrupt:
             # Gracefully exit
+            return 0
+        finally:
             print("")
-            break
-
-    return 0
 
 
 def power_job(client, timeout, job_id, power):
@@ -232,25 +216,23 @@ def power_job(client, timeout, job_id, power):
     while True:
         client.notify_job(job_id, timeout=timeout)
         state = client.get_job_state(job_id, timeout=timeout)
-
         if state["state"] == JobState.ready:
             # Power command completed
-            return 0
-        elif state["state"] == JobState.power:
+            return
+
+        if state["state"] == JobState.power:
             # Wait for change...
             try:
                 client.wait_for_notification()
             except KeyboardInterrupt:
                 # If interrupted, quietly return an error state
-                return 7
+                raise Terminate(7)
         else:
             # In an unknown state, perhaps the job was queued etc.
-            sys.stderr.write(
-                "Error: Cannot power {} job {} in state {}.\n".format(
-                    "on" if power else "off",
-                    job_id,
-                    JobState(state["state"]).name))
-            return 8
+            raise Terminate(8, "Error: Cannot power {} job {} in state {}",
+                            "on" if power else "off",
+                            job_id,
+                            JobState(state["state"]).name)
 
 
 def list_ips(client, timeout, job_id):
@@ -273,16 +255,11 @@ def list_ips(client, timeout, job_id):
     """
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = info["connections"]
-    if connections is not None:
-        print("x,y,hostname")
-        for ((x, y), hostname) in sorted(connections):
-            print("{},{},{}".format(x, y, hostname))
-        return 0
-    else:
-        sys.stderr.write(
-            "Job {} is queued or does not exist.\n".format(
-                job_id))
-        return 9
+    if connections is None:
+        raise Terminate(9, "Job {} is queued or does not exist", job_id)
+    print("x,y,hostname")
+    for ((x, y), hostname) in sorted(connections):
+        print("{},{},{}".format(x, y, hostname))
 
 
 def destroy_job(client, timeout, job_id, reason=None):
@@ -305,121 +282,84 @@ def destroy_job(client, timeout, job_id, reason=None):
         An error code, 0 for success.
     """
     client.destroy_job(job_id, reason, timeout=timeout)
-    return 0
 
 
-def main(argv=None):
-    t = Terminal()
+class ManageJobScript(Script):
+    def get_job_id(self, client, args):
+        if args.job_id is not None:
+            return args.job_id
+        # No Job ID specified, attempt to discover one
+        jobs = client.list_jobs(timeout=args.timeout)
+        job_ids = [job["job_id"] for job in jobs if job["owner"] == args.owner]
+        if len(job_ids) == 0:
+            raise Terminate(3, "Owner {} has no live jobs", args.owner)
+        elif len(job_ids) > 1:
+            raise Terminate(3, "Ambiguous: {} has {} live jobs: {}",
+                            args.owner, len(job_ids),
+                            ", ".join(map(str, job_ids)))
+        return job_ids[0]
 
-    cfg = config.read_config()
+    def get_parser(self, cfg):
+        parser = argparse.ArgumentParser(
+            description="Manage running jobs.")
+        parser.add_argument(
+            "--version", "-V", action="version", version=__version__)
+        parser.add_argument(
+            "job_id", type=int, nargs="?",
+            help="the job ID of interest, optional if the current owner only "
+            "has one job")
+        parser.add_argument(
+            "--owner", "-o", default=cfg["owner"],
+            help="if no job ID is provided and this owner has only one job, "
+            "this job is assumed (default: %(default)s)")
+        control_args = parser.add_mutually_exclusive_group()
+        control_args.add_argument(
+            "--info", "-i", action="store_true",
+            help="Show basic job information (the default)")
+        control_args.add_argument(
+            "--watch", "-w", action="store_true",
+            help="watch this job for state changes")
+        control_args.add_argument(
+            "--power-on", "--reset", "-p", "-r", action="store_true",
+            help="power-on or reset the job's boards")
+        control_args.add_argument(
+            "--power-off", action="store_true",
+            help="power-off the job's boards")
+        control_args.add_argument(
+            "--ethernet-ips", "-e", action="store_true",
+            help="output the IPs of all Ethernet connected chips as a CSV")
+        control_args.add_argument(
+            "--destroy", "-D", nargs="?", metavar="REASON", const="",
+            help="destroy a queued or running job")
+        self.parser = parser
+        return parser
 
-    parser = argparse.ArgumentParser(
-        description="Manage running jobs.")
+    def verify_arguments(self, args):
+        if args.job_id is None and args.owner is None:
+            self.parser.error("job ID (or --owner) not specified")
 
-    parser.add_argument("--version", "-V", action="version",
-                        version=__version__)
-
-    parser.add_argument("job_id", type=int, nargs="?",
-                        help="the job ID of interest, optional if the current "
-                             "owner only has one job")
-
-    parser.add_argument("--owner", "-o", default=cfg["owner"],
-                        help="if no job ID is provided and this owner has "
-                             "only one job, this job is assumed "
-                             "(default: %(default)s)")
-
-    control_args = parser.add_mutually_exclusive_group()
-
-    control_args.add_argument("--info", "-i", action="store_true",
-                              help="Show basic job information (the default)")
-    control_args.add_argument("--watch", "-w", action="store_true",
-                              help="watch this job for state changes")
-    control_args.add_argument("--power-on", "--reset", "-p", "-r",
-                              action="store_true",
-                              help="power-on or reset the job's boards")
-    control_args.add_argument("--power-off", action="store_true",
-                              help="power-off the job's boards")
-    control_args.add_argument("--ethernet-ips", "-e", action="store_true",
-                              help="output the IPs of all Ethernet connected "
-                                   "chips as a CSV")
-    control_args.add_argument("--destroy", "-D", nargs="?", metavar="REASON",
-                              const="",
-                              help="destroy a queued or running job")
-
-    server_args = parser.add_argument_group("spalloc server arguments")
-
-    server_args.add_argument("--hostname", "-H", default=cfg["hostname"],
-                             help="hostname or IP of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--port", "-P", default=cfg["port"],
-                             type=int,
-                             help="port number of the spalloc server "
-                                  "(default: %(default)s)")
-    server_args.add_argument("--timeout", default=cfg["timeout"],
-                             type=float, metavar="SECONDS",
-                             help="seconds to wait for a response "
-                                  "from the server (default: %(default)s)")
-
-    args = parser.parse_args(argv)
-
-    # Fail if server not specified
-    if args.hostname is None:
-        parser.error("--hostname of spalloc server must be specified")
-
-    # Fail if job *and* owner not specified
-    if args.job_id is None and args.owner is None:
-        parser.error("job ID (or --owner) not specified")
-
-    client = ProtocolClient(args.hostname, args.port)
-    try:
-        # Connect to server and ensure compatible version
-        client.connect()
-        version = tuple(
-            map(int, client.version(timeout=args.timeout).split(".")))
-        if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-            sys.stderr.write("Incompatible server version ({}).\n".format(
-                ".".join(map(str, version))))
-            return 2
-
-        # If no Job ID specified, attempt to discover one
-        if args.job_id is None:
-            jobs = client.list_jobs(timeout=args.timeout)
-            job_ids = [job["job_id"] for job in jobs
-                       if job["owner"] == args.owner]
-            if len(job_ids) == 0:
-                sys.stderr.write(
-                    "Owner {} has no live jobs.\n".format(args.owner))
-                return 3
-            elif len(job_ids) > 1:
-                sys.stderr.write("Ambiguous: {} has {} live jobs: {}\n".format(
-                    args.owner, len(job_ids), ", ".join(map(str, job_ids))))
-                return 3
-            else:
-                args.job_id = job_ids[0]
+    def body(self, client, args):
+        jid = self.get_job_id(client, args)
 
         # Do as the user asked
         if args.watch:
-            return watch_job(t, client, args.timeout, args.job_id)
+            watch_job(Terminal(), client, args.timeout, jid)
         elif args.power_on:
-            return power_job(client, args.timeout, args.job_id, True)
+            power_job(client, args.timeout, jid, True)
         elif args.power_off:
-            return power_job(client, args.timeout, args.job_id, False)
+            power_job(client, args.timeout, jid, False)
         elif args.ethernet_ips:
-            return list_ips(client, args.timeout, args.job_id)
+            list_ips(client, args.timeout, jid)
         elif args.destroy is not None:
             # Set default destruction message
             if args.destroy == "" and args.owner:
                 args.destroy = "Destroyed by {}".format(args.owner)
-            return destroy_job(client, args.timeout, args.job_id, args.destroy)
+            destroy_job(client, args.timeout, jid, args.destroy)
         else:
-            return show_job_info(t, client, args.timeout, args.job_id)
-
-    except (IOError, OSError, ProtocolTimeoutError) as e:
-        sys.stderr.write("Error communicating with server: {}\n".format(e))
-        return 1
-    finally:
-        client.close()
+            show_job_info(Terminal(), client, args.timeout, jid)
+        return 0
 
 
+main = ManageJobScript()
 if __name__ == "__main__":  # pragma: no cover
     sys.exit(main())

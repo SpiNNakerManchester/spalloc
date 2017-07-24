@@ -5,9 +5,10 @@ import threading
 import time
 import logging
 
-from spalloc import ProtocolClient, ProtocolTimeoutError
+from spalloc import ProtocolClient
+from spalloc import SpallocServerException, ProtocolTimeoutError, ProtocolError
 
-from common import MockServer
+from common import MockServer  # @UnresolvedImport
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -178,6 +179,12 @@ def test_call(c, s, bg_accept):
     assert 0.1 < after - before < 0.2
     assert list(c._notifications) == [{"notification": 3}]
 
+    # Exceptions should transfer
+    s.send({"exception": "something informative"})
+    with pytest.raises(SpallocServerException) as e:
+        c.call("foo")
+    assert "something informative" in str(e)
+
 
 def test_wait_for_notification(c, s, bg_accept):
     c.connect()
@@ -209,9 +216,10 @@ def test_commands_as_methods(c, s, bg_accept):
     bg_accept.join()
 
     s.send({"return": "Woo"})
-    assert c.where_is(1, bar=2) == "Woo"
+    assert c.create_job(1, bar=2, owner="dummy") == "Woo"
     assert s.recv() == {
-        "command": "where_is", "args": [1], "kwargs": {"bar": 2}}
+        "command": "create_job", "args": [1], "kwargs": {
+            "bar": 2, "owner": "dummy"}}
 
     # Should fail for arbitrary internal method names
     with pytest.raises(AttributeError):
@@ -219,3 +227,16 @@ def test_commands_as_methods(c, s, bg_accept):
     # Should fail for arbitrary external method names
     with pytest.raises(AttributeError):
         c.bar()
+
+
+def test_where_is_sanity(c):
+    with pytest.raises(SpallocServerException):
+        c.where_is(foo=1, bar=2)
+    with pytest.raises(SpallocServerException):
+        c.where_is(machine=1, x=2, y=3, z=4, foo=5)
+    with pytest.raises(ProtocolError):
+        c.where_is(machine=1, x=2, y=3, z=4)
+    with pytest.raises(ProtocolError):
+        c.where_is(machine=1, x=2, y=3, z=4, timeout=5)
+    with pytest.raises(ProtocolError):
+        c.where_is(machine=1, x=2, y=3, z=4, timeout=None)
