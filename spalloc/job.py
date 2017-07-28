@@ -255,7 +255,7 @@ class Job(object):
         # Resume/create the job
         resume_job_id = kwargs.get("resume_job_id", None)
         if resume_job_id:
-            self._id = resume_job_id
+            self.id = resume_job_id
 
             # If the job no longer exists, we can't get the keepalive interval
             # (and there's nothing to keepalive) so just bail out.
@@ -271,7 +271,7 @@ class Job(object):
             # Snag the keepalive interval from the job
             self._keepalive = job_state.keepalive
 
-            logger.info("Spalloc resumed job %d", self._id)
+            logger.info("Spalloc resumed job %d", self.id)
         else:
             # Get job creation arguments
             job_args = args
@@ -301,16 +301,12 @@ class Job(object):
             self._keepalive = job_kwargs["keepalive"]
 
             # Create the job (failing fast if can't communicate)
-            self._id = self._client.create_job(*job_args, **job_kwargs)
+            self.id = self._client.create_job(*job_args, **job_kwargs)
 
-            logger.info("Created spalloc job %d", self._id)
+            logger.info("Created spalloc job %d", self.id)
 
         # Start keepalive thread now that everything is up
         self._keepalive_thread.start()
-
-    @property
-    def id(self):
-        return self._id
 
     def __enter__(self):
         """Convenience context manager for common case where a new job is to be
@@ -378,7 +374,7 @@ class Job(object):
             # keep trying to reconnect until it succeeds.
             while not self._stop.is_set():
                 try:
-                    self._client.job_keepalive(self._id, timeout=self._timeout)
+                    self._client.job_keepalive(self.id, timeout=self._timeout)
                     break
                 except (ProtocolTimeoutError, IOError, OSError):
                     # Something went wrong, reconnect, after a delay which
@@ -400,7 +396,7 @@ class Job(object):
         # quietly on failure since the server will eventually time-out the job
         # itself.
         try:
-            self._client.destroy_job(self._id, reason)
+            self._client.destroy_job(self.id, reason)
         except (IOError, OSError, ProtocolTimeoutError) as e:
             logger.warning("Could not destroy spalloc job: %s", e)
 
@@ -430,7 +426,7 @@ class Job(object):
         -------
         :py:class:`._JobStateTuple`
         """
-        state = self._client.get_job_state(self._id, timeout=self._timeout)
+        state = self._client.get_job_state(self.id, timeout=self._timeout)
         return _JobStateTuple(
             state=JobState(state["state"]),
             power=state["power"],
@@ -452,9 +448,9 @@ class Job(object):
             already turned on, setting power to True will reset them.
         """
         if power:
-            self._client.power_on_job_boards(self._id, timeout=self._timeout)
+            self._client.power_on_job_boards(self.id, timeout=self._timeout)
         else:
-            self._client.power_off_job_boards(self._id, timeout=self._timeout)
+            self._client.power_off_job_boards(self.id, timeout=self._timeout)
 
     def reset(self):
         """Reset (power-cycle) the boards allocated to the job.
@@ -475,7 +471,7 @@ class Job(object):
         :py:class:`._JobMachineInfoTuple`
         """
         info = self._client.get_job_machine_info(
-            self._id, timeout=self._timeout)
+            self.id, timeout=self._timeout)
 
         return _JobMachineInfoTuple(
             width=info["width"],
@@ -592,7 +588,7 @@ class Job(object):
         while not timed_out(finish_time):
             try:
                 # Watch for changes in this Job's state
-                self._client.notify_job(self._id)
+                self._client.notify_job(self.id)
 
                 # Wait for job state to change
                 while not timed_out(finish_time):
@@ -622,7 +618,7 @@ class Job(object):
         # Since we're about to block holding the client lock, we must be
         # responsible for keeping everything alive.
         while not timed_out(finish_time):
-            self._client.job_keepalive(self._id, timeout=self._timeout)
+            self._client.job_keepalive(self.id, timeout=self._timeout)
 
             # Wait for the job to change
             try:
@@ -706,18 +702,17 @@ class Job(object):
         raise StateChangeTimeoutError()
 
     def where_is_machine(self, chip_x, chip_y):
-        """ locates and returns cabinate, frame, board for a given machine
-        
-        :param machine_ip: machine ip
+        """Locates and returns cabinet, frame, board for a given chip in a\
+        machine allocated to this job.
+
         :param chip_x: chip x location
-        :param chip_y: chip_y location
-        :return: tuple of (cabinate, frame, board)
+        :param chip_y: chip y location
+        :return: tuple of (cabinet, frame, board)
         """
         result = self._client.where_is(
-            job_id=self._id, chip_x=chip_x, chip_y=chip_y)
+            job_id=self.id, chip_x=chip_x, chip_y=chip_y)
         if result is None:
-            raise Exception(
-                "received None instead of machine location")
+            raise ValueError("received None instead of machine location")
         return result['physical']
 
 
