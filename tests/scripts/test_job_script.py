@@ -1,23 +1,22 @@
 import pytest
 
-from mock import Mock
+from mock import Mock, MagicMock
 
 import datetime
 
-from spalloc import JobState
+from spalloc import JobState, ProtocolError
 from spalloc.term import Terminal
 from spalloc.scripts.job import \
-    show_job_info, watch_job, power_job, list_ips, destroy_job, main, \
-    VERSION_RANGE_START, VERSION_RANGE_STOP
+    show_job_info, watch_job, power_job, list_ips, destroy_job, main
+from spalloc.scripts.support import \
+    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate
 
 
 @pytest.fixture
 def mock_protocol_client(monkeypatch):
     mock_protocol_client = Mock()
-
-    import spalloc.scripts.job
-    monkeypatch.setattr(spalloc.scripts.job,
-                        "ProtocolClient",
+    monkeypatch.setattr(main,
+                        "clientFactory",
                         mock_protocol_client)
     return mock_protocol_client
 
@@ -25,10 +24,11 @@ def mock_protocol_client(monkeypatch):
 @pytest.fixture
 def client(mock_protocol_client):
     # A mock protocol client which returns a sensible version number.
-    client = Mock()
+    client = MagicMock()
     mock_protocol_client.return_value = client
-
+    client.__enter__.return_value = client
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
+    client.__exit__.return_value = False
 
     return client
 
@@ -47,7 +47,7 @@ class TestShowJobInfo(object):
             "start_time": None,
         }
 
-        assert show_job_info(t, client, 1.0, 123) == 0
+        show_job_info(t, client, 1.0, 123)
 
         out, err = capsys.readouterr()
         assert out == ("Job ID: 123\n"
@@ -77,7 +77,7 @@ class TestShowJobInfo(object):
             "connections": None, "machine_name": None,
         }
 
-        assert show_job_info(t, client, 1.0, 123) == 0
+        show_job_info(t, client, 1.0, 123)
 
         out, err = capsys.readouterr()
         assert out == ("    Job ID: 123\n"
@@ -117,7 +117,7 @@ class TestShowJobInfo(object):
             "machine_name": "machine",
         }
 
-        assert show_job_info(t, client, 1.0, 123) == 0
+        show_job_info(t, client, 1.0, 123)
 
         out, err = capsys.readouterr()
         assert out == ("     Job ID: 123\n"
@@ -152,7 +152,7 @@ class TestShowJobInfo(object):
             "start_time": None,
         }
 
-        assert show_job_info(t, client, 1.0, 123) == 0
+        show_job_info(t, client, 1.0, 123)
 
         out, err = capsys.readouterr()
         assert out == ("Job ID: 123\n"
@@ -188,7 +188,9 @@ class TestPowerJob(object):
             "reason": None, "start_time": None,
         }
 
-        assert power_job(client, 1.0, 123, power) == 8
+        with pytest.raises(Terminate) as exn:
+            power_job(client, 1.0, 123, power)
+        assert exn.value._code == 8
 
     @pytest.mark.parametrize("states", [[JobState.power, JobState.ready],
                                         [JobState.ready]])
@@ -204,7 +206,7 @@ class TestPowerJob(object):
             for state in states
         ]
 
-        assert power_job(client, 1.0, 123, power) == 0
+        power_job(client, 1.0, 123, power)
 
         if power:
             client.power_on_job_boards.assert_called_once_with(
@@ -224,7 +226,9 @@ class TestPowerJob(object):
 
         client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
 
-        assert power_job(client, 1.0, 123, power) == 7
+        with pytest.raises(Terminate) as exn:
+            power_job(client, 1.0, 123, power)
+        assert exn.value._code == 7
 
         if power:
             client.power_on_job_boards.assert_called_once_with(
@@ -242,7 +246,9 @@ class TestListIPs(object):
             "width": None, "height": None,
             "connections": None, "machine_name": None,
         }
-        assert list_ips(client, 1.0, 123) == 9
+        with pytest.raises(Terminate) as exn:
+            list_ips(client, 1.0, 123)
+        assert exn.value._code == 9
 
     def test_some_connections(self, capsys):
         client = Mock()
@@ -255,7 +261,7 @@ class TestListIPs(object):
             "machine_name": "machine",
         }
 
-        assert list_ips(client, 1.0, 123) == 0
+        list_ips(client, 1.0, 123)
 
         out, err = capsys.readouterr()
 
@@ -267,7 +273,7 @@ class TestListIPs(object):
 
 def test_destroy_job():
     client = Mock()
-    assert destroy_job(client, 1.0, 123, "foo") == 0
+    destroy_job(client, 1.0, 123, "foo")
     client.destroy_job.assert_called_once_with(123, "foo", timeout=1.0)
 
 
@@ -286,24 +292,30 @@ class TestMain(object):
                               "0.0.0"])
     def test_bad_version(self, no_config_files, client, version):
         client.version.return_value = version
-        assert main("--hostname foo 123".split()) == 2
+        with pytest.raises(SystemExit) as exn:
+            main("--hostname foo 123".split())
+        assert exn.value.code == 2
 
     def test_bad_connection(self, no_config_files, client):
-        client.version.side_effect = IOError()
+        client.version.side_effect = ProtocolError()
         assert main("--hostname foo 123".split()) == 1
 
     def test_no_job_owner_has_no_jobs(self, no_config_files, client):
         client.list_jobs.return_value = [
             {"job_id": 1, "owner": "someone-else"}
         ]
-        assert main("--hostname foo --owner bar".split()) == 3
+        with pytest.raises(SystemExit) as exn:
+            main("--hostname foo --owner bar".split())
+        assert exn.value.code == 3
 
     def test_no_job_owner_has_many_jobs(self, no_config_files, client):
         client.list_jobs.return_value = [
             {"job_id": 1, "owner": "bar"},
             {"job_id": 2, "owner": "bar"},
         ]
-        assert main("--hostname foo --owner bar".split()) == 3
+        with pytest.raises(SystemExit) as exn:
+            main("--hostname foo --owner bar".split())
+        assert exn.value.code == 3
 
     def test_automatic_job_id(self, no_config_files, client):
         client.list_jobs.return_value = [
