@@ -701,6 +701,20 @@ class Job(object):
         # Timed out!
         raise StateChangeTimeoutError()
 
+    def where_is_machine(self, chip_x, chip_y):
+        """Locates and returns cabinet, frame, board for a given chip in a\
+        machine allocated to this job.
+
+        :param chip_x: chip x location
+        :param chip_y: chip y location
+        :return: tuple of (cabinet, frame, board)
+        """
+        result = self._client.where_is(
+            job_id=self.id, chip_x=chip_x, chip_y=chip_y)
+        if result is None:
+            raise ValueError("received None instead of machine location")
+        return result['physical']
+
 
 class StateChangeTimeoutError(Exception):
     """Thrown when a state change takes too long to occur."""
