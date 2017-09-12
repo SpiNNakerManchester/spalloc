@@ -23,6 +23,16 @@ class SpallocServerException(Exception):
     """
 
 
+class _ProtocolThreadLocal(local):
+    """Subclass of threading.local to ensure that we get sane initialisation\
+    of our state in each thread.
+    """
+    # See https://github.com/SpiNNakerManchester/spalloc/issues/12
+    def __init__(self):
+        self.buffer = b""
+        self.sock = None
+
+
 class ProtocolClient(object):
     """A simple (blocking) client implementation of the `spalloc-server
     <https://github.com/project-rig/spalloc_server>`_ protocol.
@@ -69,7 +79,7 @@ class ProtocolClient(object):
         # shut down all sockets at once.
         self._socks = dict()
         # Thread local variables
-        self._local = local()
+        self._local = _ProtocolThreadLocal()
         # A queue of unprocessed notifications
         self._notifications = deque()
         self._dead = True
@@ -128,8 +138,6 @@ class ProtocolClient(object):
         return success
 
     def _has_open_socket(self):
-        if "sock" not in self._local.__dict__:
-            return False
         return self._local.sock is not None
 
     def connect(self, timeout=None):
@@ -176,7 +184,7 @@ class ProtocolClient(object):
             keys = list(self._socks.keys())
         for key in keys:
             self._close(key)
-        self._local = local()
+        self._local = _ProtocolThreadLocal()
 
     def _recv_json(self, timeout=None):
         """Receive a line of JSON from the server.
