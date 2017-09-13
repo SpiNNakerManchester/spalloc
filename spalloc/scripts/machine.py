@@ -181,14 +181,17 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
             (t.underscore_bright, "Key"),
             (t.underscore_bright, "Job ID"),
             (t.underscore_bright, "Num boards"),
-            (t.underscore_bright, "Owner"),
+            (t.underscore_bright, "Owner (Host)"),
         ]]
         for job in displayed_jobs:
+            owner = job["owner"]
+            if "keepalivehost" in job and job["keepalivehost"] is not None:
+                owner += " (%s)" % job["keepalivehost"]
             job_table.append([
                 (job["colour"], job["key"]),
                 job["job_id"],
                 len(job["boards"]),
-                job["owner"],
+                owner,
             ])
         print("")
         print(render_table(job_table))

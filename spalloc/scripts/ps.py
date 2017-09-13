@@ -46,7 +46,7 @@ def render_job_list(t, jobs, args):
                   (t.underscore_bright, "Machine"),
                   (t.underscore_bright, "Created at"),
                   (t.underscore_bright, "Keepalive"),
-                  (t.underscore_bright, "Owner")))
+                  (t.underscore_bright, "Owner (Host)")))
 
     for job in jobs:
         # Filter jobs
@@ -87,6 +87,10 @@ def render_job_list(t, jobs, args):
         else:
             machine_name = ""
 
+        owner = job["owner"]
+        if "keepalivehost" in job and job["keepalivehost"] is not None:
+            owner += " (%s)" % job["keepalivehost"]
+
         table.append((
             job["job_id"],
             job_state,
@@ -95,7 +99,7 @@ def render_job_list(t, jobs, args):
             machine_name,
             timestamp,
             str(job["keepalive"]),
-            job["owner"],
+            owner,
         ))
     return render_table(table)
 
