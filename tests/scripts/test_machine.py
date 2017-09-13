@@ -123,7 +123,7 @@ def test_show_machine(capsys):
         r"/ A \___/ . \___/" "\n"
         r"\___/   \___/" "\n"
         "\n"
-        "Key  Job ID  Num boards  Owner\n"
+        "Key  Job ID  Num boards  Owner (Host)\n"
         "A         0           1  me\n"
         "B         1           2  me\n"
     )
