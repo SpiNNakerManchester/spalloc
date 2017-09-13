@@ -118,6 +118,8 @@ def show_job_info(t, client, timeout, job_id):
             local_timestamp = utc_timestamp.astimezone(get_localzone())
             info["Start time"] = local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
         info["Keepalive"] = job["keepalive"]
+        if "keepalivehost" in job and job["keepalivehost"] is not None:
+            info["Owner host"] = job["keepalivehost"]
 
         args = job["args"]
         kwargs = job["kwargs"]

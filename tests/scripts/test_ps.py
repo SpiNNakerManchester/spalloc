@@ -56,6 +56,21 @@ def test_render_job_list(machine, owner):
             "allocated_machine_name": "a",
             "boards": [[[0, 0], "m00"]],
         },
+        # A ready, powered-on job with a keepalive host
+        {
+            "job_id": 1,
+            "owner": "me",
+            "start_time": epoch,
+            "keepalive": 60.0,
+            "machine": None,
+            "state": int(JobState.ready),
+            "power": True,
+            "args": [],
+            "kwargs": {},
+            "allocated_machine_name": "a",
+            "boards": [[[0, 0], "m00"]],
+            "keepalivehost": "1.2.3.4",
+        },
         # A ready, powered-off job
         {
             "job_id": 2,
@@ -130,8 +145,10 @@ def test_render_job_list(machine, owner):
 
     nt = collections.namedtuple("args", "machine,owner")
     assert render_job_list(t, jobs, nt(machine, owner)) == (
-        "ID  State  Power  Boards  Machine  Created at           Keepalive  Owner\n" +  # noqa
+        "ID  State  Power  Boards  Machine  Created at           Keepalive  Owner (Host)\n" +  # noqa
         (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me\n"      # noqa
+         if not owner else "") +
+        (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me (1.2.3.4)\n"  # noqa
          if not owner else "") +
         (" 2  ready  off         1  b        01/01/1970 00:00:00  60.0       me\n"      # noqa
          if not owner and not machine else "") +
