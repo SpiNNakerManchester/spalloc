@@ -4,17 +4,15 @@ python:
         - 2.7
         - 3.4
         - 3.5
+cache: pip
+before_install:
+        - pip install --upgrade pip setuptools wheel
 install:
         - python setup.py develop
         - pip install -r requirements-test.txt
         - pip install python-coveralls
 script:
-        - >
-            py.test tests/ \
-                    --cov spalloc \
-                    --cov tests \
-                    --durations=10 \
-                    --timeout=120
+        - py.test tests/ --cov spalloc --cov tests --durations=10 --timeout=120
         # Code quality check
         - flake8
 after_success:
@@ -23,4 +21,4 @@ notifications:
         email: false
 
 matrix:
-    fast_finish: true
+        fast_finish: true
