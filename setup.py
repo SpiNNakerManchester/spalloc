@@ -41,7 +41,6 @@ setup(
                       "enum-compat",
                       "pytz",
                       "tzlocal"],
-
     # Scripts
     entry_points={
         "console_scripts": [
