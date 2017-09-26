@@ -1,4 +1,4 @@
-from spalloc.version import __version__  # noqa
+from spalloc._version import __version__  # noqa
 
 # Alias useful objects
 from spalloc.protocol_client import ProtocolClient, ProtocolError  # noqa
