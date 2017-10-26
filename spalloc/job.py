@@ -326,7 +326,7 @@ class Job(object):
         try:
             self.wait_until_ready()
             return self
-        except:
+        except Exception:
             self.destroy()
             raise
 
