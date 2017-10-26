@@ -166,13 +166,13 @@ def linkcode_resolve(domain, info):
     for part in fullname.split('.'):
         try:
             obj = getattr(obj, part)
-        except:
+        except Exception:
             return None
 
     # Find the file which contains the object
     try:
         file_name = inspect.getsourcefile(obj)
-    except:
+    except Exception:
         file_name = None
     if not file_name:
         return None
@@ -184,7 +184,7 @@ def linkcode_resolve(domain, info):
     # Get the line number range that object lives on
     try:
         source, lineno = inspect.getsourcelines(obj)
-    except:
+    except Exception:
         lineno = None
     if lineno:
         linespec = "#L{}-L{}".format(lineno,
