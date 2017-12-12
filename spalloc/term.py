@@ -102,10 +102,7 @@ class Terminal(object):
         """If enabled, passes through the given value, otherwise passes through
         an empty string.
         """
-        if self.enabled:
-            return string
-        else:
-            return ""
+        return string if self.enabled else ""
 
     def clear_screen(self):
         """Clear the screen and reset cursor to top-left corner."""
@@ -130,33 +127,31 @@ class Terminal(object):
             # No previous line to update, just save the cursor.
             self._location_saved = True
             return "".join((self("\0337"), str(string)))
-        else:
-            # Restore to previous location and clear line.
-            return "".join((self("\0338\033[K"), str(string)))
+        # Restore to previous location and clear line.
+        return "".join((self("\0338\033[K"), str(string)))
 
     def set_attrs(self, attrs=tuple()):
         """Construct an ANSI control sequence which sets the given attribute
         numbers.
         """
-        if attrs:
-            return self("\033[{}m".format(";".join(str(attr)
-                                                   for attr in attrs)))
-        else:
+        if not attrs:
             return ""
+        return self("\033[{}m".format(
+            ";".join(str(attr) for attr in attrs)))
 
     def wrap(self, string=None, pre="", post=""):
         """Wrap a string in the suppled pre and post strings or just print the
         pre string if no string given.
         """
-        if string is not None:
-            return "".join((pre, str(string), post))
-        else:
+        if string is None:
             return pre
+        return "".join((pre, str(string), post))
 
     def __getattr__(self, name):
         """Implements all the 'magic' style methods."""
         attrs = []
         while name:
+            # pylint: disable=not-an-iterable
             for attr in ANSIDisplayAttributes:
                 if name.startswith(attr.name):
                     attrs.append(int(attr))
@@ -353,7 +348,7 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 """The default board edge styles."""
 
 
-def render_boards(board_groups, dead_links=set(),
+def render_boards(board_groups, dead_links=frozenset(),
                   dead_edge=("XXX", "X", "X"),
                   blank_label="   ", blank_edge=("   ", " ", " ")):
     r"""Render an ASCII art diagram of a set of boards with sets of boards.
@@ -388,6 +383,8 @@ def render_boards(board_groups, dead_links=set(),
         The characters to use to render non-existant board edges. (Blank by
         default)
     """
+    # pylint: disable=too-many-locals
+
     # {(x, y): string_types, ...}
     board_labels = {}
     # {(x, y, edge): str, ...}
@@ -430,7 +427,7 @@ def render_boards(board_groups, dead_links=set(),
 
     # Get the bounds of the size of diagram to render
     all_xy = tuple(chain(all_boards, ((x, y) for x, y, edge in board_edges)))
-    if len(all_xy) == 0:
+    if not all_xy:
         return ""  # Special case since min/max will fail otherwise
     x_min, y_min = map(min, zip(*all_xy))
     x_max, y_max = map(max, zip(*all_xy))
@@ -485,7 +482,7 @@ def render_cells(cells, width=80, col_spacing=2):
         Size of the gap to leave between columns.
     """
     # Special case (since max below will fail)
-    if len(cells) == 0:
+    if not cells:
         return ""
 
     # Columns should be at least as large as the largest cell with padding

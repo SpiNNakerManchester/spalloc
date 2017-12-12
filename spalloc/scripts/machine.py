@@ -17,7 +17,7 @@ real-time.
 """
 import argparse
 from collections import defaultdict, OrderedDict
-from six import next
+from six import next  # pylint: disable=redefined-builtin
 import sys
 
 from spalloc import __version__
@@ -86,6 +86,14 @@ def list_machines(t, machines, jobs):
     print(render_table(table))
 
 
+def _get_machine(machines, machine_name):
+    for machine in machines:
+        if machine["name"] == machine_name:
+            return machine
+    # No matching machine
+    raise Terminate(6, "No machine '{}' was found", machine_name)
+
+
 def show_machine(t, machines, jobs, machine_name, compact=False):
     """Display a more detailed overview of an individual machine.
 
@@ -107,13 +115,10 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     -------
         An error code: 0 on success.
     """
+    # pylint: disable=too-many-locals
+
     # Find the machine requested
-    for machine in machines:
-        if machine["name"] == machine_name:
-            break
-    else:
-        # No matching machine
-        raise Terminate(6, "No machine '{}' was found", machine_name)
+    machine = _get_machine(machines, machine_name)
 
     # Extract list of jobs running on the machine
     displayed_jobs = []

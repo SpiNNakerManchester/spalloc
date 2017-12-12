@@ -240,7 +240,7 @@ class Job(object):
 
         # Set-up (but don't start) background keepalive thread
         self._keepalive_thread = threading.Thread(
-            target=self._keepalive_thread,
+            target=self.__keepalive_thread_impl,
             name="job-keepalive-thread")
         self._keepalive_thread.daemon = True
 
@@ -330,8 +330,7 @@ class Job(object):
             self.destroy()
             raise
 
-    def __exit__(self, type=None,  # @ReservedAssignment
-                 value=None, traceback=None):  # @UnusedVariable
+    def __exit__(self, _type, _value, _traceback):
         self.destroy()
         return False
 
@@ -363,7 +362,7 @@ class Job(object):
                 "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
-    def _keepalive_thread(self):
+    def __keepalive_thread_impl(self):
         """Background keep-alive thread."""
         # Send the keepalive packet twice as often as required
         keepalive = self._keepalive
@@ -379,6 +378,8 @@ class Job(object):
                 except (ProtocolTimeoutError, IOError, OSError):
                     # Something went wrong, reconnect, after a delay which
                     # may be interrupted by the thread being stopped
+
+                    # pylint: disable=protected-access
                     self._client._close()
                     if not self._stop.wait(self._reconnect_delay):
                         self._reconnect()

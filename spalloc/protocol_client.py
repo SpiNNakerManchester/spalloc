@@ -91,8 +91,7 @@ class ProtocolClient(object):
         self.connect(self._default_timeout)
         return self
 
-    def __exit__(self, type,  # @ReservedAssignment # pragma: no cover
-                 value, tb):  # @UnusedVariable # pragma: no cover
+    def __exit__(self, _ty, _val, _tb):  # pragma: no cover
         self.close()
         return False
 
@@ -217,7 +216,7 @@ class ProtocolClient(object):
                 raise ProtocolTimeoutError("recv timed out.")
 
             # Has socket closed?
-            if len(data) == 0:
+            if not data:
                 raise OSError("Connection closed.")
 
             self._local.buffer += data
@@ -396,11 +395,13 @@ class ProtocolClient(object):
 
     def get_board_position(self, machine_name, x, y, z,
                            timeout=None):  # pragma: no cover
+        # pylint: disable=too-many-arguments
         return self.call("get_board_position", machine_name, x, y, z,
                          timeout=timeout)
 
     def get_board_at_position(self, machine_name, x, y, z,
                               timeout=None):  # pragma: no cover
+        # pylint: disable=too-many-arguments
         return self.call("get_board_at_position", machine_name, x, y, z,
                          timeout=timeout)
 

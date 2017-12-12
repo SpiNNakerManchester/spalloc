@@ -13,7 +13,7 @@ class Terminate(Exception):
         self._code = code
         if message is None:
             self._msg = None
-        elif len(args):
+        elif args:
             self._msg = message.format(*args)
         else:
             self._msg = message
