@@ -33,7 +33,7 @@ def version_verify(client, timeout):
 
 class Script(object):
     def __init__(self):
-        self.clientFactory = ProtocolClient
+        self.client_factory = ProtocolClient
 
     def get_parser(self, cfg):
         """Return a set-up instance of :py:class:`argparse.ArgumentParser`"""
@@ -71,7 +71,7 @@ class Script(object):
         self.verify_arguments(args)
 
         try:
-            with self.clientFactory(args.hostname, args.port) as client:
+            with self.client_factory(args.hostname, args.port) as client:
                 version_verify(client, args.timeout)
                 self.body(client, args)
                 return 0

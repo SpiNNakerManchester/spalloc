@@ -16,7 +16,7 @@ from spalloc.scripts.support import \
 def mock_protocol_client(monkeypatch):
     mock_protocol_client = Mock()
     monkeypatch.setattr(main,
-                        "clientFactory",
+                        "client_factory",
                         mock_protocol_client)
     return mock_protocol_client
 
@@ -49,7 +49,7 @@ class TestShowJobInfo(object):
 
         show_job_info(t, client, 1.0, 123)
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         assert out == ("Job ID: 123\n"
                        " State: unknown\n")
 
@@ -79,7 +79,7 @@ class TestShowJobInfo(object):
 
         show_job_info(t, client, 1.0, 123)
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         assert out == ("    Job ID: 123\n"
                        "     Owner: me\n"
                        "     State: queued\n"
@@ -119,7 +119,7 @@ class TestShowJobInfo(object):
 
         show_job_info(t, client, 1.0, 123)
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         assert out == ("     Job ID: 123\n"
                        "      Owner: me\n"
                        "      State: " + state.name + "\n"
@@ -154,7 +154,7 @@ class TestShowJobInfo(object):
 
         show_job_info(t, client, 1.0, 123)
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
         assert out == ("Job ID: 123\n"
                        " State: destroyed\n"
                        "Reason: foobar\n")
@@ -263,7 +263,7 @@ class TestListIPs(object):
 
         list_ips(client, 1.0, 123)
 
-        out, err = capsys.readouterr()
+        out, _ = capsys.readouterr()
 
         assert out == ("x,y,hostname\n"
                        "0,0,board00\n"
