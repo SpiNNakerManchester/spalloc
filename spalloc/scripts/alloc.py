@@ -512,7 +512,7 @@ def main(argv=None):
     _, ip_file_filename = tempfile.mkstemp(".csv", "spinnaker_ips_")
 
     try:
-        run_job(job_args, job_kwargs, ip_file_filename)
+        return run_job(job_args, job_kwargs, ip_file_filename)
     except SpallocServerException as e:  # pragma: no cover
         info(t.red("Error from server: {}".format(e)))
         return 6
