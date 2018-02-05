@@ -24,7 +24,7 @@ class MockServer(object):
     def connect(self):
         """Wait for a client to connect."""
         self._started.set()
-        self._sock, addr = self._server_socket.accept()
+        self._sock, _addr = self._server_socket.accept()
 
     def close(self):
         if self._sock is not None:

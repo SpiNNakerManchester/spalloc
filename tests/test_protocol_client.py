@@ -8,7 +8,7 @@ import logging
 from spalloc import ProtocolClient
 from spalloc import SpallocServerException, ProtocolTimeoutError, ProtocolError
 
-from common import MockServer  # @UnresolvedImport
+from .common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)
 
