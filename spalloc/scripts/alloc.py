@@ -209,7 +209,7 @@ def run_command(command, job_id, machine_name, connections, width, height,
     int
         The return code of the supplied command.
     """
-
+    # pylint: disable=too-many-arguments
     root_hostname = connections[(0, 0)]
 
     # Print essential info in log
@@ -240,6 +240,65 @@ def run_command(command, job_id, machine_name, connections, width, height,
             return p.wait()
         except KeyboardInterrupt:
             p.terminate()
+
+
+def info(msg):
+    if not args.quiet:
+        t.stream.write("{}\n".format(msg))
+
+
+def update(msg, colour, *args):
+    info(t.update(colour(msg.format(*args))))
+
+
+def wait_for_job_ready(job):
+    # Wait for it to become ready, keeping the user informed along the
+    # way
+    old_state = None
+    cur_state = job.state
+    try:
+        while True:
+            # Show debug info on state-change
+            if old_state != cur_state:
+                if cur_state == JobState.queued:
+                    update("Job {}: Waiting in queue...", t.yellow,
+                           job.id)
+                elif cur_state == JobState.power:
+                    update("Job {}: Waiting for power on...", t.yellow,
+                           job.id)
+                elif cur_state == JobState.ready:
+                    # Here we go!
+                    return 0, None
+                elif cur_state == JobState.destroyed:
+                    # Exit with error state
+                    reason = None
+                    try:
+                        reason = job.reason
+                    except (IOError, OSError):
+                        pass
+
+                    if reason is not None:
+                        update("Job {}: Destroyed: {}", t.red,
+                               job.id, reason)
+                    else:
+                        update("Job {}: Destroyed.", t.red,
+                               job.id)
+                    return 1, reason
+                elif cur_state == JobState.unknown:
+                    update("Job {}: Job not recognised by server.", t.red,
+                           job.id)
+                    return 2, None
+                else:
+                    update("Job {}: Entered an unrecognised state {}.",
+                           t.red, job.id, cur_state)
+                    return 3, None
+
+            old_state, cur_state = \
+                cur_state, job.wait_for_state_change(cur_state)
+    except KeyboardInterrupt:
+        # Gracefully terminate from keyboard interrupt
+        update("Job {}: Keyboard interrupt.", t.red, job.id)
+        return 4, "Keyboard interrupt."
 
 
 def parse_argv(argv):
@@ -350,7 +409,53 @@ def parse_argv(argv):
     return parser, parser.parse_args(argv)
 
 
+def run_job(job_args, job_kwargs, ip_file_filename):
+    # Reason for destroying the job
+    reason = None
+
+    # Create the job
+    try:
+        job = Job(*job_args, **job_kwargs)
+    except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
+        info(t.red("Could not connect to server: {}".format(e)))
+        return 6
+
+    try:
+        # Wait for it to become ready, keeping the user informed along the
+        # way
+        code, reason = wait_for_job_ready(job)
+        if code != 0:
+            return code
+
+        # Machine is now ready
+        write_ips_to_csv(job.connections, ip_file_filename)
+
+        # Boot the machine if required
+        if MachineController is not None and args.boot:
+            update("Job {}: Booting...", t.yellow, job.id)
+            mc = MachineController(job.hostname)
+            mc.boot(job.width, job.height)
+
+        update("Job {}: Ready!", t.green, job.id)
+
+        # Either run the user's application or just print the details.
+        if not args.command:
+            print_info(job.machine_name, job.connections,
+                       job.width, job.height, ip_file_filename)
+            return 0
+        return run_command(args.command, job.id, job.machine_name,
+                           job.connections, job.width, job.height,
+                           ip_file_filename)
+    finally:
+        # Destroy job and disconnect client
+        if args.no_destroy:
+            job.close()
+        else:
+            job.destroy(reason)
+
+
 def main(argv=None):
+    global args, t
     parser, args = parse_argv(argv)
     t = Terminal(stream=sys.stderr)
 
@@ -406,109 +511,8 @@ def main(argv=None):
     # Create temporary file in which to write CSV of all board IPs
     _, ip_file_filename = tempfile.mkstemp(".csv", "spinnaker_ips_")
 
-    def info(msg):
-        if not args.quiet:
-            t.stream.write("{}\n".format(msg))
-
-    def wait_for_job_ready():
-        # Wait for it to become ready, keeping the user informed along the
-        # way
-        old_state = None
-        cur_state = job.state
-        reason = None
-        while True:
-            # Show debug info on state-change
-            if old_state != cur_state:
-                if cur_state == JobState.queued:
-                    info(t.update(t.yellow(
-                        "Job {}: Waiting in queue...".format(job.id))))
-                elif cur_state == JobState.power:
-                    info(t.update(t.yellow(
-                        "Job {}: Waiting for power on...".format(job.id))))
-                elif cur_state == JobState.ready:
-                    # Here we go!
-                    break
-                elif cur_state == JobState.destroyed:
-                    # Exit with error state
-                    try:
-                        reason = job.reason
-                    except (IOError, OSError):
-                        reason = None
-
-                    if reason is not None:
-                        info(t.update(t.red(
-                            "Job {}: Destroyed: {}".format(
-                                job.id, reason))))
-                    else:
-                        info(t.red("Job {}: Destroyed.".format(job.id)))
-                    return 1, reason
-                elif cur_state == JobState.unknown:
-                    info(t.update(t.red(
-                        "Job {}: Job not recognised by server.".format(
-                            job.id))))
-                    return 2, reason
-                else:
-                    info(t.update(t.red(
-                        "Job {}: Entered an unrecognised state {}.".format(
-                            job.id, cur_state))))
-                    return 3, reason
-
-            try:
-                old_state = cur_state
-                cur_state = job.wait_for_state_change(cur_state)
-            except KeyboardInterrupt:
-                # Gracefully terminate from keyboard interrupt
-                info(t.update(t.red(
-                    "Job {}: Keyboard interrupt.".format(
-                        job.id))))
-                reason = "Keyboard interrupt."
-                return 4, reason
-        return 0, reason
-
-    # Reason for destroying the job
-
-    reason = None
     try:
-        # Create the job
-        try:
-            job = Job(*job_args, **job_kwargs)
-        except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
-            info(t.red("Could not connect to server: {}".format(e)))
-            return 6
-        try:
-            # Wait for it to become ready, keeping the user informed along the
-            # way
-            code, reason = wait_for_job_ready()
-            if code != 0:
-                return code
-
-            # Machine is now ready
-            write_ips_to_csv(job.connections, ip_file_filename)
-
-            # Boot the machine if required
-            if MachineController is not None and args.boot:
-                info(t.update(t.yellow(
-                    "Job {}: Booting...".format(job.id))))
-                mc = MachineController(job.hostname)
-                mc.boot(job.width, job.height)
-
-            info(t.update(t.green("Job {}: Ready!".format(job.id))))
-
-            # Either run the user's application or just print the details.
-            if args.command:
-                return run_command(args.command, job.id, job.machine_name,
-                                   job.connections, job.width, job.height,
-                                   ip_file_filename)
-            else:
-                print_info(job.machine_name, job.connections,
-                           job.width, job.height, ip_file_filename)
-                return 0
-        finally:
-            # Destroy job and disconnect client
-            if args.no_destroy:
-                job.close()
-            else:
-                job.destroy(reason)
+        return run_job(job_args, job_kwargs, ip_file_filename)
     except SpallocServerException as e:  # pragma: no cover
         info(t.red("Error from server: {}".format(e)))
         return 6

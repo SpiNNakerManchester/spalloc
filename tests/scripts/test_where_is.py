@@ -22,7 +22,7 @@ def client(monkeypatch):
         "job_id": 11,
         "job_chip": [13, 12],
     }
-    monkeypatch.setattr(main, "clientFactory", Mock(return_value=client))
+    monkeypatch.setattr(main, "client_factory", Mock(return_value=client))
     return client
 
 
@@ -80,7 +80,7 @@ def test_job_chip(basic_config_file, client):
 
 def test_formatting_full(basic_config_file, client, capsys):
     assert main("--job-chip 123 7 8".split()) == 0
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
                    "        Board coordinate: (3, 2, 1)\n"
@@ -92,7 +92,7 @@ def test_formatting_full(basic_config_file, client, capsys):
 
 def test_formatting_no_board_chip(basic_config_file, client, capsys):
     assert main("--board m 3 2 1".split()) == 0
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
                    "        Board coordinate: (3, 2, 1)\n"
@@ -105,7 +105,7 @@ def test_formatting_no_job(basic_config_file, client, capsys):
     client.where_is.return_value["job_id"] = None
     client.where_is.return_value["job_chip"] = None
     assert main("--board m 3 2 1".split()) == 0
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
                    "        Board coordinate: (3, 2, 1)\n"

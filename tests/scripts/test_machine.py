@@ -18,13 +18,13 @@ def client(monkeypatch):
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
     client.__exit__.return_value = False
     monkeypatch.setattr(main,
-                        "clientFactory",
+                        "client_factory",
                         Mock(return_value=client))
     return client
 
 
 def test_generate_keys():
-    actual = [v for v, i in zip(generate_keys("AB"), range(8))]
+    actual = [v for v, _ in zip(generate_keys("AB"), range(8))]
     expected = ["A", "B", "AA", "AB", "BA", "BB", "AAA", "AAB"]
     assert actual == expected
 
@@ -67,7 +67,7 @@ def test_list_machines(capsys):
 
     list_machines(t, machines, jobs)
 
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == (
         "Name  Num boards  In-use  Jobs  Tags\n"
         "m1             5       3     2  default\n"
@@ -110,7 +110,7 @@ def test_show_machine(capsys):
 
     show_machine(t, machines, jobs, "m1")
 
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == (
         "  Name: m1\n"
         "  Tags: default\n"
@@ -163,7 +163,7 @@ def test_show_machine_compact(capsys):
 
     show_machine(t, machines, jobs, "m1", True)
 
-    out, err = capsys.readouterr()
+    out, _ = capsys.readouterr()
     assert out == (
         "  Name: m1\n"
         "  Tags: default\n"

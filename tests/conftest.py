@@ -10,7 +10,7 @@ import tempfile
 from spalloc import ProtocolClient
 from spalloc.config import SEARCH_PATH
 
-from common import MockServer
+from .common import MockServer
 
 
 @pytest.yield_fixture
@@ -59,7 +59,7 @@ def basic_config_file(monkeypatch):
     # Sets up a basic config file with known and non-default values for all
     # fields
     fd, filename = tempfile.mkstemp()
-    with open(filename, "w") as f:
+    with os.fdopen(fd, "w") as f:
         f.write("[spalloc]\n"
                 "hostname=localhost\n"
                 "port=22244\n"

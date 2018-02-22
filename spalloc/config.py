@@ -70,6 +70,7 @@ import os.path
 import appdirs
 
 from six import iteritems
+# pylint: disable=import-error
 from six.moves.configparser import ConfigParser, NoOptionError
 
 
@@ -88,8 +89,46 @@ SEARCH_PATH = [
     CWD_CONFIG_FILE,
 ]
 
+SECTION = "spalloc"
+DEFAULT_CONFIG = {
+    "port": "22244",
+    "keepalive": "60.0",
+    "reconnect_delay": "5.0",
+    "timeout": "5.0",
+    "machine": "None",
+    "tags": "None",
+    "min_ratio": "0.333",
+    "max_dead_boards": "0",
+    "max_dead_links": "None",
+    "require_torus": "False"}
 
-def read_config(filenames=SEARCH_PATH):
+
+def _read_none_or_float(parser, option):
+    if parser.get(SECTION, option) == "None":
+        return None
+    return parser.getfloat(SECTION, option)
+
+
+def _read_none_or_int(parser, option):
+    if parser.get(SECTION, option) == "None":
+        return None
+    return parser.getint(SECTION, option)
+
+
+def _read_any_str(parser, option):
+    try:
+        return parser.get(SECTION, option)
+    except NoOptionError:
+        return None
+
+
+def _read_none_or_str(parser, option):
+    if parser.get(SECTION, option) == "None":
+        return None
+    return parser.get(SECTION, option)
+
+
+def read_config(filenames=None):
     """Attempt to read local configuration files to determine spalloc client
     settings.
 
@@ -103,21 +142,14 @@ def read_config(filenames=SEARCH_PATH):
     dict
         The configuration loaded.
     """
+    if filenames is None:  # pragma: no cover
+        filenames = SEARCH_PATH
     parser = ConfigParser()
 
     # Set default config values (NB: No read_dict in Python 2.7)
-    parser.add_section("spalloc")
-    for key, value in iteritems({"port": "22244",
-                                 "keepalive": "60.0",
-                                 "reconnect_delay": "5.0",
-                                 "timeout": "5.0",
-                                 "machine": "None",
-                                 "tags": "None",
-                                 "min_ratio": "0.333",
-                                 "max_dead_boards": "0",
-                                 "max_dead_links": "None",
-                                 "require_torus": "False"}):
-        parser.set("spalloc", key, value)
+    parser.add_section(SECTION)
+    for key, value in iteritems(DEFAULT_CONFIG):
+        parser.set(SECTION, key, value)
 
     # Attempt to read from each possible file location in turn
     for filename in filenames:
@@ -128,56 +160,22 @@ def read_config(filenames=SEARCH_PATH):
             # File did not exist, keep trying
             pass
 
-    cfg = {}
+    cfg = {
+        "hostname":        _read_any_str(parser, "hostname"),
+        "owner":           _read_any_str(parser, "owner"),
+        "port":            parser.getint(SECTION, "port"),
+        "keepalive":       _read_none_or_float(parser, "keepalive"),
+        "reconnect_delay": parser.getfloat(SECTION, "reconnect_delay"),
+        "timeout":         _read_none_or_float(parser, "timeout"),
+        "machine":         _read_none_or_str(parser, "machine"),
+        "min_ratio":       parser.getfloat(SECTION, "min_ratio"),
+        "max_dead_boards": _read_none_or_int(parser, "max_dead_boards"),
+        "max_dead_links":  _read_none_or_int(parser, "max_dead_links"),
+        "require_torus":   parser.getboolean(SECTION, "require_torus")}
 
-    try:
-        cfg["hostname"] = parser.get("spalloc", "hostname")
-    except NoOptionError:
-        cfg["hostname"] = None
-
-    cfg["port"] = parser.getint("spalloc", "port")
-
-    try:
-        cfg["owner"] = parser.get("spalloc", "owner")
-    except NoOptionError:
-        cfg["owner"] = None
-
-    if parser.get("spalloc", "keepalive") == "None":
-        cfg["keepalive"] = None
-    else:
-        cfg["keepalive"] = parser.getfloat("spalloc", "keepalive")
-
-    cfg["reconnect_delay"] = parser.getfloat("spalloc", "reconnect_delay")
-
-    if parser.get("spalloc", "timeout") == "None":
-        cfg["timeout"] = None
-    else:
-        cfg["timeout"] = parser.getfloat("spalloc", "timeout")
-
-    if parser.get("spalloc", "machine") == "None":
-        cfg["machine"] = None
-    else:
-        cfg["machine"] = parser.get("spalloc", "machine")
-
-    if parser.get("spalloc", "tags") == "None":
-        cfg["tags"] = None
-    else:
-        cfg["tags"] = list(map(str.strip,
-                               parser.get("spalloc", "tags").split(",")))
-
-    cfg["min_ratio"] = parser.getfloat("spalloc", "min_ratio")
-
-    if parser.get("spalloc", "max_dead_boards") == "None":
-        cfg["max_dead_boards"] = None
-    else:
-        cfg["max_dead_boards"] = parser.getint("spalloc", "max_dead_boards")
-
-    if parser.get("spalloc", "max_dead_links") == "None":
-        cfg["max_dead_links"] = None
-    else:
-        cfg["max_dead_links"] = parser.getint("spalloc", "max_dead_links")
-
-    cfg["require_torus"] = parser.getboolean("spalloc", "require_torus")
+    tags = _read_none_or_str(parser, "tags")
+    cfg["tags"] = None if tags is None else list(
+        map(str.strip, tags.split(",")))
 
     return cfg
 

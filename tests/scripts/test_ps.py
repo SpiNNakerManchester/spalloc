@@ -10,19 +10,19 @@ from spalloc import JobState
 
 
 @pytest.fixture
-def clientFactory(monkeypatch):
+def client_factory(monkeypatch):
     mock = Mock()
-    monkeypatch.setattr(main, "clientFactory", mock)
+    monkeypatch.setattr(main, "client_factory", mock)
     return mock
 
 
 @pytest.fixture
-def client(clientFactory):
+def client(client_factory):
     client = MagicMock()
     client.__enter__.return_value = client
     client.version.return_value = ".".join(map(str, VERSION_RANGE_START))
     client.__exit__.return_value = False
-    clientFactory.return_value = client
+    client_factory.return_value = client
     return client
 
 
@@ -167,24 +167,24 @@ def test_args_no_hostname(no_config_files):
         main("".split())
 
 
-def test_args_from_file(basic_config_file, basic_job_kwargs, clientFactory,
+def test_args_from_file(basic_config_file, basic_job_kwargs, client_factory,
                         client, faux_render):
     client.list_jobs.return_value = []
     assert main("".split()) == 0
-    clientFactory.assert_called_once_with(basic_job_kwargs["hostname"],
-                                          basic_job_kwargs["port"])
+    client_factory.assert_called_once_with(basic_job_kwargs["hostname"],
+                                           basic_job_kwargs["port"])
     assert faux_render.mock_calls[0][1][1] == []
     assert faux_render.mock_calls[0][1][2].machine is None
     assert faux_render.mock_calls[0][1][2].owner is None
 
 
-def test_args(basic_config_file, basic_job_kwargs, clientFactory, client,
+def test_args(basic_config_file, basic_job_kwargs, client_factory, client,
               faux_render):
     client.list_jobs.return_value = []
     client.wait_for_notification.side_effect = KeyboardInterrupt()
     assert main("--hostname pstastic --port 10 --timeout 9.0 "
                 "--machine foo --owner bar --watch".split()) == 0
-    clientFactory.assert_called_once_with("pstastic", 10)
+    client_factory.assert_called_once_with("pstastic", 10)
     client.wait_for_notification.assert_called_once_with()
     assert faux_render.mock_calls[0][1][1] == []
     assert faux_render.mock_calls[0][1][2].machine == "foo"

@@ -13,7 +13,7 @@ from spalloc.scripts.alloc import \
 
 @pytest.yield_fixture
 def filename():
-    fd, filename = tempfile.mkstemp()
+    _, filename = tempfile.mkstemp()
     yield filename
     os.remove(filename)
 
@@ -28,28 +28,28 @@ def mock_input(monkeypatch):
 
 @pytest.fixture
 def mock_popen(monkeypatch):
-    popen = Mock(wait=Mock(return_value=123))
-    Popen = Mock(return_value=popen)
+    popen_behaviour = Mock(wait=Mock(return_value=123))
+    popen_func = Mock(return_value=popen_behaviour)
     import subprocess
-    monkeypatch.setattr(subprocess, "Popen", Popen)
-    return Popen
+    monkeypatch.setattr(subprocess, "Popen", popen_func)
+    return popen_func
 
 
 @pytest.fixture
 def mock_job(monkeypatch):
     # A fake job which immediately exits with a connection error.
-    Job = Mock(side_effect=OSError())
+    job_returner = Mock(side_effect=OSError())
     import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "Job", Job)
-    return Job
+    monkeypatch.setattr(spalloc.scripts.alloc, "Job", job_returner)
+    return job_returner
 
 
 @pytest.fixture
 def mock_working_job(monkeypatch):
     job = Mock()
-    Job = Mock(return_value=job)
+    job_returner = Mock(return_value=job)
     import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "Job", Job)
+    monkeypatch.setattr(spalloc.scripts.alloc, "Job", job_returner)
 
     job.id = 123
     job.state = JobState.queued
@@ -68,11 +68,10 @@ def mock_working_job(monkeypatch):
 
 @pytest.fixture
 def mock_mc(monkeypatch):
-    mc = Mock()
-    MC = Mock(return_value=mc)
+    mc = Mock(return_value=Mock())
     import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", MC)
-    return MC
+    monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", mc)
+    return mc
 
 
 @pytest.fixture

@@ -293,7 +293,7 @@ class ManageJobScript(Script):
         # No Job ID specified, attempt to discover one
         jobs = client.list_jobs(timeout=args.timeout)
         job_ids = [job["job_id"] for job in jobs if job["owner"] == args.owner]
-        if len(job_ids) == 0:
+        if not job_ids:
             raise Terminate(3, "Owner {} has no live jobs", args.owner)
         elif len(job_ids) > 1:
             raise Terminate(3, "Ambiguous: {} has {} live jobs: {}",
