@@ -7,6 +7,7 @@ from collections import deque
 from spalloc._utils import time_left, timed_out, make_timeout
 import errno
 import sys
+from six import raise_from
 
 
 class ProtocolError(Exception):
@@ -297,7 +298,7 @@ class ProtocolClient(object):
                 with self._notifications_lock:
                     self._notifications.append(obj)
         except (IOError, OSError) as e:
-            raise ProtocolError(str(e))
+            raise_from(ProtocolError(str(e)), e)
 
     def wait_for_notification(self, timeout=None):
         """Return the next notification to arrive.
@@ -339,7 +340,7 @@ class ProtocolClient(object):
         try:
             return self._recv_json(timeout)
         except (IOError, OSError) as e:  # pragma: no cover
-            raise ProtocolError(str(e))
+            raise_from(ProtocolError(str(e)), e)
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
