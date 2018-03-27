@@ -157,32 +157,6 @@ def test_version_check(client, no_config_files, version, ok):
 
 class TestKeepalive(object):
 
-    def test_normal_operation(self, client, no_config_files):
-        # Make sure that the keepalive is sent out at the correct interval by
-        # the background thread (and make sure this thread is daemonic
-        j = Job(hostname="localhost", owner="me", keepalive=0.2)
-        assert j._keepalive_thread.daemon is True
-        time.sleep(0.5)
-        j.close()
-
-        assert 4 <= len(client.job_keepalive.mock_calls) <= 6
-
-    def test_reconnect(self, client, no_config_files):
-        # Make sure that we can reconnect in the keepalive thread
-        client.job_keepalive.side_effect = [
-            IOError(), IOError(), None, None, None, None]
-        client.connect.side_effect = [
-            None, IOError(), None, None, None, None]
-        j = Job(hostname="localhost", owner="me",
-                keepalive=0.2, reconnect_delay=0.2)
-        time.sleep(0.55)
-        j.close()
-
-        # Should have attempted a reconnect after a 0.1 + 0.2 second delay then
-        # started sending keepalives as usual every 0.1 sec
-        assert 2 <= len(client.job_keepalive.mock_calls) <= 4
-        assert len(client.connect.mock_calls) == 3
-
     def test_stop_while_server_down(self, client, no_config_files):
         client.job_keepalive.side_effect = IOError()
 
@@ -339,7 +313,7 @@ class TestWaitForStateChange(object):
         assert j.wait_for_state_change(
             JobState.power, timeout=0.2) == JobState.power
         assert len(client.wait_for_notification.mock_calls) == 1
-        assert 0.15 < client.wait_for_notification.mock_calls[0][1][0] <= 0.2
+        assert 0.15 < client.wait_for_notification.mock_calls[0][1][0] <= 0.25
 
         j.close()
 

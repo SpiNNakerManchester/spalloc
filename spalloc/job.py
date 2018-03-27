@@ -2,7 +2,7 @@
 
 from collections import namedtuple
 import logging
-import threading
+import subprocess
 import time
 
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
@@ -238,15 +238,6 @@ class Job(object):
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
 
-        # Set-up (but don't start) background keepalive thread
-        self._keepalive_thread = threading.Thread(
-            target=self.__keepalive_thread_impl,
-            name="job-keepalive-thread")
-        self._keepalive_thread.daemon = True
-
-        # Event fired when the background thread should shut-down
-        self._stop = threading.Event()
-
         # Check version compatibility (fail fast if can't communicate with
         # server)
         self._client.connect(timeout=self._timeout)
@@ -305,8 +296,11 @@ class Job(object):
 
             logger.info("Created spalloc job %d", self.id)
 
-        # Start keepalive thread now that everything is up
-        self._keepalive_thread.start()
+        # Set-up and start background keepalive thread
+        self._keepalive_process = subprocess.Popen(map(str, [
+                "python", "-m", "spalloc._keepalive_process", hostname, port,
+                self.id, self._keepalive, self._timeout,
+                self._reconnect_delay]), stdin=subprocess.PIPE)
 
     def __enter__(self):
         """Convenience context manager for common case where a new job is to be
@@ -362,28 +356,6 @@ class Job(object):
                 "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
-    def __keepalive_thread_impl(self):
-        """Background keep-alive thread."""
-        # Send the keepalive packet twice as often as required
-        keepalive = self._keepalive
-        if keepalive is not None:
-            keepalive /= 2.0
-        while not self._stop.wait(keepalive):
-            # Keep trying to send the keep-alive packet, if this fails,
-            # keep trying to reconnect until it succeeds.
-            while not self._stop.is_set():
-                try:
-                    self._client.job_keepalive(self.id, timeout=self._timeout)
-                    break
-                except (ProtocolTimeoutError, IOError, OSError):
-                    # Something went wrong, reconnect, after a delay which
-                    # may be interrupted by the thread being stopped
-
-                    # pylint: disable=protected-access
-                    self._client._close()
-                    if not self._stop.wait(self._reconnect_delay):
-                        self._reconnect()
-
     def destroy(self, reason=None):
         """Destroy the job and disconnect from the server.
 
@@ -414,8 +386,9 @@ class Job(object):
             :py:meth:`.destroy` instead.
         """
         # Stop background thread
-        self._stop.set()
-        self._keepalive_thread.join()
+        if self._keepalive_process.poll() is None:
+            self._keepalive_process.communicate(input="exit\n")
+            self._keepalive_process.wait()
 
         # Disconnect
         self._client.close()
@@ -756,7 +729,7 @@ class _JobStateTuple(namedtuple("_JobStateTuple",
 class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
                                       "width,height,connections,"
                                       "machine_name,boards")):
-    """Tuple describing the machine alloated to a job, returned by
+    """Tuple describing the machine allocated to a job, returned by
     :py:meth:`.Job._get_machine_info`.
 
     Parameters
