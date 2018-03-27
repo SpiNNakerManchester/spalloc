@@ -387,7 +387,7 @@ class Job(object):
         """
         # Stop background thread
         if self._keepalive_process.poll() is None:
-            self._keepalive_process.communicate(input="exit\n")
+            self._keepalive_process.communicate(input="exit\n".encode("ascii"))
             self._keepalive_process.wait()
 
         # Disconnect
