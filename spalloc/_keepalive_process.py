@@ -25,40 +25,30 @@ class KeepAliveProcess(object):
         """Background keep-alive thread."""
         self._running.set()
         client = ProtocolClient(hostname, port)
-        print "Connect"
         client.connect(timeout)
 
         # Send the keepalive packet twice as often as required
         if keepalive is not None:
             keepalive /= 2.0
-        print "Wait", keepalive
         while not self._stop.wait(keepalive):
 
             # Keep trying to send the keep-alive packet, if this fails,
             # keep trying to reconnect until it succeeds.
-            print "Stop set", self._stop.is_set()
             while not self._stop.is_set():
                 try:
-                    print "Keepalive"
                     client.job_keepalive(job_id, timeout=timeout)
                     break
                 except (ProtocolTimeoutError, IOError, OSError):
-                    print "Error"
                     # Something went wrong, reconnect, after a delay which
                     # may be interrupted by the thread being stopped
 
                     # pylint: disable=protected-access
                     client._close()
-                    print "Wait", reconnect_delay
                     if not self._stop.wait(reconnect_delay):
-                        print "Reconnect"
                         try:
                             client.connect(timeout)
-                            print "Reconnected"
                         except (IOError, OSError):
-                            print "Reconnect Error"
                             client.close()
-        print "Stopped"
 
 
 if __name__ == "__main__":
