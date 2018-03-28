@@ -4,6 +4,7 @@ from collections import namedtuple
 import logging
 import subprocess
 import time
+import sys
 
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .config import read_config, SEARCH_PATH
@@ -298,8 +299,8 @@ class Job(object):
 
         # Set-up and start background keepalive thread
         self._keepalive_process = subprocess.Popen(map(str, [
-                "python", "-m", "spalloc._keepalive_process", hostname, port,
-                self.id, self._keepalive, self._timeout,
+                sys.executable, "-m", "spalloc._keepalive_process", hostname,
+                port, self.id, self._keepalive, self._timeout,
                 self._reconnect_delay]), stdin=subprocess.PIPE)
 
     def __enter__(self):
