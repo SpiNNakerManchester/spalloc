@@ -183,7 +183,7 @@ class TestKeepalive(object):
         j = Thread(target=keepalive.main, args=(
             "localhost", 12345, 1, 0.2, 0.1, 0.2))
         j.start()
-        time.sleep(0.55)
+        time.sleep(0.75)
         keepalive.stop.set()
 
         # Should have attempted a reconnect after a 0.1 + 0.2 second delay then
