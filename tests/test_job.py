@@ -4,12 +4,16 @@ from mock import Mock
 
 import time
 
-from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError
+from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError,\
+    _keepalive_process
 
 from spalloc.job import \
     _JobStateTuple, _JobMachineInfoTuple, \
     VERSION_RANGE_START, VERSION_RANGE_STOP, \
     StateChangeTimeoutError
+
+import spalloc._keepalive_process as keepalive
+from threading import Thread
 
 GOOD_VERSION = ".".join(map(str, VERSION_RANGE_START))
 BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))
@@ -24,6 +28,8 @@ def client(monkeypatch):
 
     import spalloc.job
     monkeypatch.setattr(spalloc.job, "ProtocolClient",
+                        Mock(return_value=client))
+    monkeypatch.setattr(_keepalive_process, "ProtocolClient",
                         Mock(return_value=client))
     return client
 
@@ -156,6 +162,34 @@ def test_version_check(client, no_config_files, version, ok):
 
 
 class TestKeepalive(object):
+
+    def test_normal_operation(self, client, no_config_files):
+        # Make sure that the keepalive is sent out at the correct interval by
+        # the background thread (and make sure this thread is daemonic
+        j = Thread(target=keepalive.main, args=(
+            "localhost", 12345, 1, 0.2, 0.1, 0.1))
+        j.start()
+        time.sleep(0.5)
+        keepalive.stop.set()
+
+        assert 4 <= len(client.job_keepalive.mock_calls) <= 6
+
+    def test_reconnect(self, client, no_config_files):
+        # Make sure that we can reconnect in the keepalive thread
+        client.job_keepalive.side_effect = [
+            IOError(), IOError(), None, None, None, None]
+        client.connect.side_effect = [
+            None, IOError(), None, None, None, None]
+        j = Thread(target=keepalive.main, args=(
+            "localhost", 12345, 1, 0.2, 0.1, 0.2))
+        j.start()
+        time.sleep(0.55)
+        keepalive.stop.set()
+
+        # Should have attempted a reconnect after a 0.1 + 0.2 second delay then
+        # started sending keepalives as usual every 0.1 sec
+        assert 2 <= len(client.job_keepalive.mock_calls) <= 4
+        assert len(client.connect.mock_calls) == 3
 
     def test_stop_while_server_down(self, client, no_config_files):
         client.job_keepalive.side_effect = IOError()

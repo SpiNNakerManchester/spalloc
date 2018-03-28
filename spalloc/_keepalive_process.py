@@ -12,17 +12,7 @@ def wait_for_exit():
             stop.set()
 
 
-if __name__ == "__main__":
-    hostname = sys.argv[1]
-    port = int(sys.argv[2])
-    job_id = int(sys.argv[3])
-    keepalive = float(sys.argv[4])
-    timeout = float(sys.argv[5])
-    reconnect_delay = float(sys.argv[6])
-    exit_thread = threading.Thread(target=wait_for_exit)
-    exit_thread.daemon = True
-    exit_thread.start()
-
+def main(hostname, port, job_id, keepalive, timeout, reconnect_delay):
     """Background keep-alive thread."""
     client = ProtocolClient(hostname, port)
     client.connect(timeout)
@@ -45,4 +35,20 @@ if __name__ == "__main__":
                 # pylint: disable=protected-access
                 client._close()
                 if not stop.wait(reconnect_delay):
-                    client.connect(timeout)
+                    try:
+                        client.connect(timeout)
+                    except (IOError, OSError):
+                        client.close()
+
+
+if __name__ == "__main__":
+    hostname = sys.argv[1]
+    port = int(sys.argv[2])
+    job_id = int(sys.argv[3])
+    keepalive = float(sys.argv[4])
+    timeout = float(sys.argv[5])
+    reconnect_delay = float(sys.argv[6])
+    exit_thread = threading.Thread(target=wait_for_exit)
+    exit_thread.daemon = True
+    exit_thread.start()
+    main(hostname, port, job_id, keepalive, timeout, reconnect_delay)
