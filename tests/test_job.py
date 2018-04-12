@@ -6,13 +6,13 @@ import time
 
 from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError
 
-from spalloc._keepalive_process import KeepAliveProcess
+from spalloc._keepalive_process import keep_job_alive
 from spalloc.job import \
     _JobStateTuple, _JobMachineInfoTuple, \
     VERSION_RANGE_START, VERSION_RANGE_STOP, \
     StateChangeTimeoutError
 
-from threading import Thread
+from threading import Thread, Event
 
 GOOD_VERSION = ".".join(map(str, VERSION_RANGE_START))
 BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))
@@ -166,13 +166,12 @@ class TestKeepalive(object):
     def test_normal_operation(self, client, no_config_files):
         # Make sure that the keepalive is sent out at the correct interval by
         # the background thread (and make sure this thread is daemonic
-        keepalive = KeepAliveProcess()
-        j = Thread(target=keepalive.run, args=(
-            "localhost", 12345, 1, 0.2, 0.1, 0.1))
+        event = Event()
+        j = Thread(target=keep_job_alive, args=(
+            "localhost", 12345, 1, 0.2, 0.1, 0.1, event))
         j.start()
-        keepalive.wait_for_start()
-        time.sleep(0.5)
-        keepalive.stop()
+        time.sleep(1)
+        event.set()
 
         assert 4 <= len(client.job_keepalive.mock_calls) <= 6
 
@@ -182,13 +181,11 @@ class TestKeepalive(object):
             IOError(), IOError(), None, None, None, None]
         client.connect.side_effect = [
             None, IOError(), None, None, None, None]
-        keepalive = KeepAliveProcess()
-        j = Thread(target=keepalive.run, args=(
-            "localhost", 12345, 1, 0.2, 0.1, 0.2))
-        j.start()
-        keepalive.wait_for_start()
+        event = Event()
+        j = Thread(target=keep_job_alive, args=(
+            "localhost", 12345, 1, 0.2, 0.1, 0.2, event))
         time.sleep(0.55)
-        keepalive.stop()
+        event.set()
 
         # Should have attempted a reconnect after a 0.1 + 0.2 second delay then
         # started sending keepalives as usual every 0.1 sec
