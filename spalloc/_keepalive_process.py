@@ -11,7 +11,7 @@ import threading
 def wait_for_exit(stop_event):
     """ Listens to stdin for a line equal to 'exit' or end-of-file and then\
         notifies the given event (that it is time to stop keeping the Spalloc\
-        job alive). 
+        job alive).
 
     :param stop_event: Used to notify another thread that is time to stop.
     :type stop_event: threading.Event
@@ -23,7 +23,7 @@ def wait_for_exit(stop_event):
 
 
 def keep_job_alive(hostname, port, job_id, keepalive_period, timeout,
-               reconnect_delay, stop_event):
+                   reconnect_delay, stop_event):
     """ Keeps a Spalloc job alive. Run as a separate process to the main\
         Spalloc client.
 

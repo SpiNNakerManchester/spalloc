@@ -170,7 +170,7 @@ class TestKeepalive(object):
         j = Thread(target=keep_job_alive, args=(
             "localhost", 12345, 1, 0.2, 0.1, 0.1, event))
         j.start()
-        time.sleep(1)
+        time.sleep(0.55)
         event.set()
 
         assert 4 <= len(client.job_keepalive.mock_calls) <= 6
@@ -184,6 +184,7 @@ class TestKeepalive(object):
         event = Event()
         j = Thread(target=keep_job_alive, args=(
             "localhost", 12345, 1, 0.2, 0.1, 0.2, event))
+        j.start()
         time.sleep(0.55)
         event.set()
 
