@@ -82,7 +82,8 @@ if __name__ == "__main__":
     # Set things up so that we can detect when to stop
     stop_event = threading.Event()
     stdin_watcher_thread = threading.Thread(
-        target=wait_for_exit, args=(stop_event,), daemon=True)
+        target=wait_for_exit, args=(stop_event,))
+    stdin_watcher_thread.daemon = True
     stdin_watcher_thread.start()
 
     # Start keeping the job alive
