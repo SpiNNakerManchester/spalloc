@@ -4,3 +4,4 @@ appdirs
 enum-compat
 pytz
 tzlocal
+future

@@ -40,7 +40,8 @@ setup(
                       "appdirs",
                       "enum-compat",
                       "pytz",
-                      "tzlocal"],
+                      "tzlocal",
+                      "future"],
     # Scripts
     entry_points={
         "console_scripts": [
