@@ -1,15 +1,11 @@
-import pytest
-
-from mock import Mock
-
 import os
 import sys
 import threading
 import tempfile
-
+import pytest
+from mock import Mock
 from spalloc import ProtocolClient
 from spalloc.config import SEARCH_PATH
-
 from .common import MockServer
 
 

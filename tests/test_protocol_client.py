@@ -1,13 +1,12 @@
-import pytest
-from mock import Mock
 import socket
 import threading
 import time
 import logging
-
-from spalloc import ProtocolClient
-from spalloc import SpallocServerException, ProtocolTimeoutError, ProtocolError
-
+import pytest
+from mock import Mock
+from spalloc import (
+    ProtocolClient, SpallocServerException, ProtocolTimeoutError,
+    ProtocolError)
 from .common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)

@@ -1,13 +1,10 @@
 import pytest
-
 from mock import Mock, MagicMock
-
 from spalloc.term import Terminal
-
-from spalloc.scripts.machine import \
-    main, generate_keys, list_machines, show_machine
-from spalloc.scripts.support import \
-    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate
+from spalloc.scripts.machine import (
+    main, generate_keys, list_machines, show_machine)
+from spalloc.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate)
 from spalloc.protocol_client import ProtocolError
 
 

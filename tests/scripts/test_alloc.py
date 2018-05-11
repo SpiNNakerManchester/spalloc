@@ -1,14 +1,10 @@
-import pytest
-
-from mock import Mock, PropertyMock
-
 import os
 import tempfile
-
+import pytest
+from mock import Mock, PropertyMock
 from spalloc import JobState, JobDestroyedError
-
-from spalloc.scripts.alloc import \
-    write_ips_to_csv, print_info, run_command, main
+from spalloc.scripts.alloc import (
+    write_ips_to_csv, print_info, run_command, main)
 
 
 @pytest.yield_fixture

@@ -1,7 +1,7 @@
 import sys
-from spalloc import config
-from spalloc import \
-    ProtocolClient, ProtocolError, ProtocolTimeoutError, SpallocServerException
+from spalloc import (
+    config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
+    SpallocServerException)
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)

@@ -1,10 +1,8 @@
-import pytest
-
 from collections import OrderedDict
-
-from spalloc.term import \
-    Terminal, render_table, render_definitions, render_boards, render_cells, \
-    DEFAULT_BOARD_EDGES
+import pytest
+from spalloc.term import (
+    Terminal, render_table, render_definitions, render_boards, render_cells,
+    DEFAULT_BOARD_EDGES)
 
 
 @pytest.mark.parametrize("force", [True, False])

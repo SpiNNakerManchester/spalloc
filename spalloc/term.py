@@ -2,14 +2,11 @@
 
 import os
 import sys
-
-from functools import partial
 from itertools import chain
 from collections import defaultdict
-
-from six import iteritems, string_types
-
 from enum import IntEnum
+from functools import partial
+from six import iteritems, string_types
 
 
 class ANSIDisplayAttributes(IntEnum):
