@@ -1,4 +1,5 @@
-"""Utilities for generating ASCII/ANSI terminal graphics."""
+""" Utilities for generating ASCII/ANSI terminal graphics.
+"""
 
 import os
 import sys
@@ -13,7 +14,8 @@ from enum import IntEnum
 
 
 class ANSIDisplayAttributes(IntEnum):
-    """Code numbers of ANSI display attributes for use with ESC[...m sequences.
+    """ Code numbers of ANSI display attributes for use with `ESC[...m`\
+        sequences.
     """
 
     reset = 0
@@ -46,7 +48,7 @@ class ANSIDisplayAttributes(IntEnum):
 
 
 class Terminal(object):
-    """ANSI terminal control shenanigans.
+    """ ANSI terminal control shenanigans.
 
     Utilities for printing colourful output and re-printing the screen on ANSI
     terminals. When output is not directed to a TTY, or when running under
@@ -99,18 +101,19 @@ class Terminal(object):
         self._location_saved = False
 
     def __call__(self, string):
-        """If enabled, passes through the given value, otherwise passes through
-        an empty string.
+        """ If enabled, passes through the given value, otherwise passes\
+            through an empty string.
         """
         return string if self.enabled else ""
 
     def clear_screen(self):
-        """Clear the screen and reset cursor to top-left corner."""
+        """ Clear the screen and reset cursor to top-left corner.
+        """
         return self("\033[2J\033[;H")
 
     def update(self, string="", start_again=False):
-        """Print before a line and it will replace the previous line prefixed
-        with :py:meth:`.update`.
+        """ Print before a line and it will replace the previous line prefixed\
+            with :py:meth:`.update`.
 
         Parameters
         ----------
@@ -131,8 +134,8 @@ class Terminal(object):
         return "".join((self("\0338\033[K"), str(string)))
 
     def set_attrs(self, attrs=tuple()):
-        """Construct an ANSI control sequence which sets the given attribute
-        numbers.
+        """ Construct an ANSI control sequence which sets the given attribute\
+            numbers.
         """
         if not attrs:
             return ""
@@ -140,15 +143,16 @@ class Terminal(object):
             ";".join(str(attr) for attr in attrs)))
 
     def wrap(self, string=None, pre="", post=""):
-        """Wrap a string in the suppled pre and post strings or just print the
-        pre string if no string given.
+        """ Wrap a string in the suppled pre and post strings or just print\
+            the pre string if no string given.
         """
         if string is None:
             return pre
         return "".join((pre, str(string), post))
 
     def __getattr__(self, name):
-        """Implements all the 'magic' style methods."""
+        """ Implements all the 'magic' style methods.
+        """
         attrs = []
         while name:
             # pylint: disable=not-an-iterable
@@ -166,7 +170,7 @@ class Terminal(object):
 
 
 def render_table(table, column_sep="  "):
-    """Render an ASCII table with optional ANSI escape codes.
+    """ Render an ASCII table with optional ANSI escape codes.
 
     An example table::
 
@@ -241,7 +245,7 @@ def render_table(table, column_sep="  "):
 
 
 def render_definitions(definitions, seperator=": "):
-    """Render a definition list.
+    """ Render a definition list.
 
     Such a list looks like this::
 
@@ -271,8 +275,8 @@ def render_definitions(definitions, seperator=": "):
 
 
 def _board_to_cartesian(x, y, z):
-    """Translate from logical board coordinates (x, y, z) into cartesian
-    coordinates for printing hexagons.
+    """ Translate from logical board coordinates (x, y, z) into Cartesian\
+        coordinates for printing hexagons.
 
     Example coordinates::
 
@@ -309,7 +313,7 @@ _LINK_TO_EDGE = {
     4: (+0, -1, 1),  # SW
     5: (+0, -1, 0),  # S
 }
-r"""Mapping from link direction to board edge.
+r""" Mapping from link direction to board edge.
 
 We define and number a board's link directions as::
 
@@ -341,17 +345,19 @@ _LINK_TO_DELTA = {
     4: (-1, -1),  # SW
     5: (-0, -2),  # S
 }
-"""The cartesian offsets of the immediate neighbouring boards."""
+""" The Cartesian offsets of the immediate neighbouring boards.
+"""
 
 
 DEFAULT_BOARD_EDGES = ("___", "\\", "/")
-"""The default board edge styles."""
+""" The default board edge styles.
+"""
 
 
 def render_boards(board_groups, dead_links=frozenset(),
                   dead_edge=("XXX", "X", "X"),
                   blank_label="   ", blank_edge=("   ", " ", " ")):
-    r"""Render an ASCII art diagram of a set of boards with sets of boards.
+    r""" Render an ASCII art diagram of a set of boards with sets of boards.
 
     For example::
 
@@ -461,8 +467,8 @@ def render_boards(board_groups, dead_links=frozenset(),
 
 
 def render_cells(cells, width=80, col_spacing=2):
-    """Given a list of short (~10 char) strings, display these aligned in
-    columns.
+    """ Given a list of short (~10 char) strings, display these aligned in\
+        columns.
 
     Example output::
 
