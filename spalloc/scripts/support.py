@@ -36,15 +36,18 @@ class Script(object):
         self.client_factory = ProtocolClient
 
     def get_parser(self, cfg):
-        """Return a set-up instance of :py:class:`argparse.ArgumentParser`"""
+        """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
+        """
 
     def verify_arguments(self, args):
-        """Check the arguments for sanity and do any second-stage parsing\
-        required."""
+        """ Check the arguments for sanity and do any second-stage parsing\
+            required.
+        """
 
     def body(self, client, args):
-        """How to do the processing of the script once a client has been\
-        obtained and verified to be compatible."""
+        """ How to do the processing of the script once a client has been\
+            obtained and verified to be compatible.
+        """
 
     def build_server_arg_group(self, server_args, cfg):
         server_args.add_argument(

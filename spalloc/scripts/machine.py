@@ -1,4 +1,4 @@
-"""Command-line administrative machine management interface.
+""" Command-line administrative machine management interface.
 
 When called with no arguments the ``spalloc-machine`` command lists all
 available machines and a summary of their current load.
@@ -33,7 +33,7 @@ VERSION_RANGE_STOP = (2, 0, 0)
 
 
 def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
-    """Generate ascending values in spreadsheet-column-name style.
+    """ Generate ascending values in spreadsheet-column-name style.
 
     For example, A, B, C, ..., Y, Z, AA, AB, AC...
     """
@@ -46,7 +46,7 @@ def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
 
 
 def list_machines(t, machines, jobs):
-    """Display a table summarising the available machines and their load.
+    """ Display a table summarising the available machines and their load.
 
     Parameters
     ----------
@@ -95,7 +95,7 @@ def _get_machine(machines, machine_name):
 
 
 def show_machine(t, machines, jobs, machine_name, compact=False):
-    """Display a more detailed overview of an individual machine.
+    """ Display a more detailed overview of an individual machine.
 
     Parameters
     ----------
