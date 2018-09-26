@@ -1,4 +1,4 @@
-"""Command-line tool to find out where a particular chip or board resides.
+""" Command-line tool to find out where a particular chip or board resides.
 
 The ``spalloc-where-is`` command allows you to query boards by coordinate, by
 physical location, by chip or by job. In response to a query, a standard set of

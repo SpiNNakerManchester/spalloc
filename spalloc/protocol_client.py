@@ -1,4 +1,5 @@
-"""A simple blocking spalloc_server protocol implementation."""
+""" A simple blocking spalloc_server protocol implementation.
+"""
 
 from collections import deque
 import errno
@@ -11,22 +12,24 @@ from spalloc._utils import time_left, timed_out, make_timeout
 
 
 class ProtocolError(Exception):
-    """Thrown when a network-level problem occurs during protocol handling."""
+    """ Thrown when a network-level problem occurs during protocol handling.
+    """
 
 
 class ProtocolTimeoutError(Exception):
-    """Thrown upon a protocol-level timeout."""
+    """ Thrown upon a protocol-level timeout.
+    """
 
 
 class SpallocServerException(Exception):
-    """Thrown when something went wrong on the server side that caused us to\
-    be sent a message.
+    """ Thrown when something went wrong on the server side that caused us to\
+        be sent a message.
     """
 
 
 class _ProtocolThreadLocal(local):
-    """Subclass of threading.local to ensure that we get sane initialisation\
-    of our state in each thread.
+    """ Subclass of threading.local to ensure that we get sane initialisation\
+        of our state in each thread.
     """
     # See https://github.com/SpiNNakerManchester/spalloc/issues/12
     def __init__(self):
@@ -35,7 +38,7 @@ class _ProtocolThreadLocal(local):
 
 
 class ProtocolClient(object):
-    """A simple (blocking) client implementation of the `spalloc-server
+    """ A simple (blocking) client implementation of the `spalloc-server
     <https://github.com/project-rig/spalloc_server>`_ protocol.
 
     This minimal implementation is intended to serve both simple applications
@@ -61,7 +64,7 @@ class ProtocolClient(object):
     """
 
     def __init__(self, hostname, port=22244, timeout=None):
-        """Define a new connection.
+        """ Define a new connection.
 
         .. note::
 
@@ -155,7 +158,8 @@ class ProtocolClient(object):
         self._connect(timeout)
 
     def _connect(self, timeout):
-        """Try to (re)connect to the server."""
+        """ Try to (re)connect to the server.
+        """
         try:
             return self._get_connection(timeout)
         except (IOError, OSError):
@@ -178,7 +182,8 @@ class ProtocolClient(object):
         sock.close()
 
     def close(self):
-        """Disconnect from the server."""
+        """ Disconnect from the server.
+        """
         self._dead = True
         with self._socks_lock:
             keys = list(self._socks.keys())
@@ -187,7 +192,7 @@ class ProtocolClient(object):
         self._local = _ProtocolThreadLocal()
 
     def _recv_json(self, timeout=None):
-        """Receive a line of JSON from the server.
+        """ Receive a line of JSON from the server.
 
         Parameters
         ----------
@@ -227,7 +232,7 @@ class ProtocolClient(object):
         return json.loads(line.decode("utf-8"))
 
     def _send_json(self, obj, timeout=None):
-        """Attempt to send a line of JSON to the server.
+        """ Attempt to send a line of JSON to the server.
 
         Parameters
         ----------
@@ -256,7 +261,7 @@ class ProtocolClient(object):
             raise ProtocolTimeoutError("send timed out.")
 
     def call(self, name, *args, **kwargs):
-        """Send a command to the server and return the reply.
+        """ Send a command to the server and return the reply.
 
         Parameters
         ----------
@@ -301,7 +306,7 @@ class ProtocolClient(object):
             raise_from(ProtocolError(str(e)), e)
 
     def wait_for_notification(self, timeout=None):
-        """Return the next notification to arrive.
+        """ Return the next notification to arrive.
 
         Parameters
         ----------

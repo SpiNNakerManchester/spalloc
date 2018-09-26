@@ -1,4 +1,4 @@
-"""Command-line administrative job management interface.
+""" Command-line administrative job management interface.
 
 ``spalloc-job`` may be called with a job ID, or if no arguments supplied your
 currently running job is shown by default. Various actions may be taken and
@@ -73,7 +73,7 @@ from .support import Terminate, Script
 
 
 def show_job_info(t, client, timeout, job_id):
-    """Print a human-readable overview of a Job's attributes.
+    """ Print a human-readable overview of a Job's attributes.
 
     Parameters
     ----------
@@ -155,7 +155,7 @@ def show_job_info(t, client, timeout, job_id):
 
 
 def watch_job(t, client, timeout, job_id):
-    """Re-print a job's information whenever the job changes.
+    """ Re-print a job's information whenever the job changes.
 
     Parameters
     ----------
@@ -188,7 +188,7 @@ def watch_job(t, client, timeout, job_id):
 
 
 def power_job(client, timeout, job_id, power):
-    """Power a job's boards on/off and wait for the action to complete.
+    """ Power a job's boards on/off and wait for the action to complete.
 
     Parameters
     ----------
@@ -237,7 +237,7 @@ def power_job(client, timeout, job_id, power):
 
 
 def list_ips(client, timeout, job_id):
-    """Print a CSV of board hostnames for all boards allocated to a job.
+    """ Print a CSV of board hostnames for all boards allocated to a job.
 
     Parameters
     ----------
@@ -264,7 +264,7 @@ def list_ips(client, timeout, job_id):
 
 
 def destroy_job(client, timeout, job_id, reason=None):
-    """Destroy a running job.
+    """ Destroy a running job.
 
     Parameters
     ----------

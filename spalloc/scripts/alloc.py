@@ -1,4 +1,4 @@
-"""A command-line utility for creating jobs.
+""" A command-line utility for creating jobs.
 
 .. note::
 
@@ -116,7 +116,7 @@ except ImportError:  # pragma: no cover
 
 
 def write_ips_to_csv(connections, ip_file_filename):
-    """Write the supplied IP addresses to a CSV file.
+    """ Write the supplied IP addresses to a CSV file.
 
     The produced CSV has three columns: x, y and hostname where x and y give
     chip coordinates of Ethernet-connected chips and hostname gives the IP
@@ -135,8 +135,8 @@ def write_ips_to_csv(connections, ip_file_filename):
 
 
 def print_info(machine_name, connections, width, height, ip_file_filename):
-    """Print the current machine info in a human-readable form and wait for the
-    user to press enter.
+    """ Print the current machine info in a human-readable form and wait for
+    the user to press enter.
 
     Parameters
     ----------
@@ -172,7 +172,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
 
 def run_command(command, job_id, machine_name, connections, width, height,
                 ip_file_filename):
-    """Run a user-specified command, substituting arguments for values taken
+    """ Run a user-specified command, substituting arguments for values taken
     from the allocated board.
 
     Arguments may include the following substitution tokens:

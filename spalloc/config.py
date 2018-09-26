@@ -1,4 +1,4 @@
-"""The spalloc command-line tool and Python library determine their default
+""" The spalloc command-line tool and Python library determine their default
 configuration options from a spalloc configuration file if present.
 
 .. note::
@@ -126,7 +126,7 @@ def _read_none_or_str(parser, option):
 
 
 def read_config(filenames=None):
-    """Attempt to read local configuration files to determine spalloc client
+    """ Attempt to read local configuration files to determine spalloc client
     settings.
 
     Parameters

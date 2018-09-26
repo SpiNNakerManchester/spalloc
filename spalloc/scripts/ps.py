@@ -1,4 +1,4 @@
-"""An administrative command-line process listing utility.
+""" An administrative command-line process listing utility.
 
 By default, the ``spalloc-ps`` command lists all running and queued jobs.  For
 a real-time monitor of queued and running jobs, the ``--watch`` option may be
@@ -21,7 +21,7 @@ from .support import Script
 
 
 def render_job_list(t, jobs, args):
-    """Return a human-readable process listing.
+    """ Return a human-readable process listing.
 
     Parameters
     ----------

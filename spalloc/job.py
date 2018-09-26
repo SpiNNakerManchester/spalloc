@@ -1,4 +1,5 @@
-"""A high-level Python interface for allocating SpiNNaker boards."""
+""" A high-level Python interface for allocating SpiNNaker boards.
+"""
 
 from collections import namedtuple
 import logging
@@ -22,7 +23,7 @@ VERSION_RANGE_STOP = (2, 0, 0)
 
 
 class Job(object):
-    """A high-level interface for requesting and managing allocations of
+    """ A high-level interface for requesting and managing allocations of
     SpiNNaker boards.
 
     Constructing a :py:class:`.Job` object connects to a `spalloc-server
@@ -106,7 +107,7 @@ class Job(object):
     """
 
     def __init__(self, *args, **kwargs):
-        """Request a SpiNNaker machine.
+        """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
 
@@ -303,8 +304,8 @@ class Job(object):
                 self._reconnect_delay]), stdin=subprocess.PIPE)
 
     def __enter__(self):
-        """Convenience context manager for common case where a new job is to be
-        created and then destroyed once some code has executed.
+        """ Convenience context manager for common case where a new job is to
+        be created and then destroyed once some code has executed.
 
         Waits for machine to be ready before the context enters and frees the
         allocation when the context exits.
@@ -329,7 +330,8 @@ class Job(object):
         return False
 
     def _assert_compatible_version(self):
-        """Assert that the server version is compatible."""
+        """ Assert that the server version is compatible.
+        """
         v = self._client.version(timeout=self._timeout)
         v_ints = tuple(map(int, v.split(".")[:3]))
 
@@ -340,7 +342,7 @@ class Job(object):
                     v))
 
     def _reconnect(self):
-        """Reconnect to the server and check version.
+        """ Reconnect to the server and check version.
 
         If reconnection fails, the error is reported as a warning but no
         exception is raised.
@@ -357,7 +359,7 @@ class Job(object):
             self._client.close()
 
     def destroy(self, reason=None):
-        """Destroy the job and disconnect from the server.
+        """ Destroy the job and disconnect from the server.
 
         Parameters
         ----------
@@ -376,7 +378,7 @@ class Job(object):
         self.close()
 
     def close(self):
-        """Disconnect from the server and stop keeping the job alive.
+        """ Disconnect from the server and stop keeping the job alive.
 
         .. warning::
 
@@ -394,7 +396,7 @@ class Job(object):
         self._client.close()
 
     def _get_state(self):
-        """Get the state of the job.
+        """ Get the state of the job.
 
         Returns
         -------
@@ -408,7 +410,7 @@ class Job(object):
             reason=state["reason"])
 
     def set_power(self, power):
-        """Turn the boards allocated to the job on or off.
+        """ Turn the boards allocated to the job on or off.
 
         Does nothing if the job has not yet been allocated any boards.
 
@@ -427,7 +429,7 @@ class Job(object):
             self._client.power_off_job_boards(self.id, timeout=self._timeout)
 
     def reset(self):
-        """Reset (power-cycle) the boards allocated to the job.
+        """ Reset (power-cycle) the boards allocated to the job.
 
         Does nothing if the job has not been allocated.
 
@@ -437,7 +439,7 @@ class Job(object):
         self.set_power(True)
 
     def _get_machine_info(self):
-        """Get information about the boards allocated to the job, e.g. the IPs
+        """ Get information about the boards allocated to the job, e.g. the IPs
         and system dimensions.
 
         Returns
@@ -459,25 +461,28 @@ class Job(object):
 
     @property
     def state(self):
-        """The current state of the job."""
+        """ The current state of the job.
+        """
         self._last_state = self._get_state()
         return self._last_state.state
 
     @property
     def power(self):
-        """Are the boards powered/powering on or off?"""
+        """ Are the boards powered/powering on or off?
+        """
         self._last_state = self._get_state()
         return self._last_state.power
 
     @property
     def reason(self):
-        """For what reason was the job destroyed (if any and if destroyed)."""
+        """ For what reason was the job destroyed (if any and if destroyed).
+        """
         self._last_state = self._get_state()
         return self._last_state.reason
 
     @property
     def connections(self):
-        """The list of Ethernet connected chips and their IPs.
+        """ The list of Ethernet connected chips and their IPs.
 
         Returns
         -------
@@ -493,12 +498,14 @@ class Job(object):
 
     @property
     def hostname(self):
-        """The hostname of chip 0, 0 (or None if not allocated yet)."""
+        """ The hostname of chip 0, 0 (or None if not allocated yet).
+        """
         return self.connections[(0, 0)]
 
     @property
     def width(self):
-        """The width of the allocated machine in chips (or None)."""
+        """ The width of the allocated machine in chips (or None).
+        """
         # Note that the dimensions of a job will never change once defined so
         # only need to get this once.
         if (self._last_machine_info is None or
@@ -509,7 +516,8 @@ class Job(object):
 
     @property
     def height(self):
-        """The height of the allocated machine in chips (or None)."""
+        """ The height of the allocated machine in chips (or None).
+        """
         # Note that the dimensions of a job will never change once defined so
         # only need to get this once.
         if (self._last_machine_info is None or
@@ -520,7 +528,8 @@ class Job(object):
 
     @property
     def machine_name(self):
-        """The name of the machine the job is allocated on (or None)."""
+        """ The name of the machine the job is allocated on (or None).
+        """
         # Note that the machine will never change once defined so only need to
         # get this once.
         if (self._last_machine_info is None or
@@ -531,7 +540,8 @@ class Job(object):
 
     @property
     def boards(self):
-        """The coordinates of the boards allocated for the job (or None)."""
+        """ The coordinates of the boards allocated for the job (or None).
+        """
         # Note that the machine will never change once defined so only need to
         # get this once.
         if (self._last_machine_info is None or
@@ -541,7 +551,7 @@ class Job(object):
         return self._last_machine_info.boards
 
     def wait_for_state_change(self, old_state, timeout=None):
-        """Block until the job's state changes from the supplied state.
+        """ Block until the job's state changes from the supplied state.
 
         Parameters
         ----------
@@ -587,7 +597,7 @@ class Job(object):
         return old_state
 
     def _do_wait_for_a_change(self, finish_time):
-        """Wait for a state change and keep the job alive.
+        """ Wait for a state change and keep the job alive.
         """
         # Since we're about to block holding the client lock, we must be
         # responsible for keeping everything alive.
@@ -617,7 +627,7 @@ class Job(object):
         return False
 
     def _do_reconnect(self, finish_time):
-        """Reconnect after the reconnection delay (or timeout, whichever
+        """ Reconnect after the reconnection delay (or timeout, whichever
         came first).
         """
         self._client.close()
@@ -629,7 +639,7 @@ class Job(object):
         self._reconnect()
 
     def wait_until_ready(self, timeout=None):
-        """Block until the job is allocated and ready.
+        """ Block until the job is allocated and ready.
 
         Parameters
         ----------
@@ -676,7 +686,7 @@ class Job(object):
         raise StateChangeTimeoutError()
 
     def where_is_machine(self, chip_x, chip_y):
-        """Locates and returns cabinet, frame, board for a given chip in a\
+        """ Locates and returns cabinet, frame, board for a given chip in a\
         machine allocated to this job.
 
         :param chip_x: chip x location
@@ -691,19 +701,20 @@ class Job(object):
 
 
 class StateChangeTimeoutError(Exception):
-    """Thrown when a state change takes too long to occur."""
+    """ Thrown when a state change takes too long to occur.
+    """
 
 
 class JobDestroyedError(Exception):
-    """Thrown when the job was destroyed while waiting for it to become
-    ready.
+    """ Thrown when the job was destroyed while waiting for it to become\
+        ready.
     """
 
 
 class _JobStateTuple(namedtuple("_JobStateTuple",
                                 "state,power,keepalive,reason")):
-    """Tuple describing the state of a particular job, returned by
-    :py:meth:`.Job._get_state`.
+    """ Tuple describing the state of a particular job, returned by\
+        :py:meth:`.Job._get_state`.
 
     Parameters
     ----------
@@ -729,8 +740,8 @@ class _JobStateTuple(namedtuple("_JobStateTuple",
 class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
                                       "width,height,connections,"
                                       "machine_name,boards")):
-    """Tuple describing the machine allocated to a job, returned by
-    :py:meth:`.Job._get_machine_info`.
+    """ Tuple describing the machine allocated to a job, returned by\
+        :py:meth:`.Job._get_machine_info`.
 
     Parameters
 
