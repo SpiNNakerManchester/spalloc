@@ -1,6 +1,2 @@
-six:six
-appdirs:appdirs
 enum-compat:enum
-pytz:pytz
-tzlocal:tzlocal
-future:future
+
