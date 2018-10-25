@@ -298,7 +298,7 @@ def _board_to_cartesian(x, y, z):
     -------
     x, y : int
         Equivalent Cartesian coordinates.
-    """
+    """  # noqa: W605
     cx = (2*x) - y + (1 if z == 1 else 0)
     cy = (3*y) + z
 
