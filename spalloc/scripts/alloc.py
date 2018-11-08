@@ -95,22 +95,19 @@ server at a regular interval. While the ``spalloc`` command is running, these
 messages are sent automatically but after exiting the commands are no longer
 sent. Adding the ``--keepalive -1`` option when creating a job disables this.
 """
-
 import argparse
 from collections import OrderedDict
 import logging
 import os
-from six import iteritems
-from six.moves import input, shlex_quote  # @UnresolvedImport
 import subprocess
 import sys
 import tempfile
-
-from spalloc import config
-from spalloc import Job, JobState, __version__
+from six import iteritems
+from six.moves import input, shlex_quote  # @UnresolvedImport
+from spalloc import (
+    config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
+    SpallocServerException)
 from spalloc.term import Terminal, render_definitions
-from spalloc import ProtocolError, ProtocolTimeoutError, SpallocServerException
-
 # Rig is used to implement the optional '--boot' facility.
 try:
     from rig.machine_control import MachineController

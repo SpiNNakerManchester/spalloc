@@ -1,14 +1,14 @@
 """ A simple blocking spalloc_server protocol implementation.
 """
 
-import socket
-import json
-from threading import current_thread, RLock, local
 from collections import deque
-from spalloc._utils import time_left, timed_out, make_timeout
 import errno
+import json
+import socket
 import sys
+from threading import current_thread, RLock, local
 from six import raise_from
+from spalloc._utils import time_left, timed_out, make_timeout
 
 
 class ProtocolError(Exception):

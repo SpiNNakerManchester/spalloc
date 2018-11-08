@@ -64,15 +64,12 @@ options available (and the default value).
     requires the allocation of a whole machine. If False, wrap-around links may
     or may-not be present in allocated machines. (Default: False)
 """
-
+# pylint: disable=import-error
 import os
 import os.path
 import appdirs
-
 from six import iteritems
-# pylint: disable=import-error
 from six.moves.configparser import ConfigParser, NoOptionError
-
 
 # The application name to use in config file names
 _name = "spalloc"

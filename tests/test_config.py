@@ -1,9 +1,7 @@
-import pytest
-
 import tempfile
 import shutil
 import os.path
-
+import pytest
 from spalloc.config import read_config
 
 

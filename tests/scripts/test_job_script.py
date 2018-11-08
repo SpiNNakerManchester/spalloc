@@ -1,15 +1,12 @@
-import pytest
-
-from mock import Mock, MagicMock
-
 import datetime
-
+import pytest
+from mock import Mock, MagicMock
 from spalloc import JobState, ProtocolError
 from spalloc.term import Terminal
-from spalloc.scripts.job import \
-    show_job_info, watch_job, power_job, list_ips, destroy_job, main
-from spalloc.scripts.support import \
-    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate
+from spalloc.scripts.job import (
+    show_job_info, watch_job, power_job, list_ips, destroy_job, main)
+from spalloc.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate)
 
 
 @pytest.fixture
