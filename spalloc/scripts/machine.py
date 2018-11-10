@@ -17,15 +17,13 @@ real-time.
 """
 import argparse
 from collections import defaultdict, OrderedDict
-from six import next  # pylint: disable=redefined-builtin
 import sys
-
+from six import next  # pylint: disable=redefined-builtin
 from spalloc import __version__
-from spalloc.term import \
-    Terminal, render_table, render_definitions, render_boards, render_cells, \
-    DEFAULT_BOARD_EDGES
+from spalloc.term import (
+    Terminal, render_table, render_definitions, render_boards, render_cells,
+    DEFAULT_BOARD_EDGES)
 from .support import Terminate, Script
-
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)

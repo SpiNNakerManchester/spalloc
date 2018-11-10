@@ -62,14 +62,13 @@ which optionally accepts a human-readable explanation::
 import argparse
 from collections import OrderedDict
 import datetime
-from pytz import utc
-from six import iteritems
 import sys
+from pytz import utc
 from tzlocal import get_localzone
-
+from six import iteritems
 from spalloc import __version__, JobState
-from spalloc.term import \
-    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES
+from spalloc.term import (
+    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
 from .support import Terminate, Script
 
 

@@ -6,7 +6,6 @@ import logging
 import os
 import time
 import sys
-
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .config import read_config, SEARCH_PATH
 from .states import JobState
