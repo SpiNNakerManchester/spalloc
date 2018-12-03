@@ -3,14 +3,13 @@
 
 from collections import namedtuple
 import logging
-import os
+import subprocess
 import time
 import sys
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .config import read_config, SEARCH_PATH
 from .states import JobState
 from ._utils import time_left, timed_out, make_timeout
-import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -299,10 +298,15 @@ class Job(object):
             logger.info("Created spalloc job %d", self.id)
 
         # Set-up and start background keepalive thread
-        self._keepalive_process = os.popen(" ".join(map(str, [
+        self._keepalive_process = subprocess.Popen(map(str, [
                 sys.executable, "-m", "spalloc._keepalive_process", hostname,
                 port, self.id, self._keepalive, self._timeout,
-                self._reconnect_delay])), "w")
+                self._reconnect_delay]), stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        first_line = self._keepalive_process.stdout.readline().strip()
+        if first_line != "KEEPALIVE":
+            raise Exception("Keepalive process wrote odd line: {}".format(
+                first_line))
 
     def __enter__(self):
         """ Convenience context manager for common case where a new job is to
@@ -389,11 +393,9 @@ class Job(object):
             :py:meth:`.destroy` instead.
         """
         # Stop background thread
-        try:
-            self._keepalive_process.write("exit\n".encode("ascii"))
-            self._keepalive_process.close()
-        except Exception:
-            traceback.print_exc()
+        if self._keepalive_process.poll() is None:
+            self._keepalive_process.communicate(input="exit\n".encode("ascii"))
+            self._keepalive_process.wait()
 
         # Disconnect
         self._client.close()
