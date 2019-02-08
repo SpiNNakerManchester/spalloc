@@ -14,7 +14,7 @@ from spalloc import __version__ as version
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-            return Mock()
+        return Mock()
 
 
 MOCK_MODULES = ['pygtk', 'gtk', 'gobject', 'argparse', 'numpy', 'pandas']
