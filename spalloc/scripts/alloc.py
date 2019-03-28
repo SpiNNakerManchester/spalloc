@@ -96,7 +96,10 @@ messages are sent automatically but after exiting the commands are no longer
 sent. Adding the ``--keepalive -1`` option when creating a job disables this.
 """
 import argparse
-from collections import OrderedDict
+try:
+    from collections.abc import OrderedDict
+except ImportError:
+    from collections import OrderedDict
 import logging
 import os
 import subprocess

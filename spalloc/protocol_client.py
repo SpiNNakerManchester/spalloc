@@ -1,7 +1,9 @@
 """ A simple blocking spalloc_server protocol implementation.
 """
-
-from collections import deque
+try:
+    from collections.abc import deque
+except ImportError:
+    from collections import deque
 import errno
 import json
 import socket

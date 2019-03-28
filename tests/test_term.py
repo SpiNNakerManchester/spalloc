@@ -1,4 +1,7 @@
-from collections import OrderedDict
+try:
+    from collections.abc import OrderedDict
+except ImportError:
+    from collections import OrderedDict
 import pytest
 from spalloc.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,

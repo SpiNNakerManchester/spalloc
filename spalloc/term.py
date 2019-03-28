@@ -4,7 +4,10 @@
 import os
 import sys
 from itertools import chain
-from collections import defaultdict
+try:
+    from collections.abc import defaultdict
+except ImportError:
+    from collections import defaultdict
 from enum import IntEnum
 from functools import partial
 from six import iteritems, string_types
