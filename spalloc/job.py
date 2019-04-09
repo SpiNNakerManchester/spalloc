@@ -306,10 +306,8 @@ class Job(object):
                 self._reconnect_delay]), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         first_line = self._keepalive_process.stdout.readline().strip()
-        if first_line.startswith(b"pydev debugger"):
+        while "pydev debugger" in str(first_line) or len(first_line) == 0:
             first_line = self._keepalive_process.stdout.readline().strip()
-            if len(first_line) == 0:
-                first_line = self._keepalive_process.stdout.readline().strip()
         if first_line != b"KEEPALIVE":
             raise Exception("Keepalive process wrote odd line: {}".format(
                 first_line))
