@@ -1,11 +1,10 @@
 """ A script for keeping Spalloc jobs alive, intended to only ever be run\
     from the Spalloc client itself.
 """
-
-
-from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
+from __future__ import print_function
 import sys
 import threading
+from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
 
 
 def wait_for_exit(stop_event):
@@ -67,6 +66,8 @@ def keep_job_alive(hostname, port, job_id, keepalive_period, timeout,
 
 
 if __name__ == "__main__":
+    print("KEEPALIVE")
+    sys.stdout.flush()
     if len(sys.argv) != 7:
         sys.stderr.write(
             "wrong # args: should be '" + sys.argv[0] + " hostname port "

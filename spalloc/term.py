@@ -3,14 +3,14 @@
 
 import os
 import sys
-
-from functools import partial
 from itertools import chain
-from collections import defaultdict
-
-from six import iteritems, string_types
-
+try:
+    from collections.abc import defaultdict
+except ImportError:
+    from collections import defaultdict
 from enum import IntEnum
+from functools import partial
+from six import iteritems, string_types
 
 
 class ANSIDisplayAttributes(IntEnum):
@@ -298,7 +298,7 @@ def _board_to_cartesian(x, y, z):
     -------
     x, y : int
         Equivalent Cartesian coordinates.
-    """
+    """  # noqa: W605
     cx = (2*x) - y + (1 if z == 1 else 0)
     cy = (3*y) + z
 

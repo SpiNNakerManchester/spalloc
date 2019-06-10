@@ -10,13 +10,11 @@ added.
 This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
-
 import argparse
 import datetime
-from pytz import utc
 import sys
+from pytz import utc
 from tzlocal import get_localzone
-
 from spalloc import __version__, JobState
 from spalloc.term import Terminal, render_table
 from .support import Script

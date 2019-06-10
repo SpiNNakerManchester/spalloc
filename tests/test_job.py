@@ -1,18 +1,12 @@
-import pytest
-
-from mock import Mock
-
 import time
-
-from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError
-
-from spalloc._keepalive_process import keep_job_alive
-from spalloc.job import \
-    _JobStateTuple, _JobMachineInfoTuple, \
-    VERSION_RANGE_START, VERSION_RANGE_STOP, \
-    StateChangeTimeoutError
-
 from threading import Thread, Event
+import pytest
+from mock import Mock
+from spalloc import Job, JobState, JobDestroyedError, ProtocolTimeoutError
+from spalloc._keepalive_process import keep_job_alive
+from spalloc.job import (
+    _JobStateTuple, _JobMachineInfoTuple, StateChangeTimeoutError,
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 GOOD_VERSION = ".".join(map(str, VERSION_RANGE_START))
 BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))

@@ -60,16 +60,18 @@ which optionally accepts a human-readable explanation::
     their boards being powered down and re-partitioned ready for another user.
 """
 import argparse
-from collections import OrderedDict
+try:
+    from collections.abc import OrderedDict
+except ImportError:
+    from collections import OrderedDict
 import datetime
-from pytz import utc
-from six import iteritems
 import sys
+from pytz import utc
 from tzlocal import get_localzone
-
+from six import iteritems
 from spalloc import __version__, JobState
-from spalloc.term import \
-    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES
+from spalloc.term import (
+    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
 from .support import Terminate, Script
 
 

@@ -52,9 +52,10 @@ To query by chip coordinate of chips allocated to a job::
 """
 import sys
 import argparse
-
-from collections import OrderedDict
-
+try:
+    from collections.abc import OrderedDict
+except ImportError:
+    from collections import OrderedDict
 from spalloc import __version__
 from spalloc.term import render_definitions
 from .support import Terminate, Script

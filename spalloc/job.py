@@ -1,12 +1,13 @@
 """ A high-level Python interface for allocating SpiNNaker boards.
 """
-
-from collections import namedtuple
+try:
+    from collections.abc import namedtuple
+except ImportError:
+    from collections import namedtuple
 import logging
 import subprocess
 import time
 import sys
-
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .config import read_config, SEARCH_PATH
 from .states import JobState
@@ -302,7 +303,14 @@ class Job(object):
         self._keepalive_process = subprocess.Popen(map(str, [
                 sys.executable, "-m", "spalloc._keepalive_process", hostname,
                 port, self.id, self._keepalive, self._timeout,
-                self._reconnect_delay]), stdin=subprocess.PIPE)
+                self._reconnect_delay]), stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        first_line = self._keepalive_process.stdout.readline().strip()
+        while "pydev debugger" in str(first_line) or len(first_line) == 0:
+            first_line = self._keepalive_process.stdout.readline().strip()
+        if first_line != b"KEEPALIVE":
+            raise Exception("Keepalive process wrote odd line: {}".format(
+                first_line))
 
     def __enter__(self):
         """ Convenience context manager for common case where a new job is to
