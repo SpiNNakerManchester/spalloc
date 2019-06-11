@@ -51,5 +51,7 @@ setup(
             "spalloc-machine = spalloc.scripts.machine:main",
             "spalloc-where-is = spalloc.scripts.where_is:main",
         ],
-    }
+    },
+    maintainer="SpiNNakerTeam",
+    maintainer_email="spinnakerusers@googlegroups.com"
 )
