@@ -182,7 +182,7 @@ def test_call(c, s, bg_accept):
     s.send({"exception": "something informative"})
     with pytest.raises(SpallocServerException) as e:
         c.call("foo")
-    assert "something informative" in str(e)
+    assert "something informative" in str(e.value)
 
 
 def test_wait_for_notification(c, s, bg_accept):
