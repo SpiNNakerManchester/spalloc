@@ -38,6 +38,8 @@ setup(
 
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
 
+        "Natural Language :: English",
+
         "Operating System :: POSIX :: Linux",
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",
@@ -45,8 +47,9 @@ setup(
         "Programming Language :: Python :: 2",
         "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
     ],
     keywords="spinnaker allocation packing management supercomputer",
 
