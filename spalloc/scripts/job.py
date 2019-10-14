@@ -75,10 +75,7 @@ which optionally accepts a human-readable explanation::
     their boards being powered down and re-partitioned ready for another user.
 """
 import argparse
-try:
-    from collections.abc import OrderedDict
-except ImportError:
-    from collections import OrderedDict
+from collections import OrderedDict
 import datetime
 import sys
 from pytz import utc
