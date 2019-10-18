@@ -35,11 +35,12 @@ before_install:
 install:
     - python setup.py develop
     - pip install -r requirements-test.txt
-    - pip install python-coveralls 'coverage>=4.4'
+    - pip install pylint python-coveralls 'coverage>=4.4'
 script:
     - py.test tests/ --cov spalloc --cov tests --durations=10 --timeout=120
     # Code quality check
     - flake8
+    - ( pylint --output-format=colorized --disable=R,C spalloc; exit $(($? & 35)) )
     - support/rat.sh run
 after_success:
     - coveralls
