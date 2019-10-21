@@ -13,10 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    from collections.abc import OrderedDict
-except ImportError:
-    from collections import OrderedDict
+from collections import OrderedDict
 import pytest
 from spalloc.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,

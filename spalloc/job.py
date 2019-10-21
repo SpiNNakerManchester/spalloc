@@ -15,10 +15,7 @@
 
 """ A high-level Python interface for allocating SpiNNaker boards.
 """
-try:
-    from collections.abc import namedtuple
-except ImportError:
-    from collections import namedtuple
+from collections import namedtuple
 import logging
 import subprocess
 import time

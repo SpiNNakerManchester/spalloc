@@ -31,10 +31,7 @@ If the ``--watch`` option is given, the information displayed is updated in
 real-time.
 """
 import argparse
-try:
-    from collections.abc import defaultdict, OrderedDict
-except ImportError:
-    from collections import defaultdict, OrderedDict
+from collections import defaultdict, OrderedDict
 import sys
 from six import next  # pylint: disable=redefined-builtin
 from spalloc import __version__
