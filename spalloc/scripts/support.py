@@ -24,8 +24,11 @@ VERSION_RANGE_STOP = (2, 0, 0)
 
 
 class Terminate(Exception):
-    def __init__(self, code, message=None, *args):
+    def __init__(self, code, *args):
+        super(Terminate, self).__init__()
         self._code = code
+        args = list(args)
+        message = args.pop(0) if args else None
         if message is None:
             self._msg = None
         elif args:
@@ -53,6 +56,7 @@ class Script(object):
     def get_parser(self, cfg):
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
         """
+        raise NotImplementedError
 
     def verify_arguments(self, args):
         """ Check the arguments for sanity and do any second-stage parsing\

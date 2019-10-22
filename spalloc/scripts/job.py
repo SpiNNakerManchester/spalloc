@@ -87,6 +87,10 @@ from spalloc.term import (
 from .support import Terminate, Script
 
 
+def _state_name(mapping):
+    return JobState(mapping["state"]).name  # pylint: disable=no-member
+
+
 def show_job_info(t, client, timeout, job_id):
     """ Print a human-readable overview of a Job's attributes.
 
@@ -116,7 +120,7 @@ def show_job_info(t, client, timeout, job_id):
         # Job no longer exists, just print basic info
         job = client.get_job_state(job_id, timeout=timeout)
 
-        info["State"] = JobState(job["state"]).name
+        info["State"] = _state_name(job)
         if job["reason"] is not None:
             info["Reason"] = job["reason"]
     else:
@@ -125,7 +129,7 @@ def show_job_info(t, client, timeout, job_id):
         job = job[0]
 
         info["Owner"] = job["owner"]
-        info["State"] = JobState(job["state"]).name
+        info["State"] = _state_name(job)
         if job["start_time"] is not None:
             utc_timestamp = datetime.datetime.fromtimestamp(
                 job["start_time"], utc)
@@ -247,8 +251,7 @@ def power_job(client, timeout, job_id, power):
             # In an unknown state, perhaps the job was queued etc.
             raise Terminate(8, "Error: Cannot power {} job {} in state {}",
                             "on" if power else "off",
-                            job_id,
-                            JobState(state["state"]).name)
+                            job_id, _state_name(state))
 
 
 def list_ips(client, timeout, job_id):

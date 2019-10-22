@@ -80,28 +80,31 @@ def keep_job_alive(hostname, port, job_id, keepalive_period, timeout,
                         client.close()
 
 
-if __name__ == "__main__":
+def _run(argv):
     print("KEEPALIVE")
     sys.stdout.flush()
+    hostname = argv[1]
+    port = int(argv[2])
+    job_id = int(argv[3])
+    keepalive = float(argv[4])
+    timeout = float(argv[5])
+    reconnect_delay = float(argv[6])
+
+    # Set things up so that we can detect when to stop
+    stop_event = threading.Event()
+    stdin_watcher = threading.Thread(target=wait_for_exit, args=(stop_event,))
+    stdin_watcher.daemon = True
+    stdin_watcher.start()
+
+    # Start keeping the job alive
+    keep_job_alive(hostname, port, job_id, keepalive, timeout,
+                   reconnect_delay, stop_event)
+
+
+if __name__ == "__main__":
     if len(sys.argv) != 7:
         sys.stderr.write(
             "wrong # args: should be '" + sys.argv[0] + " hostname port "
             "job_id keepalive_delay comms_timeout reconnect_delay'\n")
         sys.exit(1)
-    hostname = sys.argv[1]
-    port = int(sys.argv[2])
-    job_id = int(sys.argv[3])
-    keepalive = float(sys.argv[4])
-    timeout = float(sys.argv[5])
-    reconnect_delay = float(sys.argv[6])
-
-    # Set things up so that we can detect when to stop
-    stop_event = threading.Event()
-    stdin_watcher_thread = threading.Thread(
-        target=wait_for_exit, args=(stop_event,))
-    stdin_watcher_thread.daemon = True
-    stdin_watcher_thread.start()
-
-    # Start keeping the job alive
-    keep_job_alive(hostname, port, job_id, keepalive, timeout,
-                   reconnect_delay, stop_event)
+    _run(sys.argv)

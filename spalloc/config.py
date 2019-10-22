@@ -79,12 +79,10 @@ options available (and the default value).
     requires the allocation of a whole machine. If False, wrap-around links may
     or may-not be present in allocated machines. (Default: False)
 """
-# pylint: disable=import-error
-import os
 import os.path
 import appdirs
 from six import iteritems
-from six.moves.configparser import ConfigParser, NoOptionError
+from six.moves import configparser
 
 # The application name to use in config file names
 _name = "spalloc"
@@ -130,7 +128,7 @@ def _read_none_or_int(parser, option):
 def _read_any_str(parser, option):
     try:
         return parser.get(SECTION, option)
-    except NoOptionError:
+    except configparser.NoOptionError:
         return None
 
 
@@ -156,7 +154,7 @@ def read_config(filenames=None):
     """
     if filenames is None:  # pragma: no cover
         filenames = SEARCH_PATH
-    parser = ConfigParser()
+    parser = configparser.ConfigParser()
 
     # Set default config values (NB: No read_dict in Python 2.7)
     parser.add_section(SECTION)
@@ -167,7 +165,8 @@ def read_config(filenames=None):
     for filename in filenames:
         try:
             with open(filename, "r") as f:
-                parser.readfp(f, filename)
+                # TODO: Switch to read_file once we stop supporting 2.7
+                parser.readfp(f, filename)  # pylint: disable=deprecated-method
         except (IOError, OSError):
             # File did not exist, keep trying
             pass

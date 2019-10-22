@@ -129,6 +129,9 @@ try:
 except ImportError:  # pragma: no cover
     MachineController = None
 
+arguments = None
+t = None
+
 
 def write_ips_to_csv(connections, ip_file_filename):
     """ Write the supplied IP addresses to a CSV file.
@@ -163,11 +166,11 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
         The width and height of the machine in chips.
     ip_file_filename : str
     """
-    t = Terminal()
+    t_stdout = Terminal()
 
     to_print = OrderedDict()
 
-    to_print["Hostname"] = t.bright(connections[(0, 0)])
+    to_print["Hostname"] = t_stdout.bright(connections[(0, 0)])
     to_print["Width"] = width
     to_print["Height"] = height
 
@@ -180,7 +183,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
     print(render_definitions(to_print))
 
     try:
-        input(t.dim("<Press enter when done>"))
+        input(t_stdout.dim("<Press enter when done>"))
     except (KeyboardInterrupt, EOFError):
         print("")
 
@@ -255,7 +258,7 @@ def run_command(command, job_id, machine_name, connections, width, height,
 
 
 def info(msg):
-    if not args.quiet:
+    if not arguments.quiet:
         t.stream.write("{}\n".format(msg))
 
 
@@ -443,7 +446,7 @@ def run_job(job_args, job_kwargs, ip_file_filename):
         write_ips_to_csv(job.connections, ip_file_filename)
 
         # Boot the machine if required
-        if MachineController is not None and args.boot:
+        if MachineController is not None and arguments.boot:
             update("Job {}: Booting...", t.yellow, job.id)
             mc = MachineController(job.hostname)
             mc.boot(job.width, job.height)
@@ -451,73 +454,74 @@ def run_job(job_args, job_kwargs, ip_file_filename):
         update("Job {}: Ready!", t.green, job.id)
 
         # Either run the user's application or just print the details.
-        if not args.command:
+        if not arguments.command:
             print_info(job.machine_name, job.connections,
                        job.width, job.height, ip_file_filename)
             return 0
-        return run_command(args.command, job.id, job.machine_name,
+        return run_command(arguments.command, job.id, job.machine_name,
                            job.connections, job.width, job.height,
                            ip_file_filename)
     finally:
         # Destroy job and disconnect client
-        if args.no_destroy:
+        if arguments.no_destroy:
             job.close()
         else:
             job.destroy(reason)
 
 
+def _minzero(value):
+    return value if value >= 0.0 else None
+
+
 def main(argv=None):
-    global args, t
-    parser, args = parse_argv(argv)
+    global arguments, t
+    parser, arguments = parse_argv(argv)
     t = Terminal(stream=sys.stderr)
 
     # Fail if no owner is defined (unless resuming)
-    if not args.owner and args.resume is None:
+    if not arguments.owner and arguments.resume is None:
         parser.error(
             "--owner must be specified (typically your email address)")
 
     # Fail if server not specified
-    if args.hostname is None:
+    if arguments.hostname is None:
         parser.error("--hostname of spalloc server must be specified")
 
     # Set universal job arguments
     job_kwargs = {
-        "hostname": args.hostname,
-        "port": args.port,
-        "reconnect_delay":
-            args.reconnect_delay if args.reconnect_delay >= 0.0 else None,
-        "timeout": args.timeout if args.timeout >= 0.0 else None,
+        "hostname": arguments.hostname,
+        "port": arguments.port,
+        "reconnect_delay": _minzero(arguments.reconnect_delay),
+        "timeout": _minzero(arguments.timeout),
     }
 
-    if args.resume:
+    if arguments.resume:
         job_args = []
         job_kwargs.update({
-            "resume_job_id": args.resume,
+            "resume_job_id": arguments.resume,
         })
     else:
         # Make sure 'what' takes the right form
-        if len(args.what) not in (0, 1, 2, 3):
+        if len(arguments.what) not in (0, 1, 2, 3):
             parser.error(
                 "expected either no arguments, one argument, NUM, two "
                 "arguments, WIDTH HEIGHT, or three arguments, X Y Z")
 
         # Unpack arguments for the job and server
-        job_args = args.what
+        job_args = arguments.what
         job_kwargs.update({
-            "owner": args.owner,
-            "keepalive": args.keepalive if args.keepalive >= 0.0 else None,
-            "machine": args.machine,
-            "tags": args.tags if args.machine is None else None,
-            "min_ratio": args.min_ratio,
-            "max_dead_boards":
-                args.max_dead_boards if args.max_dead_boards >= 0.0 else None,
-            "max_dead_links":
-                args.max_dead_links if args.max_dead_links >= 0.0 else None,
-            "require_torus": args.require_torus,
+            "owner": arguments.owner,
+            "keepalive": _minzero(arguments.keepalive),
+            "machine": arguments.machine,
+            "tags": arguments.tags if arguments.machine is None else None,
+            "min_ratio": arguments.min_ratio,
+            "max_dead_boards": _minzero(arguments.max_dead_boards),
+            "max_dead_links": _minzero(arguments.max_dead_links),
+            "require_torus": arguments.require_torus,
         })
 
     # Set debug level
-    if args.debug:
+    if arguments.debug:
         logging.basicConfig(level=logging.DEBUG)
 
     # Create temporary file in which to write CSV of all board IPs

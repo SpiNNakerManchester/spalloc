@@ -47,6 +47,7 @@ class _ProtocolThreadLocal(local):
     """
     # See https://github.com/SpiNNakerManchester/spalloc/issues/12
     def __init__(self):
+        local.__init__(self)
         self.buffer = b""
         self.sock = None
 
@@ -149,8 +150,8 @@ class ProtocolClient(object):
         except OSError as e:
             if e.errno != errno.EISCONN:
                 raise
-        except socket.error as e:
-            if e[0] != errno.EISCONN:
+        except socket.error as e:  # pylint: disable=duplicate-except
+            if e[0] != errno.EISCONN:  # pylint: disable=unsubscriptable-object
                 raise
         return success
 

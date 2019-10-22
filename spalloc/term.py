@@ -287,7 +287,7 @@ def render_definitions(definitions, seperator=": "):
 
 
 def _board_to_cartesian(x, y, z):
-    """ Translate from logical board coordinates (x, y, z) into Cartesian\
+    r""" Translate from logical board coordinates (x, y, z) into Cartesian
         coordinates for printing hexagons.
 
     Example coordinates::
