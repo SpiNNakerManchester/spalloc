@@ -89,7 +89,7 @@ class ProtocolClient(object):
         ----------
         hostname : str
             The hostname of the server.
-        port : str
+        port : str or int
             The port to use (default: 22244).
         """
         self._hostname = hostname
