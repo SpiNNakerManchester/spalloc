@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 __version__ = "2.0.1"
-__version_month__ = "August"
+__version_month__ = "November"
 __version_year__ = "2019"
-__version_day__ = "09"
+__version_day__ = "15"
 __version_name__ = "Liveware Problem"
