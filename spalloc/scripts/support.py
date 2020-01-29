@@ -20,7 +20,7 @@ from spalloc import (
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
+VERSION_RANGE_STOP = (5, 0, 1)
 
 
 class Terminate(Exception):
@@ -79,6 +79,10 @@ class Script(object):
             "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
             help="seconds to wait for a response from the server (default: "
             "%(default)s)")
+        server_args.add_argument(
+            "--ignore_version", default=cfg["ignore_version"], type=bool,
+            help="Ignore the server version (WARNING: could result in errors) "
+                 "default: %(default)s)")
 
     def __call__(self, argv=None):
         cfg = config.read_config()
@@ -94,7 +98,8 @@ class Script(object):
 
         try:
             with self.client_factory(args.hostname, args.port) as client:
-                version_verify(client, args.timeout)
+                if not args.ignore_version:
+                    version_verify(client, args.timeout)
                 self.body(client, args)
                 return 0
         except (IOError, OSError, ProtocolError, ProtocolTimeoutError) as e:
