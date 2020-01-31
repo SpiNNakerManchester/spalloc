@@ -110,7 +110,8 @@ DEFAULT_CONFIG = {
     "min_ratio": "0.333",
     "max_dead_boards": "0",
     "max_dead_links": "None",
-    "require_torus": "False"}
+    "require_torus": "False",
+    "ignore_version": "False"}
 
 
 def _read_none_or_float(parser, option):
@@ -182,7 +183,8 @@ def read_config(filenames=None):
         "min_ratio":       parser.getfloat(SECTION, "min_ratio"),
         "max_dead_boards": _read_none_or_int(parser, "max_dead_boards"),
         "max_dead_links":  _read_none_or_int(parser, "max_dead_links"),
-        "require_torus":   parser.getboolean(SECTION, "require_torus")}
+        "require_torus":   parser.getboolean(SECTION, "require_torus"),
+        "ignore_version":  parser.getboolean(SECTION, "ignore_version")}
 
     tags = _read_none_or_str(parser, "tags")
     cfg["tags"] = None if tags is None else list(
