@@ -32,6 +32,7 @@ jobs:
     - name: Py3.5 (legacy)
       python: 3.5
       dist: bionic
+  fast_finish: true
 addons:
     apt:
         packages:
@@ -58,6 +59,3 @@ after_success:
     - coveralls
 notifications:
     email: false
-
-matrix:
-    fast_finish: true
