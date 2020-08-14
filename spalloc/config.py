@@ -81,7 +81,7 @@ options available (and the default value).
 """
 import os.path
 import appdirs
-from six import iteritems
+from six import iteritems, PY3
 from six.moves import configparser
 
 # The application name to use in config file names
@@ -166,8 +166,13 @@ def read_config(filenames=None):
     for filename in filenames:
         try:
             with open(filename, "r") as f:
-                # TODO: Switch to read_file once we stop supporting 2.7
-                parser.readfp(f, filename)  # pylint: disable=deprecated-method
+                # TODO: Remove use of readfp once we stop supporting 2.7
+                if PY3:
+                    parser.read_file(  # pylint: disable=no-member
+                        f, filename)
+                else:
+                    parser.readfp(  # pylint: disable=deprecated-method
+                        f, filename)
         except (IOError, OSError):
             # File did not exist, keep trying
             pass
