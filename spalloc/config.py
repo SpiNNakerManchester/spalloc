@@ -168,7 +168,8 @@ def read_config(filenames=None):
             with open(filename, "r") as f:
                 # TODO: Remove use of readfp once we stop supporting 2.7
                 if PY3:
-                    parser.read_file(f, filename)
+                    parser.read_file(  # pylint: disable=no-member
+                        f, filename)
                 else:
                     parser.readfp(  # pylint: disable=deprecated-method
                         f, filename)
