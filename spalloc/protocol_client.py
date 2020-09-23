@@ -426,6 +426,20 @@ class ProtocolClient(object):
         return self.call("get_board_at_position", machine_name, x, y, z,
                          timeout=timeout)
 
+    def report_problem_board(self, board_ip, timeout=None):
+        return self.call("report_problem", str(board_ip),
+                         timeout=timeout)
+
+    def report_problem_chip(self, board_ip, x, y, timeout=None):
+        # pylint: disable=too-many-arguments
+        return self.call("report_problem", str(board_ip), x=int(x), y=int(y),
+                         timeout=timeout)
+
+    def report_problem_core(self, board_ip, x, y, p, timeout=None):
+        return self.call(
+            "report_problem", str(board_ip), x=int(x), y=int(y), p=int(p),
+            timeout=timeout)
+
     _acceptable_kwargs_for_where_is = frozenset([
         frozenset("machine x y z".split()),
         frozenset("machine cabinet frame board".split()),
