@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime, timezone
+from datetime import datetime
 import time
 from tzlocal import get_localzone
 
@@ -46,6 +46,6 @@ def render_timestamp(timestamp):
     """ Convert a timestamp (Unix seconds) into a local human-readable\
         timestamp string.
     """
-    utc_timestamp = datetime.fromtimestamp(timestamp, timezone.utc)
+    utc_timestamp = datetime.utcfromtimestamp(timestamp)
     local_timestamp = utc_timestamp.astimezone(get_localzone())
     return local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
