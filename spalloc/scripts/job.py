@@ -76,14 +76,12 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 from collections import OrderedDict
-import datetime
 import sys
-from pytz import utc
-from tzlocal import get_localzone
 from six import iteritems
 from spalloc import __version__, JobState
 from spalloc.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
+from spalloc._utils import render_timestamp
 from .support import Terminate, Script
 
 
@@ -131,10 +129,7 @@ def show_job_info(t, client, timeout, job_id):
         info["Owner"] = job["owner"]
         info["State"] = _state_name(job)
         if job["start_time"] is not None:
-            utc_timestamp = datetime.datetime.fromtimestamp(
-                job["start_time"], utc)
-            local_timestamp = utc_timestamp.astimezone(get_localzone())
-            info["Start time"] = local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
+            info["Start time"] = render_timestamp(job["start_time"])
         info["Keepalive"] = job["keepalive"]
         if "keepalivehost" in job and job["keepalivehost"] is not None:
             info["Owner host"] = job["keepalivehost"]

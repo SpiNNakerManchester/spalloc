@@ -13,7 +13,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime, timezone
 import time
+from tzlocal import get_localzone
 
 
 def time_left(timestamp):
@@ -38,3 +40,12 @@ def make_timeout(delay_seconds):
     if delay_seconds is None:
         return None
     return time.time() + delay_seconds
+
+
+def render_timestamp(timestamp):
+    """ Convert a timestamp (Unix seconds) into a local human-readable\
+        timestamp string.
+    """
+    utc_timestamp = datetime.fromtimestamp(timestamp, timezone.utc)
+    local_timestamp = utc_timestamp.astimezone(get_localzone())
+    return local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
