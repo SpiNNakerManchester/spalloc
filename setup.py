@@ -56,7 +56,7 @@ setup(
     install_requires=["six>=1.8.0",
                       "appdirs",
                       "enum-compat",
-                      "tzlocal",
+                      "tzlocal<3",
                       "future"],
     # Scripts
     entry_points={
