@@ -16,5 +16,4 @@
 six>=1.8.0
 appdirs
 enum-compat
-tzlocal<3
 future

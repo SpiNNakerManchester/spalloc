@@ -15,7 +15,6 @@
 
 from datetime import datetime
 import time
-from tzlocal import get_localzone
 
 
 def time_left(timestamp):
@@ -46,6 +45,4 @@ def render_timestamp(timestamp):
     """ Convert a timestamp (Unix seconds) into a local human-readable\
         timestamp string.
     """
-    utc_timestamp = datetime.utcfromtimestamp(timestamp)
-    local_timestamp = utc_timestamp.astimezone(get_localzone())
-    return local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
+    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
