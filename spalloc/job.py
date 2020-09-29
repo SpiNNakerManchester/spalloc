@@ -720,6 +720,13 @@ class Job(object):
             raise ValueError("received None instead of machine location")
         return result['physical']
 
+    def report_problem_board(self, ip_address):
+        """ Reports a previously-unknown problem with an allocated board.
+
+        :param str ip_address:
+        """
+        self._client.report_problem_board(ip_address)
+
 
 class StateChangeTimeoutError(Exception):
     """ Thrown when a state change takes too long to occur.
