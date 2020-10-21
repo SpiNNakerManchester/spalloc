@@ -56,8 +56,6 @@ setup(
     install_requires=["six>=1.8.0",
                       "appdirs",
                       "enum-compat",
-                      "pytz",
-                      "tzlocal",
                       'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0',
                       "future"],
     # Scripts
