@@ -26,12 +26,10 @@ This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
 import argparse
-import datetime
 import sys
-from pytz import utc
-from tzlocal import get_localzone
 from spalloc import __version__, JobState
 from spalloc.term import Terminal, render_table
+from spalloc._utils import render_timestamp
 from .support import Script
 
 
@@ -90,10 +88,7 @@ def render_job_list(t, jobs, args):
         num_boards = "" if job["boards"] is None else len(job["boards"])
 
         # Format start time
-        utc_timestamp = datetime.datetime.fromtimestamp(
-            job["start_time"], utc)
-        local_timestamp = utc_timestamp.astimezone(get_localzone())
-        timestamp = local_timestamp.strftime('%d/%m/%Y %H:%M:%S')
+        timestamp = render_timestamp(job["start_time"])
 
         if job["allocated_machine_name"] is not None:
             machine_name = job["allocated_machine_name"]

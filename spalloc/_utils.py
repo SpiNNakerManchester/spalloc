@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 import time
 
 
@@ -38,3 +39,10 @@ def make_timeout(delay_seconds):
     if delay_seconds is None:
         return None
     return time.time() + delay_seconds
+
+
+def render_timestamp(timestamp):
+    """ Convert a timestamp (Unix seconds) into a local human-readable\
+        timestamp string.
+    """
+    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
