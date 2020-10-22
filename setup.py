@@ -56,6 +56,7 @@ setup(
     install_requires=["six>=1.8.0",
                       "appdirs",
                       "enum-compat",
+                      'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0',
                       "future"],
     # Scripts
     entry_points={
@@ -67,6 +68,12 @@ setup(
             "spalloc-where-is = spalloc.scripts.where_is:main",
         ],
     },
+    # Booting directly needs rig; not recommended! Use SpiNNMan instead, as
+    # that has an up-to-date boot image pre-built
+    extras_require={
+        'boot': [
+            'rig',
+        ]},
     maintainer="SpiNNakerTeam",
     maintainer_email="spinnakerusers@googlegroups.com"
 )

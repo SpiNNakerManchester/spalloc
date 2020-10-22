@@ -332,9 +332,8 @@ def parse_argv(argv):
     parser.add_argument("--no-destroy", "-D", action="store_true",
                         default=False,
                         help="do not destroy the job on exit")
-    if MachineController is not None:
-        parser.add_argument("--boot", "-B", action="store_true",
-                            default=False,
+    if MachineController:
+        parser.add_argument("--boot", "-B", action="store_true", default=False,
                             help="boot the machine once powered on")
 
     allocation_args = parser.add_argument_group(
@@ -446,7 +445,7 @@ def run_job(job_args, job_kwargs, ip_file_filename):
         write_ips_to_csv(job.connections, ip_file_filename)
 
         # Boot the machine if required
-        if MachineController is not None and arguments.boot:
+        if MachineController and arguments.boot:
             update("Job {}: Booting...", t.yellow, job.id)
             mc = MachineController(job.hostname)
             mc.boot(job.width, job.height)
