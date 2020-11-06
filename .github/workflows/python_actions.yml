@@ -62,7 +62,7 @@ jobs:
     - name: Test with pytest and coverage
       if: matrix.python-version == 3.6
       run: |
-        pytest unittests --cov data_specification
+        pytest unittests --cov spalloc
 
     - name: Test with pytest
       if: matrix.python-version != 3.6
