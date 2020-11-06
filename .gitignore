@@ -74,6 +74,7 @@ target/
 
 # Hidden files
 .*
+!.github
 
 # Virtualenv nonsense
 pip-selfcheck.json
