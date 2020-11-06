@@ -62,12 +62,12 @@ jobs:
     - name: Test with pytest and coverage
       if: matrix.python-version == 3.6
       run: |
-        pytest unittests --cov spalloc
+        py.test tests/ --cov spalloc --cov tests --durations=10 --timeout=120
 
     - name: Test with pytest
       if: matrix.python-version != 3.6
       run: |
-        py.test tests/ --cov spalloc --cov tests --durations=10 --timeout=120
+        py.test tests/ --durations=10 --timeout=120
 
     - name: Lint with flake8
       run: |
