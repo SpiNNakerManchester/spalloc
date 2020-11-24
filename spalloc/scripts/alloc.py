@@ -31,9 +31,11 @@ powered on.
 
 .. note::
 
-    By default, allocated machines are powered on but not booted. If Rig_ is
-    installed, ``spalloc`` provides a ``--boot`` option which also boots the
-    allocated machine once it has been powered on.
+    By default, allocated machines are powered on but not booted. If
+    `Rig <https://github.com/project-rig/rig>`__
+    is installed, ``spalloc`` provides a ``--boot`` option which also boots
+    the allocated machine once it has been powered on. This dependency can be
+    installed using the ``[boot]`` option at install time for spalloc.
 
 .. image:: _static/spalloc.gif
     :alt: Animated GIF showing the typical execution of a spalloc call.
@@ -49,8 +51,6 @@ Invocation             Allocation
 ``spalloc 4 2``        A 4x2 *triad* machine.
 ``spalloc 3 4 0``      A single SpiNN-5 board at logical position (3, 4, 0)
 =====================  ====================================================
-
-.. _Rig: https://github.com/project-rig/rig
 
 A range of additional command-line arguments are available to control various
 aspects of Job allocation, run ``spalloc --help`` for a complete listing.
