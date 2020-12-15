@@ -48,7 +48,7 @@ jobs:
     - name: Setup
       uses: ./support/actions/run-setup
     - name: Extra setup
-      run: pip install -r requirements-doc.txt
+      run: pip install -r requirements-docs.txt
 
     - name: Test with pytest and coverage
       if: matrix.python-version == 3.6
