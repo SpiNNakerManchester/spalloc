@@ -78,4 +78,4 @@ jobs:
       if: matrix.python-version == 3.6
       uses: ./support/actions/sphinx
       with:
-        directory: doc/source
+        directory: docs/source
