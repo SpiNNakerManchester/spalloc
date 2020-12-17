@@ -53,7 +53,7 @@ jobs:
     - name: Test with pytest
       uses: ./support/actions/pytest
       with:
-        tests: unittests
+        tests: tests
         options: --durations=10 --timeout=120
         coverage: ${{ matrix.python-version == 3.6 }}
         cover-packages: spalloc tests
