@@ -130,6 +130,7 @@ except ImportError:  # pragma: no cover
 
 arguments = None
 t = None
+_input = input  # This is so we can monkeypatch input during testing
 
 
 def write_ips_to_csv(connections, ip_file_filename):
@@ -182,7 +183,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
     print(render_definitions(to_print))
 
     try:
-        input(t_stdout.dim("<Press enter when done>"))
+        _input(t_stdout.dim("<Press enter when done>"))
     except (KeyboardInterrupt, EOFError):
         print("")
 
