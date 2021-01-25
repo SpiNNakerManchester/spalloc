@@ -33,7 +33,6 @@ real-time.
 import argparse
 from collections import defaultdict, OrderedDict
 import sys
-from six import next  # pylint: disable=redefined-builtin
 from spalloc import __version__
 from spalloc.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,

@@ -45,7 +45,6 @@ setup(
         "Operating System :: MacOS",
 
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
@@ -53,11 +52,8 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["six>=1.8.0",
-                      "appdirs",
-                      "enum-compat",
-                      'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0',
-                      "future"],
+    install_requires=["appdirs",
+                      'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0'],
     # Scripts
     entry_points={
         "console_scripts": [

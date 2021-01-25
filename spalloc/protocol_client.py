@@ -21,7 +21,6 @@ import json
 import socket
 import sys
 from threading import current_thread, RLock, local
-from six import raise_from
 from spinn_utilities.abstract_context_manager import AbstractContextManager
 from spinn_utilities.overrides import overrides
 from spalloc._utils import time_left, timed_out, make_timeout
@@ -316,7 +315,7 @@ class ProtocolClient(AbstractContextManager):
                 with self._notifications_lock:
                     self._notifications.append(obj)
         except (IOError, OSError) as e:
-            raise_from(ProtocolError(str(e)), e)
+            raise ProtocolError(str(e)) from e
 
     def wait_for_notification(self, timeout=None):
         """ Return the next notification to arrive.
@@ -358,7 +357,7 @@ class ProtocolClient(AbstractContextManager):
         try:
             return self._recv_json(timeout)
         except (IOError, OSError) as e:  # pragma: no cover
-            raise_from(ProtocolError(str(e)), e)
+            raise ProtocolError(str(e)) from e
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
