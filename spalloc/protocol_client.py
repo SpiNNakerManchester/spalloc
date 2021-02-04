@@ -48,7 +48,7 @@ class _ProtocolThreadLocal(local):
     """
     # See https://github.com/SpiNNakerManchester/spalloc/issues/12
     def __init__(self):
-        local.__init__(self)
+        super().__init__()
         self.buffer = b""
         self.sock = None
 

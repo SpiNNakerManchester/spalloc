@@ -25,7 +25,7 @@ VERSION_RANGE_STOP = (5, 0, 1)
 
 class Terminate(Exception):
     def __init__(self, code, *args):
-        super(Terminate, self).__init__()
+        super().__init__()
         self._code = code
         args = list(args)
         message = args.pop(0) if args else None
