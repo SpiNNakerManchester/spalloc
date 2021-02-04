@@ -113,10 +113,7 @@ class ProtocolClient(AbstractContextManager):
 
     def _get_connection(self, timeout):
         if self._dead:
-            if sys.version_info[0] > 2:
-                raise OSError(errno.ENOTCONN, "not connected")
-            else:
-                raise socket.error(errno.ENOTCONN, "not connected")
+            raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
         key = current_thread()
         with self._socks_lock:
