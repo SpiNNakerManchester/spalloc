@@ -19,7 +19,6 @@ from collections import deque
 import errno
 import json
 import socket
-import sys
 from threading import current_thread, RLock, local
 from spinn_utilities.abstract_context_manager import AbstractContextManager
 from spinn_utilities.overrides import overrides
@@ -144,9 +143,6 @@ class ProtocolClient(AbstractContextManager):
         except OSError as e:
             if e.errno != errno.EISCONN:
                 raise
-        except socket.error as e:  # pylint: disable=duplicate-except
-            if e[0] != errno.EISCONN:  # pylint: disable=unsubscriptable-object
-                raise
         return success
 
     def _has_open_socket(self):
@@ -227,8 +223,8 @@ class ProtocolClient(AbstractContextManager):
         while b"\n" not in self._local.buffer:
             try:
                 data = sock.recv(1024)
-            except socket.timeout:
-                raise ProtocolTimeoutError("recv timed out.")
+            except socket.timeout as e:
+                raise ProtocolTimeoutError("recv timed out.") from e
 
             # Has socket closed?
             if not data:
@@ -266,8 +262,8 @@ class ProtocolClient(AbstractContextManager):
             if sock.send(data) != len(data):
                 # XXX: If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
-        except socket.timeout:
-            raise ProtocolTimeoutError("send timed out.")
+        except socket.timeout as e:
+            raise ProtocolTimeoutError("send timed out.") from e
 
     def call(self, name, *args, **kwargs):
         """ Send a command to the server and return the reply.
