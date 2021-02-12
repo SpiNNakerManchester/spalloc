@@ -22,7 +22,6 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
-from six import iteritems, string_types
 
 
 class ANSIDisplayAttributes(IntEnum):
@@ -212,7 +211,7 @@ def render_table(table, column_sep="  "):
     column_widths = defaultdict(lambda: 0)
     for row in table:
         for i, column in enumerate(row):
-            if isinstance(column, string_types):
+            if isinstance(column, str):
                 string = column
             elif isinstance(column, int):
                 string = str(column)
@@ -227,7 +226,7 @@ def render_table(table, column_sep="  "):
         out.append(rendered_row)
         for i, column in enumerate(row):
             # Get string length and formatted string
-            if isinstance(column, string_types):
+            if isinstance(column, str):
                 string = column
                 length = len(string)
                 right_align = False
@@ -235,7 +234,7 @@ def render_table(table, column_sep="  "):
                 string = str(column)
                 length = len(string)
                 right_align = True
-            elif isinstance(column[1], string_types):
+            elif isinstance(column[1], str):
                 f, string = column
                 length = len(string)
                 right_align = False
@@ -283,7 +282,7 @@ def render_definitions(definitions, seperator=": "):
     return "\n".join("{:>{}s}{}{}".format(
         key, col_width, seperator, str(value).replace(
             "\n", "\n{}".format(" "*(col_width + len(seperator)))))
-        for key, value in iteritems(definitions))
+        for key, value in definitions.items())
 
 
 def _board_to_cartesian(x, y, z):

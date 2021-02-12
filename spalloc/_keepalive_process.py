@@ -16,7 +16,6 @@
 """ A script for keeping Spalloc jobs alive, intended to only ever be run\
     from the Spalloc client itself.
 """
-from __future__ import print_function
 import sys
 import threading
 from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError

@@ -117,8 +117,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from six import iteritems
-from six.moves import input, shlex_quote  # @UnresolvedImport
+from shlex import quote
 from spalloc import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
@@ -131,6 +130,7 @@ except ImportError:  # pragma: no cover
 
 arguments = None
 t = None
+_input = input  # This is so we can monkeypatch input during testing
 
 
 def write_ips_to_csv(connections, ip_file_filename):
@@ -149,7 +149,7 @@ def write_ips_to_csv(connections, ip_file_filename):
         f.write("x,y,hostname\n")
         f.write("".join("{},{},{}\n".format(x, y, hostname)
                         for (x, y), hostname
-                        in sorted(iteritems(connections))))
+                        in sorted(connections.items())))
 
 
 def print_info(machine_name, connections, width, height, ip_file_filename):
@@ -183,7 +183,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
     print(render_definitions(to_print))
 
     try:
-        input(t_stdout.dim("<Press enter when done>"))
+        _input(t_stdout.dim("<Press enter when done>"))
     except (KeyboardInterrupt, EOFError):
         print("")
 
@@ -246,7 +246,7 @@ def run_command(command, job_id, machine_name, connections, width, height,
 
     # NB: When using shell=True, commands should be given as a string rather
     # than the usual list of arguments.
-    command = " ".join(map(shlex_quote, command))
+    command = " ".join(map(quote, command))
     p = subprocess.Popen(command, shell=True)
 
     # Pass through keyboard interrupts

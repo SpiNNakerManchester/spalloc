@@ -19,9 +19,7 @@ from collections import deque
 import errno
 import json
 import socket
-import sys
 from threading import current_thread, RLock, local
-from six import raise_from
 from spinn_utilities.abstract_context_manager import AbstractContextManager
 from spinn_utilities.overrides import overrides
 from spalloc._utils import time_left, timed_out, make_timeout
@@ -49,7 +47,7 @@ class _ProtocolThreadLocal(local):
     """
     # See https://github.com/SpiNNakerManchester/spalloc/issues/12
     def __init__(self):
-        local.__init__(self)
+        super().__init__()
         self.buffer = b""
         self.sock = None
 
@@ -114,10 +112,7 @@ class ProtocolClient(AbstractContextManager):
 
     def _get_connection(self, timeout):
         if self._dead:
-            if sys.version_info[0] > 2:
-                raise OSError(errno.ENOTCONN, "not connected")
-            else:
-                raise socket.error(errno.ENOTCONN, "not connected")
+            raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
         key = current_thread()
         with self._socks_lock:
@@ -147,9 +142,6 @@ class ProtocolClient(AbstractContextManager):
             success = True
         except OSError as e:
             if e.errno != errno.EISCONN:
-                raise
-        except socket.error as e:  # pylint: disable=duplicate-except
-            if e[0] != errno.EISCONN:  # pylint: disable=unsubscriptable-object
                 raise
         return success
 
@@ -231,8 +223,8 @@ class ProtocolClient(AbstractContextManager):
         while b"\n" not in self._local.buffer:
             try:
                 data = sock.recv(1024)
-            except socket.timeout:
-                raise ProtocolTimeoutError("recv timed out.")
+            except socket.timeout as e:
+                raise ProtocolTimeoutError("recv timed out.") from e
 
             # Has socket closed?
             if not data:
@@ -270,8 +262,8 @@ class ProtocolClient(AbstractContextManager):
             if sock.send(data) != len(data):
                 # XXX: If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
-        except socket.timeout:
-            raise ProtocolTimeoutError("send timed out.")
+        except socket.timeout as e:
+            raise ProtocolTimeoutError("send timed out.") from e
 
     def call(self, name, *args, **kwargs):
         """ Send a command to the server and return the reply.
@@ -316,7 +308,7 @@ class ProtocolClient(AbstractContextManager):
                 with self._notifications_lock:
                     self._notifications.append(obj)
         except (IOError, OSError) as e:
-            raise_from(ProtocolError(str(e)), e)
+            raise ProtocolError(str(e)) from e
 
     def wait_for_notification(self, timeout=None):
         """ Return the next notification to arrive.
@@ -358,7 +350,7 @@ class ProtocolClient(AbstractContextManager):
         try:
             return self._recv_json(timeout)
         except (IOError, OSError) as e:  # pragma: no cover
-            raise_from(ProtocolError(str(e)), e)
+            raise ProtocolError(str(e)) from e
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
