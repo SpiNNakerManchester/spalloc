@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2019 The University of Manchester
+# Copyright (c) 2017-2019 The University of Manchester
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,10 +13,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-appdirs
--e git+https://github.com/SpiNNakerManchester/SpiNNUtils.git@master#egg=SpiNNUtilities
-
-sphinx >= 2
-numpydoc
-sentinel
-mock
+version: 2
+build:
+  image: latest
+sphinx:
+  configuration: docs/source/conf.py
+  builder: dirhtml
+  fail_on_warning: false
+formats: [pdf]  # This is ADDITIONAL to HTML
+python:
+  version: 3.8
+  install:
+    - requirements: requirements-docs.txt

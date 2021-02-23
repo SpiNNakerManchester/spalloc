@@ -21,9 +21,7 @@
 import sys
 from mock import Mock as MagicMock
 import inspect
-import spalloc
 import os
-from spalloc import __version__ as version
 
 
 class Mock(MagicMock):
@@ -59,8 +57,12 @@ AUTHORS = u'Project Rig'
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('.'))
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path[:0] = [os.path.abspath('.'), os.path.abspath('../..')]
+
+# Note that this has to go AFTER we have updated sys.path!
+# This is because RTD doesn't actually install our checkout.
+import spalloc  # noqa: E402
+from spalloc import __version__ as version  # noqa: E402
 
 # -- General configuration ------------------------------------------------
 
