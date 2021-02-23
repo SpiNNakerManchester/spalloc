@@ -24,4 +24,4 @@ formats: [pdf]  # This is ADDITIONAL to HTML
 python:
   version: 3.8
   install:
-    - requirements: requirements_docs.txt
+    - requirements: requirements-docs.txt
