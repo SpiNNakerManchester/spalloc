@@ -81,8 +81,7 @@ options available (and the default value).
 """
 import os.path
 import appdirs
-from six import iteritems, PY3
-from six.moves import configparser
+import configparser
 
 # The application name to use in config file names
 _name = "spalloc"
@@ -159,20 +158,14 @@ def read_config(filenames=None):
 
     # Set default config values (NB: No read_dict in Python 2.7)
     parser.add_section(SECTION)
-    for key, value in iteritems(DEFAULT_CONFIG):
+    for key, value in DEFAULT_CONFIG.items():
         parser.set(SECTION, key, value)
 
     # Attempt to read from each possible file location in turn
     for filename in filenames:
         try:
             with open(filename, "r") as f:
-                # TODO: Remove use of readfp once we stop supporting 2.7
-                if PY3:
-                    parser.read_file(  # pylint: disable=no-member
-                        f, filename)
-                else:
-                    parser.readfp(  # pylint: disable=deprecated-method
-                        f, filename)
+                parser.read_file(f, filename)
         except (IOError, OSError):
             # File did not exist, keep trying
             pass

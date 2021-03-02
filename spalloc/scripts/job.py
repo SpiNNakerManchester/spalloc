@@ -77,7 +77,6 @@ which optionally accepts a human-readable explanation::
 import argparse
 from collections import OrderedDict
 import sys
-from six import iteritems
 from spalloc import __version__, JobState
 from spalloc.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
@@ -140,7 +139,7 @@ def show_job_info(t, client, timeout, job_id):
             ", ".join(map(str, args)),
             ",\n    " if args and kwargs else "",
             ",\n    ".join("{}={!r}".format(k, v) for
-                           k, v in sorted(iteritems(kwargs)))
+                           k, v in sorted(kwargs.items()))
         )
 
         if job["boards"] is not None:

@@ -20,6 +20,7 @@ from mock import Mock, PropertyMock
 from spalloc import JobState, JobDestroyedError
 from spalloc.scripts.alloc import (
     write_ips_to_csv, print_info, run_command, main)
+# pylint: disable=redefined-outer-name, unused-argument
 
 
 @pytest.yield_fixture
@@ -33,7 +34,7 @@ def filename():
 def mock_input(monkeypatch):
     m = Mock()
     import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "input", m)
+    monkeypatch.setattr(spalloc.scripts.alloc, "_input", m)
     return m
 
 

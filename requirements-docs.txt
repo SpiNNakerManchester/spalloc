@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-sphinx
+appdirs
+-e git+https://github.com/SpiNNakerManchester/SpiNNUtils.git@master#egg=SpiNNUtilities
+
+sphinx >= 2
 numpydoc
-six
-enum-compat
 sentinel
 mock
-future
