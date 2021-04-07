@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2019 The University of Manchester
+# Copyright (c) 2016-2021 The University of Manchester
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@ setup(
 
     # Requirements
     install_requires=["appdirs",
-                      'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0'],
+                      'SpiNNUtilities == 1!6.0.0'],
     # Scripts
     entry_points={
         "console_scripts": [
