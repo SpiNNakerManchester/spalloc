@@ -39,11 +39,11 @@ class Job(object):
     SpiNNaker boards.
 
     Constructing a :py:class:`.Job` object connects to a `spalloc-server
-    <https://github.com/project-rig/spalloc_server>`_ and requests a number of
-    SpiNNaker boards. See the :py:meth:`constructor <.Job.__init__>` for
-    details of the types of requests which may be made. The job object may then
-    be used to monitor the state of the request, control the boards allocated
-    and determine their IP addresses.
+    <https://github.com/SpiNNakerManchester/spalloc_server>`_ and requests a
+    number of SpiNNaker boards. See the :py:meth:`constructor <.Job.__init__>`
+    for details of the types of requests which may be made. The job object may
+    then be used to monitor the state of the request, control the boards
+    allocated and determine their IP addresses.
 
     In its simplest form, a :py:class:`.Job` can be used as a context manager
     like so::
