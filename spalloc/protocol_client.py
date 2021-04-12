@@ -54,7 +54,7 @@ class _ProtocolThreadLocal(local):
 
 class ProtocolClient(AbstractContextManager):
     """ A simple (blocking) client implementation of the `spalloc-server
-    <https://github.com/project-rig/spalloc_server>`_ protocol.
+    <https://github.com/SpiNNakerManchester/spalloc_server>`_ protocol.
 
     This minimal implementation is intended to serve both simple applications
     and as an example implementation of the protocol for other applications.
