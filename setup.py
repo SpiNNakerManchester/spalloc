@@ -26,7 +26,6 @@ setup(
 
     # Metadata for PyPi
     url="https://github.com/SpiNNakerManchester/spalloc",
-    author="Jonathan Heathcote",
     description="A client for the spalloc_server SpiNNaker machine "
                 "partitioning and allocation system.",
     license="GPLv2",
