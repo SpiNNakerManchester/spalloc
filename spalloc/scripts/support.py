@@ -20,7 +20,8 @@ from spalloc import (
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
-VERSION_RANGE_STOP = (5, 0, 1)
+# Note that v6 of the server is the Java-based one
+VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
