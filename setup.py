@@ -26,7 +26,6 @@ setup(
 
     # Metadata for PyPi
     url="https://github.com/SpiNNakerManchester/spalloc",
-    author="Jonathan Heathcote",
     description="A client for the spalloc_server SpiNNaker machine "
                 "partitioning and allocation system.",
     license="GPLv2",
@@ -54,7 +53,7 @@ setup(
 
     # Requirements
     install_requires=["appdirs",
-                      'SpiNNUtilities >= 1!5.1.1, < 1!6.0.0'],
+                      'SpiNNUtilities == 1!6.0.1'],
     # Scripts
     entry_points={
         "console_scripts": [

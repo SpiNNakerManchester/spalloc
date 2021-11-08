@@ -39,10 +39,6 @@ from spalloc.term import (
     DEFAULT_BOARD_EDGES)
 from .support import Terminate, Script
 
-# The acceptable range of server version numbers
-VERSION_RANGE_START = (0, 1, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
-
 
 def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
     """ Generate ascending values in spreadsheet-column-name style.

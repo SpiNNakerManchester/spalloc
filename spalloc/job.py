@@ -12,6 +12,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
 
 """ A high-level Python interface for allocating SpiNNaker boards.
 """
@@ -32,20 +33,17 @@ logger = logging.getLogger(__name__)
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 logger.addHandler(logging.StreamHandler())
 
-VERSION_RANGE_START = (0, 4, 0)
-VERSION_RANGE_STOP = (2, 0, 0)
-
 
 class Job(object):
     """ A high-level interface for requesting and managing allocations of
     SpiNNaker boards.
 
     Constructing a :py:class:`.Job` object connects to a `spalloc-server
-    <https://github.com/project-rig/spalloc_server>`_ and requests a number of
-    SpiNNaker boards. See the :py:meth:`constructor <.Job.__init__>` for
-    details of the types of requests which may be made. The job object may then
-    be used to monitor the state of the request, control the boards allocated
-    and determine their IP addresses.
+    <https://github.com/SpiNNakerManchester/spalloc_server>`_ and requests a
+    number of SpiNNaker boards. See the :py:meth:`constructor <.Job.__init__>`
+    for details of the types of requests which may be made. The job object may
+    then be used to monitor the state of the request, control the boards
+    allocated and determine their IP addresses.
 
     In its simplest form, a :py:class:`.Job` can be used as a context manager
     like so::
