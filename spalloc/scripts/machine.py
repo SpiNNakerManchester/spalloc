@@ -31,7 +31,6 @@ If the ``--watch`` option is given, the information displayed is updated in
 real-time.
 """
 import argparse
-from collections import defaultdict, OrderedDict
 import sys
 from spalloc import __version__
 from spalloc.term import (
@@ -149,7 +148,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     num_in_use = sum(map(len, (job["boards"] for job in displayed_jobs)))
 
     # Show general machine information
-    info = OrderedDict()
+    info = dict()
     info["Name"] = machine["name"]
     info["Tags"] = ", ".join(machine["tags"])
     info["In-use"] = "{} of {}".format(num_in_use, num_boards)
