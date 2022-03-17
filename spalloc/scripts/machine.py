@@ -30,6 +30,7 @@ running on a machine.
 If the ``--watch`` option is given, the information displayed is updated in
 real-time.
 """
+from collections import defaultdict
 import argparse
 import sys
 from spalloc import __version__
