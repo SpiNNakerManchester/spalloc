@@ -13,11 +13,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from spalloc._version import __version__  # noqa
+from spalloc._version import __version__  # noqa: F401
 
 # Alias useful objects
-from spalloc.protocol_client import ProtocolClient, ProtocolError  # noqa
-from spalloc.protocol_client import ProtocolTimeoutError  # noqa
-from spalloc.protocol_client import SpallocServerException  # noqa
-from spalloc.job import Job, JobDestroyedError, StateChangeTimeoutError  # noqa
-from spalloc.states import JobState  # noqa
+from spalloc.protocol_client import ProtocolClient, ProtocolError
+from spalloc.protocol_client import ProtocolTimeoutError
+from spalloc.protocol_client import SpallocServerException
+from spalloc.job import Job, JobDestroyedError, StateChangeTimeoutError
+from spalloc.states import JobState
+
+__all__ = [
+    "Job", "JobDestroyedError", "JobState", "ProtocolClient",
+    "ProtocolError", "ProtocolTimeoutError", "SpallocServerException",
+    "StateChangeTimeoutError"]
