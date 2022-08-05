@@ -75,7 +75,6 @@ which optionally accepts a human-readable explanation::
     their boards being powered down and re-partitioned ready for another user.
 """
 import argparse
-from collections import OrderedDict
 import sys
 from spalloc import __version__, JobState
 from spalloc.term import (
@@ -110,7 +109,7 @@ def show_job_info(t, client, timeout, job_id):
     # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
     job = [job for job in job_list if job["job_id"] == job_id]
-    info = OrderedDict()
+    info = dict()
     info["Job ID"] = job_id
 
     if not job:

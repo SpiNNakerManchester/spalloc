@@ -67,7 +67,6 @@ To query by chip coordinate of chips allocated to a job::
 """
 import sys
 import argparse
-from collections import OrderedDict
 from spalloc import __version__
 from spalloc.term import render_definitions
 from .support import Terminate, Script
@@ -145,7 +144,7 @@ class WhereIsScript(Script):
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
-        out = OrderedDict()
+        out = dict()
         out["Machine"] = location["machine"]
         out["Physical location"] = "Cabinet {}, Frame {}, Board {}".format(
             *location["physical"])

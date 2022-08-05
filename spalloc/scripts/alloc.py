@@ -111,7 +111,6 @@ messages are sent automatically but after exiting the commands are no longer
 sent. Adding the ``--keepalive -1`` option when creating a job disables this.
 """
 import argparse
-from collections import OrderedDict
 import logging
 import os
 import subprocess
@@ -168,7 +167,7 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
     """
     t_stdout = Terminal()
 
-    to_print = OrderedDict()
+    to_print = dict()
 
     to_print["Hostname"] = t_stdout.bright(connections[(0, 0)])
     to_print["Width"] = width

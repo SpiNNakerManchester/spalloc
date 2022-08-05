@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections import OrderedDict
 import pytest
 from spalloc.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
@@ -185,13 +184,13 @@ def test_render_table():
 
 def test_render_definitions():
     # Empty case
-    assert render_definitions(OrderedDict()) == ""
+    assert render_definitions(dict()) == ""
 
     # Singleton
-    assert render_definitions(OrderedDict([("foo", "bar")])) == "foo: bar"
+    assert render_definitions(dict([("foo", "bar")])) == "foo: bar"
 
     # Ragged
-    assert render_definitions(OrderedDict([
+    assert render_definitions(dict([
         ("Key", "Value"),
         ("Something", "Else"),
         ("Another", "Thing"),
@@ -200,7 +199,7 @@ def test_render_definitions():
             "  Another: Thing")
 
     # Alternative seperator
-    assert render_definitions(OrderedDict([("foo", "bar")]),
+    assert render_definitions(dict([("foo", "bar")]),
                               seperator="=") == "foo=bar"
     # Linebreaks
     assert render_definitions({"Key": "Lines\nBroken\nUp."}) == (
