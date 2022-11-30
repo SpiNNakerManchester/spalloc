@@ -66,6 +66,7 @@ setup(
     },
     # Booting directly needs rig; not recommended! Use SpiNNMan instead, as
     # that has an up-to-date boot image pre-built
+    # Note rig does not work with python 3.11 and there are NO plans to fix it
     extras_require={
         'boot': [
             'rig',
