@@ -1,4 +1,4 @@
-# Copyright (c) 2016-2019 The University of Manchester
+# Copyright (c) 2016-2022 The University of Manchester
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -21,4 +21,3 @@ pytest-cov
 pytest-timeout
 flake8
 mock
-rig
