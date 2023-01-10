@@ -76,6 +76,7 @@ class WhereIsScript(Script):
 
     def __init__(self):
         super().__init__()
+        self.parser = None
         self.where_is_kwargs = None
         self.show_board_chip = None
 

@@ -237,9 +237,9 @@ def power_job(client, timeout, job_id, power):
             # Wait for change...
             try:
                 client.wait_for_notification()
-            except KeyboardInterrupt:
+            except KeyboardInterrupt as exc:
                 # If interrupted, quietly return an error state
-                raise Terminate(7)
+                raise Terminate(7) from exc
         else:
             # In an unknown state, perhaps the job was queued etc.
             raise Terminate(8, "Error: Cannot power {} job {} in state {}",
