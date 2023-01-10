@@ -472,8 +472,7 @@ def _minzero(value):
 
 
 def main(argv=None):
-    # pylint disable=global-statement
-    global arguments, t
+    global arguments, t  # pylint: disable=global-statement
     parser, arguments = parse_argv(argv)
     t = Terminal(stream=sys.stderr)
 
