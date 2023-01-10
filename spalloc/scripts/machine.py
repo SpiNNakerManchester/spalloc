@@ -211,6 +211,11 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
 
 
 class ListMachinesScript(Script):
+
+    def __init__(self):
+        super().__init__()
+        self.parser = None
+
     def get_and_display_machine_info(self, client, args, t):
         # Get all information
         machines = client.list_machines(timeout=args.timeout)

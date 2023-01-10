@@ -144,7 +144,7 @@ def write_ips_to_csv(connections, ip_file_filename):
     connections : {(x, y): hostname, ...}
     ip_file_filename : str
     """
-    with open(ip_file_filename, "w") as f:
+    with open(ip_file_filename, "w", encoding="utf-8") as f:
         f.write("x,y,hostname\n")
         f.write("".join("{},{},{}\n".format(x, y, hostname)
                         for (x, y), hostname
@@ -472,7 +472,7 @@ def _minzero(value):
 
 
 def main(argv=None):
-    global arguments, t
+    global arguments, t  # pylint disable=global-statement
     parser, arguments = parse_argv(argv)
     t = Terminal(stream=sys.stderr)
 

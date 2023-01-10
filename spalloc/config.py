@@ -164,7 +164,7 @@ def read_config(filenames=None):
     # Attempt to read from each possible file location in turn
     for filename in filenames:
         try:
-            with open(filename, "r") as f:
+            with open(filename, "r", encoding="utf-8") as f:
                 parser.read_file(f, filename)
         except (IOError, OSError):
             # File did not exist, keep trying

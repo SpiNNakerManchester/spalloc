@@ -297,6 +297,11 @@ def destroy_job(client, timeout, job_id, reason=None):
 
 
 class ManageJobScript(Script):
+
+    def __init__(self):
+        super().__init__()
+        self.parser = None
+
     def get_job_id(self, client, args):
         if args.job_id is not None:
             return args.job_id
