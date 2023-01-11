@@ -73,6 +73,13 @@ from .support import Terminate, Script
 
 
 class WhereIsScript(Script):
+
+    def __init__(self):
+        super().__init__()
+        self.parser = None
+        self.where_is_kwargs = None
+        self.show_board_chip = None
+
     def get_parser(self, cfg):  # @UnusedVariable
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "

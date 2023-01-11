@@ -260,7 +260,7 @@ class ProtocolClient(AbstractContextManager):
         data = json.dumps(obj).encode("utf-8") + b"\n"
         try:
             if sock.send(data) != len(data):
-                # XXX: If can't send whole command at once, just fail
+                # If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e

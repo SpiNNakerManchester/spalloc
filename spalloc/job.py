@@ -14,8 +14,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
 
-""" A high-level Python interface for allocating SpiNNaker boards.
-"""
+# A high-level Python interface for allocating SpiNNaker boards.
+
 from collections import namedtuple
 import logging
 import subprocess

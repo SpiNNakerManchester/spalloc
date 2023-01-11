@@ -237,9 +237,9 @@ def power_job(client, timeout, job_id, power):
             # Wait for change...
             try:
                 client.wait_for_notification()
-            except KeyboardInterrupt:
+            except KeyboardInterrupt as exc:
                 # If interrupted, quietly return an error state
-                raise Terminate(7)
+                raise Terminate(7) from exc
         else:
             # In an unknown state, perhaps the job was queued etc.
             raise Terminate(8, "Error: Cannot power {} job {} in state {}",
@@ -297,6 +297,11 @@ def destroy_job(client, timeout, job_id, reason=None):
 
 
 class ManageJobScript(Script):
+
+    def __init__(self):
+        super().__init__()
+        self.parser = None
+
     def get_job_id(self, client, args):
         if args.job_id is not None:
             return args.job_id
