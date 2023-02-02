@@ -319,8 +319,7 @@ class Job(object):
         while "pydev debugger" in str(first_line) or len(first_line) == 0:
             first_line = self._keepalive_process.stdout.readline().strip()
         if first_line != b"KEEPALIVE":
-            raise Exception("Keepalive process wrote odd line: {}".format(
-                first_line))
+            raise ValueError("Keepalive process wrote odd line: {first_line}")
 
     def __enter__(self):
         """ Convenience context manager for common case where a new job is to
