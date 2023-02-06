@@ -316,10 +316,12 @@ class Job(object):
                 self._reconnect_delay]), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         first_line = self._keepalive_process.stdout.readline().strip()
-        while "pydev debugger" in str(first_line) or len(first_line) == 0:
+        while ("pydev debugger" in str(first_line) or
+               "thread" in str(first_line)
+               or len(first_line) == 0):
             first_line = self._keepalive_process.stdout.readline().strip()
         if first_line != b"KEEPALIVE":
-            raise ValueError("Keepalive process wrote odd line: {first_line}")
+            raise ValueError(f"Keepalive process wrote odd line: {first_line}")
 
     def __enter__(self):
         """ Convenience context manager for common case where a new job is to
