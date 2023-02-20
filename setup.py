@@ -52,8 +52,7 @@ setup(
     keywords="spinnaker allocation packing management supercomputer",
 
     # Requirements
-    install_requires=["appdirs",
-                      'SpiNNUtilities == 1!6.0.1'],
+    install_requires=['SpiNNUtilities == 1!6.0.1'],
     # Scripts
     entry_points={
         "console_scripts": [
