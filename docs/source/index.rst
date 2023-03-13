@@ -4,7 +4,7 @@ Spalloc: SpiNNaker machine allocation client
 Spalloc is a Python library and set of command-line programs for requesting
 SpiNNaker_ machines from a spalloc `server`_.
 
-.. _SpiNNaker: http://apt.cs.manchester.ac.uk/projects/SpiNNaker/
+.. _SpiNNaker: https://apt.cs.manchester.ac.uk/projects/SpiNNaker/
 .. _server: https://github.com/SpiNNakerManchester/spalloc_server
 
 
@@ -104,7 +104,7 @@ the spalloc server enabling any spalloc server command to be sent.
     the spalloc server protocol_ in a manner better suited to their specific
     use-case.
 
-.. _protocol: http://spalloc-server.readthedocs.org/en/stable/protocol.html
+.. _protocol: https://spalloc-server.readthedocs.org/en/stable/protocol.html
 
 High level interface (:py:class:`spalloc.Job`)
 ``````````````````````````````````````````````
