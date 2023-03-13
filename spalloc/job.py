@@ -314,11 +314,17 @@ class Job(object):
                 port, self.id, self._keepalive, self._timeout,
                 self._reconnect_delay]), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        first_line = self._keepalive_process.stdout.readline().strip()
-        while "pydev debugger" in str(first_line) or len(first_line) == 0:
-            first_line = self._keepalive_process.stdout.readline().strip()
-        if first_line != b"KEEPALIVE":
-            raise ValueError("Keepalive process wrote odd line: {first_line}")
+        # Wait for it to announce that it is working
+        stdout = self._keepalive_process.stdout
+        while not stdout.closed:
+            line = stdout.readline().decode("utf-8").strip()
+            if line == "KEEPALIVE":
+                break
+            # Two special cases
+            if "pydev debugger" in line or "thread" in line:
+                continue
+            if line:
+                raise ValueError(f"Keepalive process wrote odd line: {line}")
 
     def __enter__(self):
         """ Convenience context manager for common case where a new job is to
