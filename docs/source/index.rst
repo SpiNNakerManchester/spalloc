@@ -107,7 +107,7 @@ interface to the spalloc server enabling any spalloc server command to be sent.
 .. _protocol: https://spalloc-server.readthedocs.org/en/stable/protocol.html
 
 High level interface (:py:class:`spalloc_client.Job`)
-``````````````````````````````````````````````
+`````````````````````````````````````````````````````
 
 .. autoclass:: spalloc_client.Job
     :members:
@@ -121,7 +121,7 @@ High level interface (:py:class:`spalloc_client.Job`)
 .. autoexception:: spalloc_clientc.StateChangeTimeoutError
 
 Lower level interface (:py:class:`spalloc_client.ProtocolClient`)
-``````````````````````````````````````````````````````````
+`````````````````````````````````````````````````````````````````
 
 .. autoclass:: spalloc_client.ProtocolClient
     :members:
