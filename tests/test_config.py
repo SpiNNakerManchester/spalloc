@@ -16,7 +16,7 @@ import tempfile
 import shutil
 import os.path
 import pytest
-from spalloc.config import read_config
+from spalloc_client.config import read_config
 
 
 @pytest.yield_fixture

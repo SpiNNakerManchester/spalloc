@@ -16,10 +16,11 @@ import collections
 import datetime
 from mock import Mock, MagicMock
 import pytest
-from spalloc.scripts.ps import main, render_job_list
-from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
-from spalloc.term import Terminal
-from spalloc import JobState
+from spalloc_client.scripts.ps import main, render_job_list
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
+from spalloc_client.term import Terminal
+from spalloc_client import JobState
 
 
 @pytest.fixture
@@ -41,9 +42,10 @@ def client(client_factory):
 
 @pytest.fixture
 def faux_render(monkeypatch):
-    import spalloc.scripts.ps
+    import spalloc_client.scripts.ps
     render_job_list = Mock()
-    monkeypatch.setattr(spalloc.scripts.ps, "render_job_list", render_job_list)
+    monkeypatch.setattr(
+        spalloc_client.scripts.ps, "render_job_list", render_job_list)
     return render_job_list
 
 

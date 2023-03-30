@@ -14,9 +14,10 @@
 
 import pytest
 from mock import Mock, MagicMock
-from spalloc.scripts.where_is import main
-from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
-from spalloc.protocol_client import ProtocolError
+from spalloc_client.scripts.where_is import main
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
+from spalloc_client.protocol_client import ProtocolError
 
 
 @pytest.fixture

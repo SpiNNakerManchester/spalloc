@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from spalloc.term import (
+from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
     DEFAULT_BOARD_EDGES)
 

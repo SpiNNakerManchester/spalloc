@@ -12,14 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from spalloc._version import __version__  # noqa: F401
+from spalloc_client._version import __version__  # noqa: F401
 
 # Alias useful objects
-from spalloc.protocol_client import ProtocolClient, ProtocolError
-from spalloc.protocol_client import ProtocolTimeoutError
-from spalloc.protocol_client import SpallocServerException
-from spalloc.job import Job, JobDestroyedError, StateChangeTimeoutError
-from spalloc.states import JobState
+from spalloc_client.protocol_client import ProtocolClient, ProtocolError
+from spalloc_client.protocol_client import ProtocolTimeoutError
+from spalloc_client.protocol_client import SpallocServerException
+from spalloc_client.job import Job, JobDestroyedError, StateChangeTimeoutError
+from spalloc_client.states import JobState
 
 __all__ = [
     "Job", "JobDestroyedError", "JobState", "ProtocolClient",

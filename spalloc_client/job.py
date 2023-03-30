@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 # A high-level Python interface for allocating SpiNNaker boards.
 
@@ -47,7 +48,7 @@ class Job(object):
     In its simplest form, a :py:class:`.Job` can be used as a context manager
     like so::
 
-        >>> from spalloc import Job
+        >>> from spalloc_client import Job
         >>> with Job(6) as j:
         ...     my_boot(j.hostname, j.width, j.height)
         ...     my_application(j.hostname)
@@ -60,7 +61,7 @@ class Job(object):
     For more fine-grained control, the same functionality is available via
     various methods::
 
-        >>> from spalloc import Job
+        >>> from spalloc_client import Job
         >>> j = Job(6)
         >>> j.wait_until_ready()
         >>> my_boot(j.hostname, j.width, j.height)
@@ -160,7 +161,8 @@ class Job(object):
 
         The following keyword-only parameters below are used both to specify
         the server details as well as the job requirements. Most parameters
-        default to the values supplied in the local :py:mod:`~spalloc.config`
+        default to the values supplied in the local
+        :py:mod:`~spalloc_client.config`
         file allowing usage as in the examples above.
 
         Parameters
@@ -310,8 +312,8 @@ class Job(object):
 
         # Set-up and start background keepalive thread
         self._keepalive_process = subprocess.Popen(map(str, [
-                sys.executable, "-m", "spalloc._keepalive_process", hostname,
-                port, self.id, self._keepalive, self._timeout,
+                sys.executable, "-m", "spalloc_client._keepalive_process",
+                hostname, port, self.id, self._keepalive, self._timeout,
                 self._reconnect_delay]), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # Wait for it to announce that it is working
@@ -335,7 +337,7 @@ class Job(object):
 
         Example::
 
-            >>> from spalloc import Job
+            >>> from spalloc_client import Job
             >>> with Job(6) as j:
             ...     my_boot(j.hostname, j.width, j.height)
             ...     my_application(j.hostname)
@@ -578,7 +580,7 @@ class Job(object):
 
         Parameters
         ----------
-        old_state : :py:class:`~spalloc.JobState`
+        old_state : :py:class:`~spalloc_client.JobState`
             The current state.
         timeout : float or None
             The number of seconds to wait for a change before timing out. If
@@ -586,7 +588,7 @@ class Job(object):
 
         Returns
         -------
-        :py:class:`~spalloc.JobState`
+        :py:class:`~spalloc_client.JobState`
             The new state, or old state if timed out.
         """
         finish_time = make_timeout(timeout)

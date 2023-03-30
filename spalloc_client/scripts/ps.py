@@ -26,9 +26,9 @@ This list may be filtered by owner or machine with the ``--owner`` and
 """
 import argparse
 import sys
-from spalloc import __version__, JobState
-from spalloc.term import Terminal, render_table
-from spalloc._utils import render_timestamp
+from spalloc_client import __version__, JobState
+from spalloc_client.term import Terminal, render_table
+from spalloc_client._utils import render_timestamp
 from .support import Script
 
 

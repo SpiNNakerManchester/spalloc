@@ -66,8 +66,8 @@ To query by chip coordinate of chips allocated to a job::
 """
 import sys
 import argparse
-from spalloc import __version__
-from spalloc.term import render_definitions
+from spalloc_client import __version__
+from spalloc_client.term import render_definitions
 from .support import Terminate, Script
 
 
