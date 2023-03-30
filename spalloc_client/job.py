@@ -163,7 +163,7 @@ class Job(object):
         the server details as well as the job requirements. Most parameters
         default to the values supplied in the local
         :py:mod:`~spalloc_client.config`
-         file allowing usage as in the examples above.
+        file allowing usage as in the examples above.
 
         Parameters
         ----------
