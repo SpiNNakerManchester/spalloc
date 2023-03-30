@@ -15,11 +15,11 @@
 import datetime
 import pytest
 from mock import Mock, MagicMock
-from spalloc import JobState, ProtocolError
-from spalloc.term import Terminal
-from spalloc.scripts.job import (
+from spalloc_client import JobState, ProtocolError
+from spalloc_client.term import Terminal
+from spalloc_client.scripts.job import (
     show_job_info, watch_job, power_job, list_ips, destroy_job, main)
-from spalloc.scripts.support import (
+from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate)
 
 

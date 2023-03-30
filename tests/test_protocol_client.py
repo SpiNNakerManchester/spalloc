@@ -18,7 +18,7 @@ import time
 import logging
 import pytest
 from mock import Mock
-from spalloc import (
+from spalloc_client import (
     ProtocolClient, SpallocServerException, ProtocolTimeoutError,
     ProtocolError)
 from .common import MockServer

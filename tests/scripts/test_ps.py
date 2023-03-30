@@ -16,10 +16,11 @@ import collections
 import datetime
 from mock import Mock, MagicMock
 import pytest
-from spalloc.scripts.ps import main, render_job_list
-from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
-from spalloc.term import Terminal
-from spalloc import JobState
+from spalloc_client.scripts.ps import main, render_job_list
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
+from spalloc_client.term import Terminal
+from spalloc_client import JobState
 
 
 @pytest.fixture

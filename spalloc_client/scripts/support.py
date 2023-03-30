@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import sys
-from spalloc import (
+from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
 

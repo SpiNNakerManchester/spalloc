@@ -21,7 +21,7 @@ import socket
 from threading import current_thread, RLock, local
 from spinn_utilities.abstract_context_manager import AbstractContextManager
 from spinn_utilities.overrides import overrides
-from spalloc._utils import time_left, timed_out, make_timeout
+from spalloc_client._utils import time_left, timed_out, make_timeout
 
 
 class ProtocolError(Exception):

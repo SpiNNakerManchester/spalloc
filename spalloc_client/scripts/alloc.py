@@ -116,10 +116,10 @@ import subprocess
 import sys
 import tempfile
 from shlex import quote
-from spalloc import (
+from spalloc_client import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
-from spalloc.term import Terminal, render_definitions
+from spalloc_client.term import Terminal, render_definitions
 # Rig is used to implement the optional '--boot' facility.
 try:
     from rig.machine_control import MachineController

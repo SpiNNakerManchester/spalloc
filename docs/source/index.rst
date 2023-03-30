@@ -35,7 +35,7 @@ three-board machine::
 
 ::
 
-    >>> from spalloc import Job
+    >>> from spalloc_client import Job
     >>> with Job(3) as j:
     ...     my_boot(j.hostname, j.width, j.height)
     ...     my_application(j.hostname)

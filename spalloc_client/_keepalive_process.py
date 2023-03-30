@@ -17,7 +17,7 @@
 """
 import sys
 import threading
-from spalloc.protocol_client import ProtocolClient, ProtocolTimeoutError
+from spalloc_client.protocol_client import ProtocolClient, ProtocolTimeoutError
 
 
 def wait_for_exit(stop_event):

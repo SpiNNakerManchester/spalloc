@@ -32,8 +32,8 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from spalloc import __version__
-from spalloc.term import (
+from spalloc_client import __version__
+from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
     DEFAULT_BOARD_EDGES)
 from .support import Terminate, Script

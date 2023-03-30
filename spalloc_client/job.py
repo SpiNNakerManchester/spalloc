@@ -11,7 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from spalloc.scripts.support import VERSION_RANGE_START, VERSION_RANGE_STOP
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 # A high-level Python interface for allocating SpiNNaker boards.
 
@@ -47,7 +48,7 @@ class Job(object):
     In its simplest form, a :py:class:`.Job` can be used as a context manager
     like so::
 
-        >>> from spalloc import Job
+        >>> from spalloc_client import Job
         >>> with Job(6) as j:
         ...     my_boot(j.hostname, j.width, j.height)
         ...     my_application(j.hostname)
@@ -60,7 +61,7 @@ class Job(object):
     For more fine-grained control, the same functionality is available via
     various methods::
 
-        >>> from spalloc import Job
+        >>> from spalloc_client import Job
         >>> j = Job(6)
         >>> j.wait_until_ready()
         >>> my_boot(j.hostname, j.width, j.height)
@@ -335,7 +336,7 @@ class Job(object):
 
         Example::
 
-            >>> from spalloc import Job
+            >>> from spalloc_client import Job
             >>> with Job(6) as j:
             ...     my_boot(j.hostname, j.width, j.height)
             ...     my_application(j.hostname)
