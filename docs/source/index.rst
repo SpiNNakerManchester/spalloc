@@ -62,28 +62,28 @@ three-board machine::
 Configuration file format and defaults
 --------------------------------------
 
-.. automodule:: spalloc.config
+.. automodule:: spalloc_client.config
 
 
 ``spalloc``: Allocate SpiNNaker machines
 ----------------------------------------
-.. automodule:: spalloc.scripts.alloc
+.. automodule:: spalloc_client.scripts.alloc
 
 ``spalloc-job``: Manage and reset existing jobs and their boards
 ----------------------------------------------------------------
-.. automodule:: spalloc.scripts.job
+.. automodule:: spalloc_client.scripts.job
 
 ``spalloc-ps``: List all running jobs
 -------------------------------------
-.. automodule:: spalloc.scripts.ps
+.. automodule:: spalloc_client.scripts.ps
 
 ``spalloc-machine``: List available machines and their running jobs
 -------------------------------------------------------------------
-.. automodule:: spalloc.scripts.machine
+.. automodule:: spalloc_client.scripts.machine
 
 ``spalloc-where-is``: Query the server for the physical/logical locations of boards/chips
 -----------------------------------------------------------------------------------------
-.. automodule:: spalloc.scripts.where_is
+.. automodule:: spalloc_client.scripts.where_is
 
 
 Python library
@@ -91,11 +91,11 @@ Python library
 
 Spalloc provides a pair of Python libraries which enable basic high- and
 low-level interaction with a spalloc server. The high-level
-:py:class:`~spalloc.Job` interface makes the task of creating jobs (and keeping
-them alive) straight-forward but only facilitates basic job management
-functions such as resetting boards and getting their IP addresses.  The
-low-level :py:class:`~spalloc.ProtocolClient` provides an RPC-like interface to
-the spalloc server enabling any spalloc server command to be sent.
+:py:class:`~spalloc_client.Job` interface makes the task of creating jobs
+(and keeping them alive) straight-forward but only facilitates basic job
+management functions such as resetting boards and getting their IP addresses.
+The low-level :py:class:`~spalloc_client.ProtocolClient` provides an RPC-like
+interface to the spalloc server enabling any spalloc server command to be sent.
 
 .. note::
 
@@ -106,28 +106,28 @@ the spalloc server enabling any spalloc server command to be sent.
 
 .. _protocol: https://spalloc-server.readthedocs.org/en/stable/protocol.html
 
-High level interface (:py:class:`spalloc.Job`)
+High level interface (:py:class:`spalloc_client.Job`)
 ``````````````````````````````````````````````
 
-.. autoclass:: spalloc.Job
+.. autoclass:: spalloc_client.Job
     :members:
     :special-members:
 
-.. autoclass:: spalloc.JobState
+.. autoclass:: spalloc_client.JobState
     :members:
 
-.. autoexception:: spalloc.JobDestroyedError
+.. autoexception:: spalloc_client.JobDestroyedError
 
-.. autoexception:: spalloc.StateChangeTimeoutError
+.. autoexception:: spalloc_clientc.StateChangeTimeoutError
 
-Lower level interface (:py:class:`spalloc.ProtocolClient`)
+Lower level interface (:py:class:`spalloc_client.ProtocolClient`)
 ``````````````````````````````````````````````````````````
 
-.. autoclass:: spalloc.ProtocolClient
+.. autoclass:: spalloc_client.ProtocolClient
     :members:
     :special-members:
 
-.. autoexception:: spalloc.ProtocolTimeoutError
+.. autoexception:: spalloc_client.ProtocolTimeoutError
 
 
 Indicies and Tables
