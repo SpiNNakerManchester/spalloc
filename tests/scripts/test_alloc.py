@@ -32,8 +32,8 @@ def filename():
 @pytest.fixture
 def mock_input(monkeypatch):
     m = Mock()
-    import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "_input", m)
+    import spalloc_client.scripts.alloc
+    monkeypatch.setattr(spalloc_client.scripts.alloc, "_input", m)
     return m
 
 
@@ -50,8 +50,8 @@ def mock_popen(monkeypatch):
 def mock_job(monkeypatch):
     # A fake job which immediately exits with a connection error.
     job_returner = Mock(side_effect=OSError())
-    import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "Job", job_returner)
+    import spalloc_client.scripts.alloc
+    monkeypatch.setattr(spalloc_client.scripts.alloc, "Job", job_returner)
     return job_returner
 
 
@@ -59,8 +59,8 @@ def mock_job(monkeypatch):
 def mock_working_job(monkeypatch):
     job = Mock()
     job_returner = Mock(return_value=job)
-    import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "Job", job_returner)
+    import spalloc_client.scripts.alloc
+    monkeypatch.setattr(spalloc_client.scripts.alloc, "Job", job_returner)
 
     job.id = 123
     job.state = JobState.queued
@@ -80,15 +80,16 @@ def mock_working_job(monkeypatch):
 @pytest.fixture
 def mock_mc(monkeypatch):
     mc = Mock(return_value=Mock())
-    import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", mc)
+    import spalloc_client.scripts.alloc
+    monkeypatch.setattr(spalloc_client.scripts.alloc, "MachineController", mc)
     return mc
 
 
 @pytest.fixture
 def no_rig(monkeypatch):
-    import spalloc.scripts.alloc
-    monkeypatch.setattr(spalloc.scripts.alloc, "MachineController", None)
+    import spalloc_client.scripts.alloc
+    monkeypatch.setattr(
+        spalloc_client.scripts.alloc, "MachineController", None)
 
 
 def test_write_ips_to_file_empty(filename):
@@ -359,9 +360,9 @@ def test_quiet_args(capsys, basic_config_file, mock_working_job, mock_input):
 
 @pytest.mark.parametrize("args,enable", [("--debug", True), ("", False)])
 def test_debug_args(basic_config_file, mock_job, monkeypatch, args, enable):
-    import spalloc.scripts.alloc
+    import spalloc_client.scripts.alloc
     logging = Mock()
-    monkeypatch.setattr(spalloc.scripts.alloc, "logging", logging)
+    monkeypatch.setattr(spalloc_client.scripts.alloc, "logging", logging)
 
     assert main(args.split()) == 6
 

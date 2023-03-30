@@ -33,11 +33,11 @@ def client(monkeypatch):
     client.version.return_value = GOOD_VERSION
     client.create_job.return_value = 123
 
-    import spalloc.job
-    monkeypatch.setattr(spalloc.job, "ProtocolClient",
+    import spalloc_client.job
+    monkeypatch.setattr(spalloc_client.job, "ProtocolClient",
                         Mock(return_value=client))
-    import spalloc._keepalive_process
-    monkeypatch.setattr(spalloc._keepalive_process, "ProtocolClient",
+    import spalloc_client._keepalive_process
+    monkeypatch.setattr(spalloc_client._keepalive_process, "ProtocolClient",
                         Mock(return_value=client))
     return client
 

@@ -161,8 +161,9 @@ class Job(object):
 
         The following keyword-only parameters below are used both to specify
         the server details as well as the job requirements. Most parameters
-        default to the values supplied in the local :py:mod:`~spalloc.config`
-        file allowing usage as in the examples above.
+        default to the values supplied in the local
+        :py:mod:`~spalloc_client.config`
+         file allowing usage as in the examples above.
 
         Parameters
         ----------
@@ -311,8 +312,8 @@ class Job(object):
 
         # Set-up and start background keepalive thread
         self._keepalive_process = subprocess.Popen(map(str, [
-                sys.executable, "-m", "spalloc._keepalive_process", hostname,
-                port, self.id, self._keepalive, self._timeout,
+                sys.executable, "-m", "spalloc_client._keepalive_process",
+                hostname, port, self.id, self._keepalive, self._timeout,
                 self._reconnect_delay]), stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # Wait for it to announce that it is working
@@ -579,7 +580,7 @@ class Job(object):
 
         Parameters
         ----------
-        old_state : :py:class:`~spalloc.JobState`
+        old_state : :py:class:`~spalloc_client.JobState`
             The current state.
         timeout : float or None
             The number of seconds to wait for a change before timing out. If
@@ -587,7 +588,7 @@ class Job(object):
 
         Returns
         -------
-        :py:class:`~spalloc.JobState`
+        :py:class:`~spalloc_client.JobState`
             The new state, or old state if timed out.
         """
         finish_time = make_timeout(timeout)

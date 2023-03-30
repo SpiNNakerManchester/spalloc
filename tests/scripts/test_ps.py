@@ -42,9 +42,9 @@ def client(client_factory):
 
 @pytest.fixture
 def faux_render(monkeypatch):
-    import spalloc.scripts.ps
+    import spalloc_client.scripts.ps
     render_job_list = Mock()
-    monkeypatch.setattr(spalloc.scripts.ps, "render_job_list", render_job_list)
+    monkeypatch.setattr(spalloc_client.scripts.ps, "render_job_list", render_job_list)
     return render_job_list
 
 
