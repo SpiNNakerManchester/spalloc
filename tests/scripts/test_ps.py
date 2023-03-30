@@ -44,7 +44,8 @@ def client(client_factory):
 def faux_render(monkeypatch):
     import spalloc_client.scripts.ps
     render_job_list = Mock()
-    monkeypatch.setattr(spalloc_client.scripts.ps, "render_job_list", render_job_list)
+    monkeypatch.setattr(
+        spalloc_client.scripts.ps, "render_job_list", render_job_list)
     return render_job_list
 
 
