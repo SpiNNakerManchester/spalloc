@@ -118,7 +118,7 @@ High level interface (:py:class:`spalloc_client.Job`)
 
 .. autoexception:: spalloc_client.JobDestroyedError
 
-.. autoexception:: spalloc_clientc.StateChangeTimeoutError
+.. autoexception:: spalloc_client.StateChangeTimeoutError
 
 Lower level interface (:py:class:`spalloc_client.ProtocolClient`)
 `````````````````````````````````````````````````````````````````
