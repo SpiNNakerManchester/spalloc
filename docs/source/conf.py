@@ -61,8 +61,8 @@ sys.path[:0] = [os.path.abspath('.'), os.path.abspath('../..')]
 
 # Note that this has to go AFTER we have updated sys.path!
 # This is because RTD doesn't actually install our checkout.
-import spalloc  # noqa: E402
-from spalloc import __version__ as release  # noqa: E402
+import spalloc_client  # noqa: E402
+from spalloc_client import __version__ as release  # noqa: E402
 
 # -- General configuration ------------------------------------------------
 
@@ -158,8 +158,8 @@ intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
 
 # -- linkcode GitHub link generator ---------------------------------------
 
-local_module_path = spalloc.__file__
-github_module_path = "spalloc/"
+local_module_path = spalloc_client.__file__
+github_module_path = "spalloc_client/"
 github_repo = "SpiNNakerManchester/spalloc"
 
 

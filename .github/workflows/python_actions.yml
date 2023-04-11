@@ -29,8 +29,10 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+
     - name: Checkout
       uses: actions/checkout@v3
+
     - name: Checkout SupportScripts
       uses: actions/checkout@v3
       with:
@@ -39,14 +41,17 @@ jobs:
 
     - name: Install pip, etc
       uses: ./support/actions/python-tools
+
     - name: Install Spinnaker Dependencies
-      uses: ./support/actions/checkout-spinn-deps
+      uses: ./support/actions/install-spinn-deps
       with:
         repositories: SpiNNUtils
         install: true
-    - name: Setup
-      uses: ./support/actions/run-setup
-    - name: Extra setup
+
+    - name: Install
+      uses: ./support/actions/run-install
+
+    - name: Docs requirements Install
       run: pip install -r requirements-docs.txt
 
     - name: Test with pytest
@@ -59,11 +64,12 @@ jobs:
         coveralls-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Lint with flake8
-      run: flake8 spalloc tests
+      run: flake8 spalloc_client tests
+
     - name: Lint with pylint
       uses: ./support/actions/pylint
-      with: 
-        package: spalloc
+      with:
+        package: spalloc_client
         exitcheck: 39
 
     - name: Run rat copyright enforcement
@@ -71,6 +77,7 @@ jobs:
       uses: ./support/actions/check-copyrights
       with:
         config_file: rat_asl20.xml
+
     - name: Build documentation with sphinx
       if: matrix.python-version == 3.8
       uses: ./support/actions/sphinx
