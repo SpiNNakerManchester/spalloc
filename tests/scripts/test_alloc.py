@@ -85,13 +85,6 @@ def mock_mc(monkeypatch):
     return mc
 
 
-@pytest.fixture
-def no_rig(monkeypatch):
-    import spalloc_client.scripts.alloc
-    monkeypatch.setattr(
-        spalloc_client.scripts.alloc, "MachineController", None)
-
-
 def test_write_ips_to_file_empty(filename):
     write_ips_to_csv({}, filename)
 
@@ -309,27 +302,9 @@ def test_timeout_args(basic_config_file, mock_job, basic_job_kwargs):
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
-@pytest.mark.parametrize("args,boot", [("--boot", True), ("", False)])
-def test_boot_args(basic_config_file, mock_working_job, mock_input,
-                   args, boot, mock_mc):
-    assert main(args.split()) == 0
-
-    if boot:
-        mock_mc.assert_called_once_with("foobar")
-        mock_mc().boot.assert_called_once_with(8, 8)
-    else:
-        assert len(mock_mc.mock_calls) == 0
-
-
-def test_no_boot_arg_when_no_rig(basic_config_file, mock_job, no_rig):
-    with pytest.raises(SystemExit):
-        main("--boot".split())
-
-
-@pytest.mark.parametrize("args,boot", [("--boot", True), ("", False)])
 def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
-                      args, boot, mock_mc, no_colour):
-    assert main(args.split()) == 0
+                      mock_mc, no_colour):
+    assert main([]) == 0
 
     out, err = capsys.readouterr()
 
@@ -339,8 +314,6 @@ def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
     # Should have printed no debug output
     expected = ("Job 123: Waiting in queue...\n"
                 "Job 123: Waiting for power on...\n")
-    if boot:
-        expected += "Job 123: Booting...\n"
     expected += "Job 123: Ready!\n"
 
     assert err == expected
