@@ -30,11 +30,7 @@ powered on.
 
 .. note::
 
-    By default, allocated machines are powered on but not booted. If
-    `Rig <https://github.com/project-rig/rig>`__
-    is installed, ``spalloc`` provides a ``--boot`` option which also boots
-    the allocated machine once it has been powered on. This dependency can be
-    installed using the ``[boot]`` option at install time for spalloc.
+    Allocated machines are powered on but not booted.
 
 .. image:: _static/spalloc.gif
     :alt: Animated GIF showing the typical execution of a spalloc call.
@@ -120,11 +116,6 @@ from spalloc_client import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
 from spalloc_client.term import Terminal, render_definitions
-# Rig is used to implement the optional '--boot' facility.
-try:
-    from rig.machine_control import MachineController
-except ImportError:  # pragma: no cover
-    MachineController = None
 
 arguments = None
 t = None
@@ -330,9 +321,6 @@ def parse_argv(argv):
     parser.add_argument("--no-destroy", "-D", action="store_true",
                         default=False,
                         help="do not destroy the job on exit")
-    if MachineController:
-        parser.add_argument("--boot", "-B", action="store_true", default=False,
-                            help="boot the machine once powered on")
 
     allocation_args = parser.add_argument_group(
         "allocation requirement arguments")
@@ -441,12 +429,6 @@ def run_job(job_args, job_kwargs, ip_file_filename):
 
         # Machine is now ready
         write_ips_to_csv(job.connections, ip_file_filename)
-
-        # Boot the machine if required
-        if MachineController and arguments.boot:
-            update("Job {}: Booting...", t.yellow, job.id)
-            mc = MachineController(job.hostname)
-            mc.boot(job.width, job.height)
 
         update("Job {}: Ready!", t.green, job.id)
 

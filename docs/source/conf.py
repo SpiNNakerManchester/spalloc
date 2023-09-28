@@ -152,9 +152,9 @@ pygments_style = 'sphinx'
 # keep_warnings = False
 
 # Search Python docs for extra definitions.
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       'rig': ('https://rig.readthedocs.org/en/stable/', None)
-                       }
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None)
+}
 
 # -- linkcode GitHub link generator ---------------------------------------
 
