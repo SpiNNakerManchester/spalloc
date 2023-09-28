@@ -77,14 +77,6 @@ def mock_working_job(monkeypatch):
     return job
 
 
-@pytest.fixture
-def mock_mc(monkeypatch):
-    mc = Mock(return_value=Mock())
-    import spalloc_client.scripts.alloc
-    monkeypatch.setattr(spalloc_client.scripts.alloc, "MachineController", mc)
-    return mc
-
-
 def test_write_ips_to_file_empty(filename):
     write_ips_to_csv({}, filename)
 
@@ -303,7 +295,7 @@ def test_timeout_args(basic_config_file, mock_job, basic_job_kwargs):
 
 
 def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
-                      mock_mc, no_colour):
+                      no_colour):
     assert main([]) == 0
 
     out, err = capsys.readouterr()
