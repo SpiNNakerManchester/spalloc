@@ -19,7 +19,6 @@ import errno
 import json
 import socket
 from threading import current_thread, RLock, local
-from spinn_utilities.overrides import overrides
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
 
