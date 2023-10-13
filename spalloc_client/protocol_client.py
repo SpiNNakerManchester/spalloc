@@ -19,8 +19,6 @@ import errno
 import json
 import socket
 from threading import current_thread, RLock, local
-from spinn_utilities.abstract_context_manager import AbstractContextManager
-from spinn_utilities.overrides import overrides
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
 
@@ -51,7 +49,7 @@ class _ProtocolThreadLocal(local):
         self.sock = None
 
 
-class ProtocolClient(AbstractContextManager):
+class ProtocolClient(object):
     """ A simple (blocking) client implementation of the `spalloc-server
     <https://github.com/SpiNNakerManchester/spalloc_server>`_ protocol.
 
@@ -105,9 +103,13 @@ class ProtocolClient(AbstractContextManager):
         self._notifications_lock = RLock()
         self._default_timeout = timeout
 
-    @overrides(AbstractContextManager._context_entered)
-    def _context_entered(self):  # pragma: no cover
+    def __enter__(self):
         self.connect(self._default_timeout)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+        return False
 
     def _get_connection(self, timeout):
         if self._dead:
