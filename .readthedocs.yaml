@@ -21,6 +21,6 @@ sphinx:
   fail_on_warning: false
 formats: [pdf]  # This is ADDITIONAL to HTML
 python:
-  version: 3.8
+  version: 3.12
   install:
     - requirements: requirements-docs.txt
