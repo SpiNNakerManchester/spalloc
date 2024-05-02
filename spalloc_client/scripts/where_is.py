@@ -79,7 +79,7 @@ class WhereIsScript(Script):
         self.where_is_kwargs = None
         self.show_board_chip = None
 
-    def get_parser(self, cfg):  # @UnusedVariable
+    def get_parser(self, cfg):
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")
@@ -144,7 +144,7 @@ class WhereIsScript(Script):
         except ValueError as e:
             self.parser.error("Error: {}".format(e))
 
-    def body(self, client, args):  # @UnusedVariable
+    def body(self, client, args):
         # Ask the server
         location = client.where_is(**self.where_is_kwargs)
         if location is None:

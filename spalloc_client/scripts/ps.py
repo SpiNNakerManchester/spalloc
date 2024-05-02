@@ -112,7 +112,7 @@ def render_job_list(t, jobs, args):
 
 
 class ProcessListScript(Script):
-    def get_parser(self, cfg):  # @UnusedVariable
+    def get_parser(self, cfg):
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)
