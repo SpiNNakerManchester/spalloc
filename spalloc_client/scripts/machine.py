@@ -226,7 +226,7 @@ class ListMachinesScript(Script):
         else:
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
-    def get_parser(self, cfg):  # @UnusedVariable
+    def get_parser(self, cfg):
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(
