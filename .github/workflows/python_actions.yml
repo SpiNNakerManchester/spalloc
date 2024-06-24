@@ -15,76 +15,17 @@
 # This workflow will install Python dependencies, run tests, lint and rat with a variety of Python versions
 # For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
 
-name: Python Build
+name: Python Actions
 on: [push]
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      matrix:
-        python-version: [3.8, 3.9, "3.10", "3.11", "3.12"]
+  call:
+    uses: SpiNNakerManchester/SupportScripts/.github/workflows/python_checks.yml@main
+    with:
+      dependencies: SpiNNUtils
+      test_directories: tests
+      coverage-package: spalloc tests
+      flake8-packages:  spalloc_client tests
+      pylint-packages: spalloc_client
+      mypy-packages: spalloc_client tests
+    secrets: inherit
 
-    steps:
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Checkout SupportScripts
-      uses: actions/checkout@v4
-      with:
-        repository: SpiNNakerManchester/SupportScripts
-        path: support
-
-    - name: Install pip, etc
-      uses: ./support/actions/python-tools
-
-    - name: Install Spinnaker Dependencies
-      uses: ./support/actions/install-spinn-deps
-      with:
-        repositories: SpiNNUtils
-        install: true
-
-    - name: Install
-      uses: ./support/actions/run-install
-
-    - name: Docs requirements Install
-      run: pip install -r requirements-docs.txt
-
-    - name: Test with pytest
-      uses: ./support/actions/pytest
-      with:
-        tests: tests
-        options: --durations=10 --timeout=120
-        coverage: ${{ matrix.python-version == 3.12 }}
-        cover-packages: spalloc tests
-        coveralls-token: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Lint with flake8
-      run: flake8 spalloc_client tests
-
-    - name: Lint with pylint
-      uses: ./support/actions/pylint
-      with:
-        package: spalloc_client
-        exitcheck: 39
-
-    - name: Run rat copyright enforcement
-      if: matrix.python-version == 3.12
-      uses: ./support/actions/check-copyrights
-      with:
-        config_file: rat_asl20.xml
-
-    - name: Build documentation with sphinx
-      if: matrix.python-version == 3.12
-      uses: ./support/actions/sphinx
-      with:
-        directory: docs/source
-
-    - name: Validate CITATION.cff
-      if: matrix.python-version == 3.12
-      uses: dieghernan/cff-validator@main
