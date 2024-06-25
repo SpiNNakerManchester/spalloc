@@ -111,6 +111,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from typing import Dict, List, Optional, Tuple
 from shlex import quote
 from spalloc_client import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
@@ -305,7 +306,14 @@ def wait_for_job_ready(job):
         return 4, "Keyboard interrupt."
 
 
-def parse_argv(argv):
+def parse_argv(argv: List[str]) -> Tuple[
+        argparse.ArgumentParser, argparse.Namespace]:
+    """
+    Parse the arguments.
+
+    :param list(str) argv: Arguments passed it
+    :rtype: (ArgumentParser, list(str)
+    """
     cfg = config.read_config()
 
     parser = argparse.ArgumentParser(
@@ -409,7 +417,15 @@ def parse_argv(argv):
     return parser, parser.parse_args(argv)
 
 
-def run_job(job_args, job_kwargs, ip_file_filename):
+def run_job(job_args: List[str], job_kwargs: Dict[str, str], ip_file_filename: str):
+    """
+    Run a job
+
+    :param list(str) job_args:
+    :param job_kwargs:
+    :param ip_file_filename:
+    :return:
+    """
     # Reason for destroying the job
     reason = None
 
@@ -448,11 +464,22 @@ def run_job(job_args, job_kwargs, ip_file_filename):
             job.destroy(reason)
 
 
-def _minzero(value):
+def _minzero(value: Optional[float]) -> Optional[float]:
+    """
+    Makes sure a value is not negative.
+
+    :type value: float, int or None
+    :rtpye: float or None
+    """
     return value if value >= 0.0 else None
 
 
-def main(argv=None):
+def main(argv: List[str] = None):
+    """
+    The main method run
+
+    :param list(str) argv:
+    """
     global arguments, t  # pylint: disable=global-statement
     parser, arguments = parse_argv(argv)
     t = Terminal(stream=sys.stderr)
@@ -509,7 +536,7 @@ def main(argv=None):
     try:
         return run_job(job_args, job_kwargs, ip_file_filename)
     except SpallocServerException as e:  # pragma: no cover
-        info(t.red("Error from server: {}".format(e)))
+        info(t.red(f"Error from server: {e}"))
         return 6
     finally:
         # Delete IP address list file
