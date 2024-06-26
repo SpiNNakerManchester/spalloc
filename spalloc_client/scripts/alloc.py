@@ -185,7 +185,7 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
 def run_command(
         command: List[str], job_id: int, machine_name: str,
         connections: Dict[Tuple[int, int], str], width: int, height: int,
-                ip_file_filename: str):
+        ip_file_filename: str):
     """ Run a user-specified command, substituting arguments for values taken
     from the allocated board.
 
@@ -253,7 +253,7 @@ def run_command(
             p.terminate()
 
 
-def info(msg:str):
+def info(msg: str):
     """
     Writes a message to the terminal
     """
@@ -261,7 +261,7 @@ def info(msg:str):
         t.stream.write(f"{msg}\n")
 
 
-def update(msg:str, colour: functools.partial, *args: List[object]):
+def update(msg: str, colour: functools.partial, *args: List[object]):
     """
     Writes a message to the terminal in the schoosen colour.
     """
@@ -426,7 +426,8 @@ def parse_argv(argv: List[str]) -> Tuple[
     return parser, parser.parse_args(argv)
 
 
-def run_job(job_args: List[str], job_kwargs: Dict[str, str], ip_file_filename: str):
+def run_job(job_args: List[str], job_kwargs: Dict[str, str],
+            ip_file_filename: str):
     """
     Run a job
     """

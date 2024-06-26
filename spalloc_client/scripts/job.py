@@ -85,6 +85,7 @@ from spalloc_client import ProtocolClient
 from spalloc_client._utils import render_timestamp
 from .support import Terminate, Script
 
+
 def _state_name(mapping):
     return JobState(mapping["state"]).name  # pylint: disable=no-member
 
@@ -362,7 +363,7 @@ class ManageJobScript(Script):
         if args.job_id is None and args.owner is None:
             self.parser.error("job ID (or --owner) not specified")
 
-    def body(self, client:ProtocolClient, args:  argparse.Namespace):
+    def body(self, client: ProtocolClient, args:  argparse.Namespace):
         jid = self.get_job_id(client, args)
 
         # Do as the user asked
