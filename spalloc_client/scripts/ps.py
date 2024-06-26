@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ An administrative command-line process listing utility.
 
 By default, the ``spalloc-ps`` command lists all running and queued jobs.  For
@@ -96,7 +97,7 @@ def render_job_list(t, jobs, args):
 
         owner = job["owner"]
         if "keepalivehost" in job and job["keepalivehost"] is not None:
-            owner += " (%s)" % job["keepalivehost"]
+            owner += f" ({job['keepalivehost']})"
 
         table.append((
             job["job_id"],

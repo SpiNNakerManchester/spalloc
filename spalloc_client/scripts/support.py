@@ -104,10 +104,10 @@ class Script(object):
                 self.body(client, args)
                 return 0
         except (IOError, OSError, ProtocolError, ProtocolTimeoutError) as e:
-            sys.stderr.write("Error communicating with server: {}\n".format(e))
+            sys.stderr.write(f"Error communicating with server: {e}\n")
             return 1
         except SpallocServerException as srv_exn:
-            sys.stderr.write("Error from server: {}\n".format(srv_exn))
+            sys.stderr.write(f"Error from server: {srv_exn}\n")
             return 1
         except Terminate as t:
             t.exit()

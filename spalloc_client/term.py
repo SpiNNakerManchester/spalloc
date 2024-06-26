@@ -22,6 +22,8 @@ from collections import defaultdict
 from enum import IntEnum
 from functools import partial
 
+# pylint: disable=wrong-spelling-in-docstring
+
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
@@ -149,8 +151,7 @@ class Terminal(object):
         """
         if not attrs:
             return ""
-        return self("\033[{}m".format(
-            ";".join(str(attr) for attr in attrs)))
+        return self(f"\033[{''.join(str(attr) for attr in attrs)}m")
 
     def wrap(self, string=None, pre="", post=""):
         """ Wrap a string in the suppled pre and post strings or just print\
@@ -243,6 +244,8 @@ def render_table(table, column_sep="  "):
                 length = len(str(string))
                 right_align = True
                 string = f(string)
+            else:
+                raise TypeError(f"Unexpected type {column=}")
 
             padding = " " * (column_widths[i] - length)
             if right_align:
@@ -271,7 +274,7 @@ def render_definitions(definitions, separator=": "):
     definitions : :py:class:`collections.OrderedDict`
         The key/value set to display.
     separator : str
-        The seperator inserted between keys and values.
+        The separator inserted between keys and values.
     """
     # Special case since max would fail
     if not definitions:
@@ -383,7 +386,7 @@ def render_boards(board_groups, dead_links=frozenset(),
         Lists the groups of boards to display. Label is a 3-character string
         labelling the boards in the group, edge_inner and edge_outer are the
         characters to use to draw board edges as a tuple ("___", "\\", "/")
-        which are to be used for the inner and outer board edges repsectively.
+        which are to be used for the inner and outer board edges respectively.
         Board groups are drawn sequentially with later board groups obscuring
         earlier ones when their edges or boards overlap.
     dead_links : set([(x, y, z, link), ...])
@@ -411,7 +414,7 @@ def render_boards(board_groups, dead_links=frozenset(),
     all_boards = set()
 
     for boards, label, edge_inner, edge_outer in board_groups:
-        # Convert to Cartesian coords
+        # Convert to Cartesian coordinates
         boards = set(_board_to_cartesian(x, y, z) for x, y, z in boards)
         all_boards.update(boards)
 

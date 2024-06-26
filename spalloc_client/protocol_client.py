@@ -56,8 +56,9 @@ class ProtocolClient(object):
 
     This minimal implementation is intended to serve both simple applications
     and as an example implementation of the protocol for other applications.
-    This implementation simply implements the protocol, presenting an RPC-like
-    interface to the server. For a higher-level interface built on top of this
+    This implementation simply implements the protocol,
+    presenting a Remote procedure call-like interface to the server.
+    For a higher-level interface built on top of this
     client, see :py:class:`spalloc.Job`.
 
     Usage examples::
@@ -430,6 +431,6 @@ class ProtocolClient(object):
         keywords = frozenset(kwargs)
         if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
             raise SpallocServerException(
-                "Invalid arguments: {}".format(", ".join(keywords)))
+                f"Invalid arguments: {', '.join(keywords)}")
         kwargs["timeout"] = timeout
         return self.call("where_is", **kwargs)

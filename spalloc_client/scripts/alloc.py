@@ -120,6 +120,7 @@ from spalloc_client import (
     SpallocServerException)
 from spalloc_client.term import Terminal, render_definitions
 
+# pylint: disable=invalid-name
 arguments = None
 t = None
 _input = input  # This is so we can monkey patch input during testing
