@@ -141,7 +141,7 @@ def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
     """
     with open(ip_file_filename, "w", encoding="utf-8") as f:
         f.write("x,y,hostname\n")
-        f.write("".join("{},{},{}\n".format(x, y, hostname)
+        f.write("".join(f"{x},{y},{hostname}\n"
                         for (x, y), hostname
                         in sorted(connections.items())))
 
@@ -439,7 +439,7 @@ def run_job(job_args: List[str], job_kwargs: Dict[str, str],
     try:
         job = Job(*job_args, **job_kwargs)
     except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
-        info(t.red("Could not connect to server: {}".format(e)))
+        info(t.red(f"Could not connect to server: {e}"))
         return 6
 
     try:
