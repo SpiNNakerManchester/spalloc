@@ -411,7 +411,7 @@ class ProtocolClient(object):
         return self.call("destroy_job", job_id, reason, timeout=timeout)
 
     def notify_job(self, job_id: Optional[int] = None,
-                      timeout: Optional[int] = None) -> JsonObject:
+                   timeout: Optional[int] = None) -> JsonObject:
         """ Turn on notification of job status changes. """
         return self.call("notify_job", job_id, timeout=timeout)
 
