@@ -396,7 +396,7 @@ class ProtocolClient(object):
         return self.call("get_job_machine_info", job_id, timeout=timeout)
 
     def power_on_job_boards(self, job_id: int,
-                             timeout: Optional[int] = None) -> JsonObject:
+                            timeout: Optional[int] = None) -> JsonObject:
         """ Turn on the power on the jobs baords. """
         return self.call("power_on_job_boards", job_id, timeout=timeout)
 
@@ -411,12 +411,12 @@ class ProtocolClient(object):
         return self.call("destroy_job", job_id, reason, timeout=timeout)
 
     def notify_job(self, job_id: Optional[int] = None,
-                      timeout: Optional[int]=None) -> JsonObject:
+                      timeout: Optional[int] = None) -> JsonObject:
         """ Turn on notification of job status changes. """
         return self.call("notify_job", job_id, timeout=timeout)
 
     def no_notify_job(self, job_id: Optional[int] = None,
-                      timeout: Optional[int]=None) -> JsonObject:
+                      timeout: Optional[int] = None) -> JsonObject:
         """ Turn off notification of job status changes. """
         return self.call("no_notify_job", job_id, timeout=timeout)
 
@@ -446,7 +446,8 @@ class ProtocolClient(object):
                          timeout=timeout)
 
     def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
-                              timeout: Optional[int] = None) -> JsonObject:  # pragma: no cover
+                              timeout: Optional[int] = None
+                              ) -> JsonObject:  # pragma: no cover
         """ Gets the board x, y, z on the requested machine. """
         # pylint: disable=too-many-arguments
         return self.call("get_board_at_position", machine_name, x, y, z,
