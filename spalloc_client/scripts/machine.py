@@ -33,7 +33,9 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from spalloc_client import __version__
+from typing import List
+
+from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
     DEFAULT_BOARD_EDGES)
@@ -211,6 +213,9 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
 
 
 class ListMachinesScript(Script):
+    """
+    A Script object to get information from a spalloc machine.
+    """
 
     def __init__(self):
         super().__init__()
@@ -250,12 +255,18 @@ class ListMachinesScript(Script):
             self.parser.error(
                 "--detailed only works when a specific machine is specified")
 
-    def one_shot(self, client, args):
+    def one_shot(self,  client: ProtocolClient, args: List[object]):
+        """
+        Display the machine info once
+        """
         t = Terminal()
         # Get all information and display accordingly
         self.get_and_display_machine_info(client, args, t)
 
-    def recurring(self, client, args):
+    def recurring(self, client: ProtocolClient, args: List[object]):
+        """
+        Repeatedly display the machine info
+        """
         t = Terminal()
         while True:
             client.notify_machine(args.machine, timeout=args.timeout)

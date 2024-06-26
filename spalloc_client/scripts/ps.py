@@ -27,7 +27,9 @@ This list may be filtered by owner or machine with the ``--owner`` and
 """
 import argparse
 import sys
-from spalloc_client import __version__, JobState
+from typing import List
+
+from spalloc_client import __version__, JobState, ProtocolClient
 from spalloc_client.term import Terminal, render_table
 from spalloc_client._utils import render_timestamp
 from .support import Script
@@ -113,6 +115,9 @@ def render_job_list(t, jobs, args):
 
 
 class ProcessListScript(Script):
+    """
+    An object form Job scripts.
+    """
     def get_parser(self, cfg):
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
@@ -128,12 +133,14 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client, args):
+    def one_shot(self, client: ProtocolClient, args: List[object]):
+        """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
         print(render_job_list(t, jobs, args))
 
-    def recurring(self, client, args):
+    def recurring(self, client: ProtocolClient, args: List[object]):
+        """ Repeatedly gets info on the job list. """
         client.notify_job(timeout=args.timeout)
         t = Terminal(stream=sys.stderr)
         while True:

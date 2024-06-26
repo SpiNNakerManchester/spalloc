@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import sys
-from typing import List
+from typing import Any, Dict, List, Optional, Tuple
 from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
@@ -25,7 +25,10 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
-    def __init__(self, code, *args):
+    def __init__(self, code: int, *args: Tuple[object]):
+        """
+        An Exception that can be used to exit the program.
+        """
         super().__init__()
         self._code = code
         args = list(args)
@@ -38,12 +41,16 @@ class Terminate(Exception):
             self._msg = message
 
     def exit(self):
+        """ Exit the program after priintg and erro msg. """
         if self._msg is not None:
             sys.stderr.write(self._msg + "\n")
         sys.exit(self._code)
 
 
-def version_verify(client, timeout):
+def version_verify(client: ProtocolClient, timeout: Optional[int]):
+    """
+    Verify that the current version of the client is compatible
+    """
     version = tuple(map(int, client.version(timeout=timeout).split(".")))
     if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
         raise Terminate(2, "Incompatible server version ({})",
@@ -51,6 +58,7 @@ def version_verify(client, timeout):
 
 
 class Script(object):
+    """ Base class of various Scopt Objects. """
     def __init__(self):
         self.client_factory = ProtocolClient
 
@@ -69,7 +77,13 @@ class Script(object):
             obtained and verified to be compatible.
         """
 
-    def build_server_arg_group(self, server_args, cfg):
+    def build_server_arg_group(self, server_args: Any,
+                               cfg: Dict[str, object]):
+        """
+        Adds a few more arguements
+
+        :param argparse._ArguementGroup server_args:
+        """
         server_args.add_argument(
             "--hostname", "-H", default=cfg["hostname"],
             help="hostname or IP of the spalloc server (default: %(default)s)")

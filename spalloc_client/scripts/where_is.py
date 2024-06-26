@@ -72,6 +72,9 @@ from .support import Terminate, Script
 
 
 class WhereIsScript(Script):
+    """
+    An script object to find where a board is
+    """
 
     def __init__(self):
         super().__init__()
