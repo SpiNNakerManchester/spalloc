@@ -151,7 +151,7 @@ class Terminal(object):
         """
         if not attrs:
             return ""
-        return self(f"\033[{''.join(str(attr) for attr in attrs)}m")
+        return self(f"\033[{';'.join(str(attr) for attr in attrs)}m")
 
     def wrap(self, string=None, pre="", post=""):
         """ Wrap a string in the suppled pre and post strings or just print\
