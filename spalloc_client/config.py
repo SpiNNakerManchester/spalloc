@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ The spalloc command-line tool and Python library determine their default
 configuration options from a spalloc configuration file if present.
 
@@ -62,7 +63,7 @@ options available (and the default value).
     The name of a specific machine on which to run all jobs or None to use any
     available machine. (Default: None)
 ``tags``
-    The set of tags, comma seperated, to require a machine to have when
+    The set of tags, comma separated, to require a machine to have when
     allocating jobs. (Default: default)
 ``min_ratio``
     Require that when allocating a number of boards the allocation is at least
@@ -78,9 +79,9 @@ options available (and the default value).
     requires the allocation of a whole machine. If False, wrap-around links may
     or may-not be present in allocated machines. (Default: False)
 """
+import configparser
 import os.path
 import appdirs
-import configparser
 
 # The application name to use in config file names
 _name = "spalloc"
@@ -88,7 +89,7 @@ _name = "spalloc"
 # Standard config file names/locations
 SYSTEM_CONFIG_FILE = appdirs.site_config_dir(_name)
 USER_CONFIG_FILE = appdirs.user_config_dir(_name)
-CWD_CONFIG_FILE = os.path.join(os.curdir, ".{}".format(_name))
+CWD_CONFIG_FILE = os.path.join(os.curdir, f".{_name}")
 
 # Search path for config files (lowest to highest priority)
 SEARCH_PATH = [

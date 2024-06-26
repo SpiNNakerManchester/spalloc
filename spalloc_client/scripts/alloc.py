@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ A command-line utility for creating jobs.
 
 .. note::
@@ -106,6 +107,7 @@ messages are sent automatically but after exiting the commands are no longer
 sent. Adding the ``--keepalive -1`` option when creating a job disables this.
 """
 import argparse
+import functools
 import logging
 import os
 import subprocess
@@ -120,10 +122,11 @@ from spalloc_client.term import Terminal, render_definitions
 
 arguments = None
 t = None
-_input = input  # This is so we can monkeypatch input during testing
+_input = input  # This is so we can monkey patch input during testing
 
 
-def write_ips_to_csv(connections, ip_file_filename):
+def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
+                     ip_file_filename: str):
     """ Write the supplied IP addresses to a CSV file.
 
     The produced CSV has three columns: x, y and hostname where x and y give
@@ -142,7 +145,8 @@ def write_ips_to_csv(connections, ip_file_filename):
                         in sorted(connections.items())))
 
 
-def print_info(machine_name, connections, width, height, ip_file_filename):
+def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
+               width: int, height: int, ip_file_filename: str):
     """ Print the current machine info in a human-readable form and wait for
     the user to press enter.
 
@@ -178,8 +182,10 @@ def print_info(machine_name, connections, width, height, ip_file_filename):
         print("")
 
 
-def run_command(command, job_id, machine_name, connections, width, height,
-                ip_file_filename):
+def run_command(
+        command: List[str], job_id: int, machine_name: str,
+        connections: Dict[Tuple[int, int], str], width: int, height: int,
+                ip_file_filename: str):
     """ Run a user-specified command, substituting arguments for values taken
     from the allocated board.
 
@@ -247,18 +253,25 @@ def run_command(command, job_id, machine_name, connections, width, height,
             p.terminate()
 
 
-def info(msg):
+def info(msg:str):
+    """
+    Writes a message to the terminal
+    """
     if not arguments.quiet:
-        t.stream.write("{}\n".format(msg))
+        t.stream.write(f"{msg}\n")
 
 
-def update(msg, colour, *args):
+def update(msg:str, colour: functools.partial, *args: List[object]):
+    """
+    Writes a message to the terminal in the schoosen colour.
+    """
     info(t.update(colour(msg.format(*args))))
 
 
-def wait_for_job_ready(job):
-    # Wait for it to become ready, keeping the user informed along the
-    # way
+def wait_for_job_ready(job: Job):
+    """
+    Wait for it to become ready, keeping the user informed along the way
+    """
     old_state = None
     cur_state = job.state
     try:
@@ -310,9 +323,6 @@ def parse_argv(argv: List[str]) -> Tuple[
         argparse.ArgumentParser, argparse.Namespace]:
     """
     Parse the arguments.
-
-    :param list(str) argv: Arguments passed it
-    :rtype: (ArgumentParser, list(str)
     """
     cfg = config.read_config()
 
@@ -350,7 +360,7 @@ def parse_argv(argv: List[str]) -> Tuple[
         "--tags", "-t", nargs="*", metavar="TAG",
         default=cfg["tags"] or ["default"],
         help="only allocate boards which have (at least) the specified flags "
-        "(default: {})".format(" ".join(cfg["tags"] or [])))
+        f"(default: {' '.join(cfg['tags'] or [])})")
     allocation_args.add_argument(
         "--min-ratio", type=float, metavar="RATIO", default=cfg["min_ratio"],
         help="when allocating by number of boards, require that the "
@@ -370,12 +380,11 @@ def parse_argv(argv: List[str]) -> Tuple[
         "--require-torus", "-w", action="store_true",
         default=cfg["require_torus"],
         help="require that the allocation contain torus (a.k.a. wrap-around) "
-        "links {}".format("(default)" if cfg["require_torus"] else ""))
+        f"links {'(default)' if cfg['require_torus'] else ''}")
     allocation_args.add_argument(
         "--no-require-torus", "-W", action="store_false", dest="require_torus",
         help="do not require that the allocation contain torus (a.k.a. "
-        "wrap-around) links {}".format(
-            "" if cfg["require_torus"] else "(default)"))
+        f"wrap-around) links {'' if cfg['require_torus'] else '(default)'}")
 
     command_args = parser.add_argument_group("command wrapping arguments")
     command_args.add_argument(
@@ -420,11 +429,6 @@ def parse_argv(argv: List[str]) -> Tuple[
 def run_job(job_args: List[str], job_kwargs: Dict[str, str], ip_file_filename: str):
     """
     Run a job
-
-    :param list(str) job_args:
-    :param job_kwargs:
-    :param ip_file_filename:
-    :return:
     """
     # Reason for destroying the job
     reason = None
@@ -467,9 +471,6 @@ def run_job(job_args: List[str], job_kwargs: Dict[str, str], ip_file_filename: s
 def _minzero(value: Optional[float]) -> Optional[float]:
     """
     Makes sure a value is not negative.
-
-    :type value: float, int or None
-    :rtpye: float or None
     """
     return value if value >= 0.0 else None
 
@@ -477,8 +478,6 @@ def _minzero(value: Optional[float]) -> Optional[float]:
 def main(argv: List[str] = None):
     """
     The main method run
-
-    :param list(str) argv:
     """
     global arguments, t  # pylint: disable=global-statement
     parser, arguments = parse_argv(argv)

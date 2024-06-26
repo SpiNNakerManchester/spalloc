@@ -27,7 +27,7 @@ class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
     """
-
+    # pylint: disable=invalid-name
     reset = 0
     bright = 1
     dim = 2
@@ -121,7 +121,7 @@ class Terminal(object):
         """
         return self("\033[2J\033[;H")
 
-    def update(self, string="", start_again=False):
+    def update(self, string: str = "", start_again: bool = False):
         """ Print before a line and it will replace the previous line prefixed\
             with :py:meth:`.update`.
 
@@ -254,7 +254,7 @@ def render_table(table, column_sep="  "):
     return "\n".join(column_sep.join(row).rstrip() for row in out)
 
 
-def render_definitions(definitions, seperator=": "):
+def render_definitions(definitions, separator=": "):
     """ Render a definition list.
 
     Such a list looks like this::
@@ -270,7 +270,7 @@ def render_definitions(definitions, seperator=": "):
     ----------
     definitions : :py:class:`collections.OrderedDict`
         The key/value set to display.
-    seperator : str
+    separator : str
         The seperator inserted between keys and values.
     """
     # Special case since max would fail
@@ -279,8 +279,8 @@ def render_definitions(definitions, seperator=": "):
 
     col_width = max(map(len, definitions))
     return "\n".join("{:>{}s}{}{}".format(
-        key, col_width, seperator, str(value).replace(
-            "\n", "\n{}".format(" "*(col_width + len(seperator)))))
+        key, col_width, separator, str(value).replace(
+            "\n", f"\n{' '*(col_width + len(separator))}"))
         for key, value in definitions.items())
 
 
@@ -393,10 +393,10 @@ def render_boards(board_groups, dead_links=frozenset(),
     dead_edge : ("___", "\\", "/")
         The strings to use to draw dead links.
     blank_label : "   "
-        The 3-character string to use to label non-existant boards. (Blank by
+        The 3-character string to use to label non-existent boards. (Blank by
         default)
     blank_edge : ("___", "\\", "/")
-        The characters to use to render non-existant board edges. (Blank by
+        The characters to use to render non-existent board edges. (Blank by
         default)
     """
     # pylint: disable=too-many-locals
@@ -407,11 +407,11 @@ def render_boards(board_groups, dead_links=frozenset(),
     board_edges = {}
 
     # The set of all boards defined (used to filter displaying of dead links to
-    # non-existant boards
+    # non-existent boards
     all_boards = set()
 
     for boards, label, edge_inner, edge_outer in board_groups:
-        # Convert to cartesian coords
+        # Convert to Cartesian coords
         boards = set(_board_to_cartesian(x, y, z) for x, y, z in boards)
         all_boards.update(boards)
 
@@ -458,7 +458,7 @@ def render_boards(board_groups, dead_links=frozenset(),
     #  .   /0 0\___/2 0\___/   0 Even
     #  .   \___/   \___/      -1 Odd
     # -1   0   1   2   3   4
-    #  Odd Evn Odd Evn Odd Evn
+    #  Odd Even Odd Even Odd Even
     out = []
     for y in range(y_max, y_min - 1, -1):
         even_row = (y % 2) == 0

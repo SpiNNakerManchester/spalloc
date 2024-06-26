@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ Command-line administrative job management interface.
 
 ``spalloc-job`` may be called with a job ID, or if no arguments supplied your
@@ -75,12 +76,14 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
+from typing import List
+
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
+from spalloc_client import ProtocolClient
 from spalloc_client._utils import render_timestamp
 from .support import Terminate, Script
-
 
 def _state_name(mapping):
     return JobState(mapping["state"]).name  # pylint: disable=no-member
@@ -136,8 +139,7 @@ def show_job_info(t, client, timeout, job_id):
         info["Request"] = "Job({}{}{})".format(
             ", ".join(map(str, args)),
             ",\n    " if args and kwargs else "",
-            ",\n    ".join("{}={!r}".format(k, v) for
-                           k, v in sorted(kwargs.items()))
+            ",\n    ".join(f"{k}={v!r}" for k, v in sorted(kwargs.items()))
         )
 
         if job["boards"] is not None:
@@ -270,7 +272,7 @@ def list_ips(client, timeout, job_id):
         raise Terminate(9, "Job {} is queued or does not exist", job_id)
     print("x,y,hostname")
     for ((x, y), hostname) in sorted(connections):
-        print("{},{},{}".format(x, y, hostname))
+        print(f"{x},{y},{hostname}")
 
 
 def destroy_job(client, timeout, job_id, reason=None):
@@ -296,12 +298,18 @@ def destroy_job(client, timeout, job_id, reason=None):
 
 
 class ManageJobScript(Script):
+    """
+    A tool for running Job scripts.
+    """
 
     def __init__(self):
         super().__init__()
         self.parser = None
 
-    def get_job_id(self, client, args):
+    def get_job_id(self, client: ProtocolClient, args: List[str]):
+        """
+    get a job for the owner named in the args
+        """
         if args.job_id is not None:
             return args.job_id
         # No Job ID specified, attempt to discover one
@@ -354,7 +362,7 @@ class ManageJobScript(Script):
         if args.job_id is None and args.owner is None:
             self.parser.error("job ID (or --owner) not specified")
 
-    def body(self, client, args):
+    def body(self, client:ProtocolClient, args:  argparse.Namespace):
         jid = self.get_job_id(client, args)
 
         # Do as the user asked
@@ -369,7 +377,7 @@ class ManageJobScript(Script):
         elif args.destroy is not None:
             # Set default destruction message
             if args.destroy == "" and args.owner:
-                args.destroy = "Destroyed by {}".format(args.owner)
+                args.destroy = f"Destroyed by {args.owner}"
             destroy_job(client, args.timeout, jid, args.destroy)
         else:
             show_job_info(Terminal(), client, args.timeout, jid)

@@ -18,6 +18,7 @@ from collections import deque
 import errno
 import json
 import socket
+from typing import Dict, Optional
 from threading import current_thread, RLock, local
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
@@ -423,7 +424,8 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, timeout=None, **kwargs):
+    def where_is(self, timeout :Optional[int] = None,
+                 **kwargs: Dict[str, object]):
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)
         if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:

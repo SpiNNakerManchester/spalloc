@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+from typing import List
 from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
@@ -63,7 +64,7 @@ class Script(object):
             required.
         """
 
-    def body(self, client, args):
+    def body(self, client: ProtocolClient, args: List[str]):
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
         """

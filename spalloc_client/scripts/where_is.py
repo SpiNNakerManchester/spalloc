@@ -142,7 +142,7 @@ class WhereIsScript(Script):
                 }
                 self.show_board_chip = True
         except ValueError as e:
-            self.parser.error("Error: {}".format(e))
+            self.parser.error(f"Error: {e}")
 
     def body(self, client, args):
         # Ask the server
@@ -152,8 +152,9 @@ class WhereIsScript(Script):
 
         out = dict()
         out["Machine"] = location["machine"]
-        out["Physical location"] = "Cabinet {}, Frame {}, Board {}".format(
-            *location["physical"])
+        cabinet, frame, board = location["physical"]
+        out["Physical location"] = (
+            f"Cabinet {cabinet}, Frame {frame}, Board {board}")
         out["Board coordinate"] = tuple(location["logical"])
         out["Machine chip coordinates"] = tuple(location["chip"])
         if self.show_board_chip:

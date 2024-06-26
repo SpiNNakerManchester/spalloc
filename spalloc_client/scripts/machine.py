@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ Command-line administrative machine management interface.
 
 When called with no arguments the ``spalloc-machine`` command lists all
@@ -151,7 +152,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     info = dict()
     info["Name"] = machine["name"]
     info["Tags"] = ", ".join(machine["tags"])
-    info["In-use"] = "{} of {}".format(num_in_use, num_boards)
+    info["In-use"] = f"{num_in_use} of {num_boards}"
     info["Jobs"] = len(displayed_jobs)
     print(render_definitions(info))
 
@@ -184,7 +185,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
             key = job["key"]
             job_id = str(job["job_id"])
             cells.append((len(key) + len(job_id) + 1,
-                         "{}:{}".format(job["colour"](key), job_id)))
+                         f"{job['colour'](key)}:{job_id}"))
         print("")
         print(render_cells(cells))
     else:
@@ -198,7 +199,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
         for job in displayed_jobs:
             owner = job["owner"]
             if "keepalivehost" in job and job["keepalivehost"] is not None:
-                owner += " (%s)" % job["keepalivehost"]
+                owner += f" {job['keepalivehost']}"
             job_table.append([
                 (job["colour"], job["key"]),
                 job["job_id"],
