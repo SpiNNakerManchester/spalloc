@@ -76,7 +76,7 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
-from typing import Dict
+from typing import Any, Dict
 
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (

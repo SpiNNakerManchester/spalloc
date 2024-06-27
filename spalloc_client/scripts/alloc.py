@@ -239,7 +239,7 @@ def run_command(
                            height=height,
                            ethernet_ips=ip_file_filename,
                            id=job_id)
-               for arg in command]
+                for arg in command]
 
     # NB: When using shell=True, commands should be given as a string rather
     # than the usual list of arguments.
