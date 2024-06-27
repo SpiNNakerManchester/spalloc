@@ -397,12 +397,12 @@ class ProtocolClient(object):
 
     def power_on_job_boards(self, job_id: int,
                             timeout: Optional[int] = None) -> JsonObject:
-        """ Turn on the power on the jobs baords. """
+        """ Turn on the power on the jobs boards. """
         return self.call("power_on_job_boards", job_id, timeout=timeout)
 
     def power_off_job_boards(self, job_id: int,
                              timeout: Optional[int] = None) -> JsonObject:
-        """ Turn off the power on the jobs baords. """
+        """ Turn off the power on the jobs boards. """
         return self.call("power_off_job_boards", job_id, timeout=timeout)
 
     def destroy_job(self, job_id: int, reason: Optional[str] = None,

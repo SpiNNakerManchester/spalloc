@@ -41,7 +41,7 @@ class Terminate(Exception):
             self._msg = message
 
     def exit(self):
-        """ Exit the program after priintg and erro msg. """
+        """ Exit the program after printing an error msg. """
         if self._msg is not None:
             sys.stderr.write(self._msg + "\n")
         sys.exit(self._code)
@@ -58,7 +58,7 @@ def version_verify(client: ProtocolClient, timeout: Optional[int]):
 
 
 class Script(object):
-    """ Base class of various Scopt Objects. """
+    """ Base class of various Script Objects. """
     def __init__(self):
         self.client_factory = ProtocolClient
 
@@ -80,7 +80,7 @@ class Script(object):
     def build_server_arg_group(self, server_args: Any,
                                cfg: Dict[str, object]):
         """
-        Adds a few more arguements
+        Adds a few more arguments
 
         :param argparse._ArguementGroup server_args:
         """
