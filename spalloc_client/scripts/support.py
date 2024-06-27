@@ -30,7 +30,7 @@ class Terminate(Exception):
     """
 
     def __init__(self, code: int, *args: Tuple[object]):
-       super().__init__()
+        super().__init__()
         self._code = code
         args = list(args)
         message = args.pop(0) if args else None
