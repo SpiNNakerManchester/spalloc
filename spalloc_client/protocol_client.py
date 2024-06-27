@@ -116,7 +116,7 @@ class ProtocolClient(object):
         self.close()
         return False
 
-    def _get_connection(self, timeout):
+    def _get_connection(self, timeout: Optional[int]) -> socket:
         if self._dead:
             raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
@@ -141,7 +141,7 @@ class ProtocolClient(object):
         sock.settimeout(timeout)
         return sock
 
-    def _do_connect(self, sock):
+    def _do_connect(self, sock: socket):
         success = False
         try:
             sock.connect((self._hostname, self._port))
@@ -151,10 +151,10 @@ class ProtocolClient(object):
                 raise
         return success
 
-    def _has_open_socket(self):
+    def _has_open_socket(self) -> bool:
         return self._local.sock is not None
 
-    def connect(self, timeout=None):
+    def connect(self, timeout: Optional[int] = None):
         """(Re)connect to the server.
 
         Raises
@@ -168,7 +168,7 @@ class ProtocolClient(object):
         self._dead = False
         self._connect(timeout)
 
-    def _connect(self, timeout):
+    def _connect(self, timeout: Optional[int]) -> socket:
         """ Try to (re)connect to the server.
         """
         try:

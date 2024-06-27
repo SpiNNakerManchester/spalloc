@@ -26,9 +26,10 @@ from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 
-TableList: TypeAlias = List[Union[str,
-                            Tuple[Callable[[Union[int, str]], str]]]]
-
+TableFunction: TypeAlias = Callable[[Union[int, str]], str]
+TableValue: TypeAlias = Union[int, str]
+TableItem: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
+TableList: TypeAlias = List[TableItem]
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
@@ -215,6 +216,7 @@ def render_table(table: TableList, column_sep: str = "  "):
     # Determine maximum column widths
     column_widths = defaultdict(lambda: 0)
     for row in table:
+        column: TableItem
         for i, column in enumerate(row):
             if isinstance(column, str):
                 string = column
@@ -229,6 +231,7 @@ def render_table(table: TableList, column_sep: str = "  "):
     for row in table:
         rendered_row = []
         out.append(rendered_row)
+        f: TableFunction
         for i, column in enumerate(row):
             # Get string length and formatted string
             if isinstance(column, str):

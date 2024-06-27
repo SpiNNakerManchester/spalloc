@@ -27,7 +27,7 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 import sys
 
-from spinn_utilities.typing.json import JsonObject
+from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, JobState, ProtocolClient
 from spalloc_client.term import Terminal, render_table, TableList
@@ -35,7 +35,8 @@ from spalloc_client._utils import render_timestamp
 from .support import Script
 
 
-def render_job_list(t: Terminal, jobs: JsonObject, args: argparse.Namespace):
+def render_job_list(t: Terminal, jobs: JsonObjectArray,
+                    args: argparse.Namespace):
     """ Return a human-readable process listing.
 
     Parameters

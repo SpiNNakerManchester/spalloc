@@ -32,13 +32,13 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from typing import List
+from typing import Any, Dict, List
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
     DEFAULT_BOARD_EDGES, TableList)
-from .support import Terminate, Script
+from spalloc_client.scripts.support import Terminate, Script
 
 
 def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
@@ -233,7 +233,7 @@ class ListMachinesScript(Script):
         else:
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
-    def get_parser(self, cfg):
+    def get_parser(self, cfg: Dict[str, Any]):
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(
