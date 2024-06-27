@@ -81,8 +81,9 @@ options available (and the default value).
 """
 import configparser
 import os.path
-import appdirs
 from typing import Any, Dict, List, Optional
+
+import appdirs
 
 # The application name to use in config file names
 _name = "spalloc"

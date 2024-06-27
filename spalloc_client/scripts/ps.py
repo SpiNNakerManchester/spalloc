@@ -27,10 +27,11 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 import sys
 
+from spinn_utilities.typing.json import JsonObject
+
 from spalloc_client import __version__, JobState, ProtocolClient
 from spalloc_client.term import Terminal, render_table
 from spalloc_client._utils import render_timestamp
-from spinn_utilities.typing.json import JsonObject
 from .support import Script
 
 
