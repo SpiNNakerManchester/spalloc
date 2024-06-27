@@ -216,6 +216,7 @@ def render_table(table: TableList, column_sep: str = "  "):
     """
     # Determine maximum column widths
     column_widths = defaultdict(lambda: 0)
+    assert isinstance(table, list)
     for row in table:
         column: TableItem
         for i, column in enumerate(row):
@@ -249,10 +250,10 @@ def render_table(table: TableList, column_sep: str = "  "):
                 right_align = False
                 string = f(string)
             elif isinstance(column[1], int):
-                f, string = column
-                length = len(str(string))
+                f, value = column
+                length = len(str(value))
                 right_align = True
-                string = f(string)
+                string = f(value)
             else:
                 raise TypeError(f"Unexpected type {column=}")
 
