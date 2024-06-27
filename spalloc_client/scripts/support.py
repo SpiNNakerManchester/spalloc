@@ -25,6 +25,7 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
+    """ Exception that can be used to exit the code """
     def __init__(self, code: int, message: Optional[str] = None):
         super().__init__()
         self._code = code
