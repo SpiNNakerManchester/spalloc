@@ -21,16 +21,16 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
-from typing import Callable, List, Tuple, Union
+from typing import Callable, Iterable, Tuple, Union
 from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 
 TableFunction: TypeAlias = Callable[[Union[int, str]], str]
 TableValue: TypeAlias = Union[int, str]
-TableItem: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
-TableList: TypeAlias = List[TableItem]
-
+TableColumn: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
+TableRow: TypeAlias = Iterable[TableColumn]
+TableType: TypeError = Iterable[TableRow]
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
@@ -187,7 +187,7 @@ class Terminal(object):
                        post=self("\033[0m"))
 
 
-def render_table(table: TableList, column_sep: str = "  "):
+def render_table(table: TableType, column_sep: str = "  "):
     """ Render an ASCII table with optional ANSI escape codes.
 
     An example table::
@@ -216,9 +216,7 @@ def render_table(table: TableList, column_sep: str = "  "):
     """
     # Determine maximum column widths
     column_widths = defaultdict(lambda: 0)
-    assert isinstance(table, list)
     for row in table:
-        column: TableItem
         for i, column in enumerate(row):
             if isinstance(column, str):
                 string = column

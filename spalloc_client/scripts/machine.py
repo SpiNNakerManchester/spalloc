@@ -37,7 +37,7 @@ from typing import Any, Dict, List
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
-    DEFAULT_BOARD_EDGES, TableList)
+    DEFAULT_BOARD_EDGES, TableType)
 from spalloc_client.scripts.support import Terminate, Script
 
 
@@ -74,7 +74,7 @@ def list_machines(t, machines, jobs):
     for job in jobs:
         machine_jobs[job["allocated_machine_name"]].append(job)
 
-    table: TableList = [[
+    table: TableType = [[
         (t.underscore_bright, "Name"),
         (t.underscore_bright, "Num boards"),
         (t.underscore_bright, "In-use"),
@@ -191,7 +191,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
         print(render_cells(cells))
     else:
         # In non-compact mode, produce a full table of job information
-        job_table: TableList = [[
+        job_table: TableType = [[
             (t.underscore_bright, "Key"),
             (t.underscore_bright, "Job ID"),
             (t.underscore_bright, "Num boards"),
