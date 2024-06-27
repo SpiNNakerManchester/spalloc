@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import sys
+from typing import Optional
 from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
@@ -24,17 +25,10 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
-    def __init__(self, code, *args):
+    def __init__(self, code: int, message: Optional[str] = None):
         super().__init__()
         self._code = code
-        args = list(args)
-        message = args.pop(0) if args else None
-        if message is None:
-            self._msg = None
-        elif args:
-            self._msg = message.format(*args)
-        else:
-            self._msg = message
+        self._msg = message
 
     def exit(self):
         if self._msg is not None:
@@ -45,8 +39,8 @@ class Terminate(Exception):
 def version_verify(client, timeout):
     version = tuple(map(int, client.version(timeout=timeout).split(".")))
     if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-        raise Terminate(2, "Incompatible server version ({})",
-                        ".".join(map(str, version)))
+        raise Terminate(
+            2, f"Incompatible server version ({'.'.join(map(str, version))})")
 
 
 class Script(object):
