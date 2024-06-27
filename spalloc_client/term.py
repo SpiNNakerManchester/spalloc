@@ -27,7 +27,8 @@ from typing_extensions import TypeAlias
 # pylint: disable=wrong-spelling-in-docstring
 
 TableList: TypeAlias = List[Union[str,
-    Tuple[Callable[[Union[int, str]], str]]]]
+                            Tuple[Callable[[Union[int, str]], str]]]]
+
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
