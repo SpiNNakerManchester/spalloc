@@ -763,8 +763,7 @@ class _JobStateTuple(namedtuple("_JobStateTuple",
         reason the job was terminated.
     """
 
-    # Python 3.4 Workaround: https://bugs.python.org/issue24931
-    __slots__ = tuple()
+    __slots__ = ()
 
 
 class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",

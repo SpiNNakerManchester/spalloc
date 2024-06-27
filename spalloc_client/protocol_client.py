@@ -459,8 +459,7 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, timeout: Optional[int] = None,
-                 **kwargs: Dict[str, object]) -> JsonObject:
+    def where_is(self, timeout: Optional[int] = None, **kwargs) -> JsonObject:
         """ Reports where ion the Machine a job is running """
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)
