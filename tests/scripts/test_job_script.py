@@ -14,7 +14,7 @@
 
 import datetime
 import pytest
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client import JobState, ProtocolError
 from spalloc_client.term import Terminal
 from spalloc_client.scripts.job import (

@@ -82,6 +82,7 @@ options available (and the default value).
 import configparser
 import os.path
 import appdirs
+from typing import Any, Dict, List, Optional
 
 # The application name to use in config file names
 _name = "spalloc"
@@ -138,7 +139,7 @@ def _read_none_or_str(parser, option):
     return parser.get(SECTION, option)
 
 
-def read_config(filenames=None):
+def read_config(filenames: Optional[List[str]] = None) -> Dict[str, Any]:
     """ Attempt to read local configuration files to determine spalloc client
     settings.
 

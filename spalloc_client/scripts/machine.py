@@ -220,8 +220,8 @@ class ListMachinesScript(Script):
         super().__init__()
         self.parser = None
 
-    def get_and_display_machine_info(
-            self, client: ProtocolClient, args: List[object], t: Terminal):
+    def get_and_display_machine_info(self, client: ProtocolClient,
+                                     args: argparse.Namespace, t: Terminal):
         """ Gets and displays info for the machine(s) """
         # Get all information
         machines = client.list_machines(timeout=args.timeout)
@@ -264,7 +264,7 @@ class ListMachinesScript(Script):
         # Get all information and display accordingly
         self.get_and_display_machine_info(client, args, t)
 
-    def recurring(self, client: ProtocolClient, args: List[object]):
+    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
         """
         Repeatedly display the machine info
         """

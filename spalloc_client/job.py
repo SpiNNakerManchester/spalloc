@@ -790,5 +790,4 @@ class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
         None if none allocated yet.
     """
 
-    # Python 3.4 Workaround: https://bugs.python.org/issue24931
-    __slots__ = tuple()
+    __slots__ = ()

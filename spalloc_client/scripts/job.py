@@ -76,7 +76,7 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
-from typing import List
+from typing import Dict
 
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (
@@ -307,7 +307,7 @@ class ManageJobScript(Script):
         super().__init__()
         self.parser = None
 
-    def get_job_id(self, client: ProtocolClient, args: List[str]):
+    def get_job_id(self, client: ProtocolClient, args: argparse.Namespace):
         """
     get a job for the owner named in the args
         """
@@ -324,7 +324,7 @@ class ManageJobScript(Script):
             raise Terminate(3, msg)
         return job_ids[0]
 
-    def get_parser(self, cfg):
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Manage running jobs.")
         parser.add_argument(
@@ -359,7 +359,7 @@ class ManageJobScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    def verify_arguments(self, args: argparse.Namespace):
         if args.job_id is None and args.owner is None:
             self.parser.error("job ID (or --owner) not specified")
 

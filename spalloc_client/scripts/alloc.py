@@ -121,8 +121,8 @@ from spalloc_client import (
 from spalloc_client.term import Terminal, render_definitions
 
 # pylint: disable=invalid-name
-arguments = None
-t = None
+arguments: Optional[argparse.Namespace] = None
+t: Optional[Terminal] = None
 _input = input  # This is so we can monkey patch input during testing
 
 
@@ -231,7 +231,7 @@ def run_command(
     logging.info("All board IPs listed in: %s", ip_file_filename)
 
     # Make substitutions in command arguments
-    command = [arg.format(root_hostname,
+    commands = [arg.format(root_hostname,
                           hostname=root_hostname,
                           w=width,
                           width=width,
@@ -243,7 +243,7 @@ def run_command(
 
     # NB: When using shell=True, commands should be given as a string rather
     # than the usual list of arguments.
-    command = " ".join(map(quote, command))
+    command = " ".join(map(quote, commands))
     p = subprocess.Popen(command, shell=True)
 
     # Pass through keyboard interrupts
@@ -258,6 +258,7 @@ def info(msg: str):
     """
     Writes a message to the terminal
     """
+    assert t is not None
     if not arguments.quiet:
         t.stream.write(f"{msg}\n")
 
@@ -273,6 +274,7 @@ def wait_for_job_ready(job: Job):
     """
     Wait for it to become ready, keeping the user informed along the way
     """
+    assert t is not None
     old_state = None
     cur_state = job.state
     try:
@@ -432,6 +434,7 @@ def run_job(job_args: List[str], job_kwargs: Dict[str, str],
     """
     Run a job
     """
+    assert arguments is not None
     # Reason for destroying the job
     reason = None
 
@@ -470,14 +473,14 @@ def run_job(job_args: List[str], job_kwargs: Dict[str, str],
             job.destroy(reason)
 
 
-def _minzero(value: Optional[float]) -> Optional[float]:
+def _minzero(value: float) -> Optional[float]:
     """
-    Makes sure a value is not negative.
+    Replaces a negative value with None
     """
     return value if value >= 0.0 else None
 
 
-def main(argv: List[str] = None):
+def main(argv: Optional[List[str]] = None):
     """
     The main method run
     """

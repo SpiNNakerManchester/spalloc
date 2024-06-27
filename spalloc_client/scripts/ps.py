@@ -26,15 +26,15 @@ This list may be filtered by owner or machine with the ``--owner`` and
 """
 import argparse
 import sys
-from typing import List
 
 from spalloc_client import __version__, JobState, ProtocolClient
 from spalloc_client.term import Terminal, render_table
 from spalloc_client._utils import render_timestamp
+from spinn_utilities.typing.json import JsonObject
 from .support import Script
 
 
-def render_job_list(t, jobs, args):
+def render_job_list(t: Terminal, jobs: JsonObject, args: argparse.Namespace):
     """ Return a human-readable process listing.
 
     Parameters
@@ -132,13 +132,13 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client: ProtocolClient, args: List[object]):
+    def one_shot(self, client: ProtocolClient, args: argparse.Namespace):
         """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
         print(render_job_list(t, jobs, args))
 
-    def recurring(self, client: ProtocolClient, args: List[object]):
+    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
         """ Repeatedly gets info on the job list. """
         client.notify_job(timeout=args.timeout)
         t = Terminal(stream=sys.stderr)
