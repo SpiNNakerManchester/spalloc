@@ -31,6 +31,7 @@ TableValue: TypeAlias = Union[int, str]
 TableItem: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
 TableList: TypeAlias = List[TableItem]
 
+
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
