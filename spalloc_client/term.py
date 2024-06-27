@@ -21,7 +21,7 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
-from typing import Callable, Iterable, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Tuple, Union
 from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
@@ -30,7 +30,7 @@ TableFunction: TypeAlias = Callable[[Union[int, str]], str]
 TableValue: TypeAlias = Union[int, str]
 TableColumn: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
 TableRow: TypeAlias = Iterable[TableColumn]
-TableType: TypeError = Iterable[TableRow]
+TableType: TypeAlias = List[TableRow]
 
 
 class ANSIDisplayAttributes(IntEnum):
@@ -216,7 +216,7 @@ def render_table(table: TableType, column_sep: str = "  "):
         The formatted table.
     """
     # Determine maximum column widths
-    column_widths = defaultdict(lambda: 0)
+    column_widths: Dict[int, int] = defaultdict(lambda: 0)
     for row in table:
         for i, column in enumerate(row):
             if isinstance(column, str):
@@ -224,13 +224,13 @@ def render_table(table: TableType, column_sep: str = "  "):
             elif isinstance(column, int):
                 string = str(column)
             else:
-                _, string = column
+                string = str(column[1])
             column_widths[i] = max(len(str(string)), column_widths[i])
 
     # Render the table cells with padding [[str, ...], ...]
     out = []
     for row in table:
-        rendered_row = []
+        rendered_row: List[str] = []
         out.append(rendered_row)
         f: TableFunction
         for i, column in enumerate(row):
@@ -243,18 +243,16 @@ def render_table(table: TableType, column_sep: str = "  "):
                 string = str(column)
                 length = len(string)
                 right_align = True
-            elif isinstance(column[1], str):
-                f, string = column
-                length = len(string)
-                right_align = False
-                string = f(string)
-            elif isinstance(column[1], int):
-                f, value = column
-                length = len(str(value))
-                right_align = True
-                string = f(value)
             else:
-                raise TypeError(f"Unexpected type {column=}")
+                f = column[0]
+                value = column[1]
+                if isinstance(value, str):
+                    length = len(value)
+                    right_align = False
+                else:
+                    length = len(str(value))
+                    right_align = True
+                string = f(value)
 
             padding = " " * (column_widths[i] - length)
             if right_align:

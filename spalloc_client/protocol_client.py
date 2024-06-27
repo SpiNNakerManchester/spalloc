@@ -21,7 +21,7 @@ import socket
 from typing import Dict, List, Optional
 from threading import current_thread, RLock, local
 
-from spinn_utilities.typing.json import JsonObject
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray
 
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
@@ -116,7 +116,7 @@ class ProtocolClient(object):
         self.close()
         return False
 
-    def _get_connection(self, timeout: Optional[int]) -> socket:
+    def _get_connection(self, timeout: Optional[int]) -> socket.socket:
         if self._dead:
             raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
@@ -141,7 +141,7 @@ class ProtocolClient(object):
         sock.settimeout(timeout)
         return sock
 
-    def _do_connect(self, sock: socket):
+    def _do_connect(self, sock: socket.socket):
         success = False
         try:
             sock.connect((self._hostname, self._port))
@@ -168,7 +168,7 @@ class ProtocolClient(object):
         self._dead = False
         self._connect(timeout)
 
-    def _connect(self, timeout: Optional[int]) -> socket:
+    def _connect(self, timeout: Optional[int]) -> socket.socket:
         """ Try to (re)connect to the server.
         """
         try:
@@ -361,7 +361,7 @@ class ProtocolClient(object):
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
 
-    def version(self, timeout: Optional[int] = None) -> JsonObject:
+    def version(self, timeout: Optional[int] = None) -> str:
         """ Ask what version of spalloc is running. """
         return self.call("version", timeout=timeout)
 
@@ -430,11 +430,12 @@ class ProtocolClient(object):
         """ Turn off notification of machine status changes. """
         return self.call("no_notify_machine", machine_name, timeout=timeout)
 
-    def list_jobs(self, timeout: Optional[int] = None) -> JsonObject:
+    def list_jobs(self, timeout: Optional[int] = None) -> JsonObjectArray:
         """ Obtains a list of jobs currently running. """
         return self.call("list_jobs", timeout=timeout)
 
-    def list_machines(self, timeout: Optional[float] = None) -> JsonObject:
+    def list_machines(self,
+                      timeout: Optional[float] = None) -> JsonObjectArray:
         """ Obtains a list of currently supported machines. """
         return self.call("list_machines", timeout=timeout)
 

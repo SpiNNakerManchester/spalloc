@@ -83,7 +83,7 @@ import configparser
 import os.path
 from typing import Any, Dict, List, Optional
 
-import appdirs
+import appdirs # type: ignore[import]
 
 # The application name to use in config file names
 _name = "spalloc"

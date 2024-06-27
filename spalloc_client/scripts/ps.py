@@ -25,12 +25,14 @@ This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
 import argparse
+from collections.abc import Sized
 import sys
+from typing import cast, Union
 
 from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, JobState, ProtocolClient
-from spalloc_client.term import Terminal, render_table, TableType
+from spalloc_client.term import Terminal, render_table, TableColumn, TableType
 from spalloc_client._utils import render_timestamp
 from .support import Script
 
@@ -71,6 +73,7 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
             continue
 
         # Colourise job states
+        job_state: TableColumn
         if job["state"] == JobState.queued:
             job_state = (t.blue, "queue")
         elif job["state"] == JobState.power:
@@ -81,6 +84,7 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
             job_state = str(job["state"])
 
         # Colourise power states
+        power_state: TableColumn
         if job["power"] is not None:
             power_state = (t.green, "on") if job["power"] else (t.red, "off")
             if job["state"] == JobState.power:
@@ -88,22 +92,25 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
         else:
             power_state = ""
 
-        num_boards = "" if job["boards"] is None else len(job["boards"])
-
+        num_boards: Union[int, str]
+        if isinstance(job["boards"],  Sized):
+            num_boards = len(job["boards"])
+        else:
+            num_boards = ""
         # Format start time
         timestamp = render_timestamp(job["start_time"])
 
         if job["allocated_machine_name"] is not None:
-            machine_name = job["allocated_machine_name"]
+            machine_name = str(job["allocated_machine_name"])
         else:
             machine_name = ""
 
-        owner = job["owner"]
+        owner = str(job["owner"])
         if "keepalivehost" in job and job["keepalivehost"] is not None:
             owner += f" ({job['keepalivehost']})"
 
         table.append((
-            job["job_id"],
+            cast(int, job["job_id"]),
             job_state,
             power_state,
             num_boards,

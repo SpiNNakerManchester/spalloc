@@ -34,6 +34,8 @@ import argparse
 import sys
 from typing import Any, Dict, List
 
+from spinn_utilities.typing.json import JsonObjectArray
+
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
@@ -54,7 +56,8 @@ def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
             yield prefix + symbol
 
 
-def list_machines(t, machines, jobs):
+def list_machines(t: Terminal, machines: JsonObjectArray,
+                  jobs: JsonObjectArray):
     """ Display a table summarising the available machines and their load.
 
     Parameters
@@ -177,7 +180,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     print("")
     print(render_boards(board_groups, machine["dead_links"],
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
-
+    compact = False
     # Produce table showing jobs on machine
     if compact:
         # In compact mode, produce column-aligned cells
