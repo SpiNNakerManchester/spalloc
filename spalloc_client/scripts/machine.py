@@ -100,7 +100,7 @@ def _get_machine(machines, machine_name):
         if machine["name"] == machine_name:
             return machine
     # No matching machine
-    raise Terminate(6, "No machine '{}' was found", machine_name)
+    raise Terminate(6, f"No machine '{machine_name}' was found")
 
 
 def show_machine(t, machines, jobs, machine_name, compact=False):

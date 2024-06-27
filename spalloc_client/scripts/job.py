@@ -244,9 +244,9 @@ def power_job(client, timeout, job_id, power):
                 raise Terminate(7) from exc
         else:
             # In an unknown state, perhaps the job was queued etc.
-            raise Terminate(8, "Error: Cannot power {} job {} in state {}",
-                            "on" if power else "off",
-                            job_id, _state_name(state))
+            raise Terminate(
+                8, (f"Error: Cannot power {'on' if power else 'off'} "
+                    f"job {job_id} in state {_state_name(state)}"))
 
 
 def list_ips(client, timeout, job_id):
@@ -270,7 +270,7 @@ def list_ips(client, timeout, job_id):
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = info["connections"]
     if connections is None:
-        raise Terminate(9, "Job {} is queued or does not exist", job_id)
+        raise Terminate(9, f"Job {job_id} is queued or does not exist")
     print("x,y,hostname")
     for ((x, y), hostname) in sorted(connections):
         print(f"{x},{y},{hostname}")
@@ -317,11 +317,11 @@ class ManageJobScript(Script):
         jobs = client.list_jobs(timeout=args.timeout)
         job_ids = [job["job_id"] for job in jobs if job["owner"] == args.owner]
         if not job_ids:
-            raise Terminate(3, "Owner {} has no live jobs", args.owner)
+            raise Terminate(3, f"Owner {args.owner} has no live jobs")
         elif len(job_ids) > 1:
-            raise Terminate(3, "Ambiguous: {} has {} live jobs: {}",
-                            args.owner, len(job_ids),
-                            ", ".join(map(str, job_ids)))
+            msg = (f"Ambiguous: {args.owner} has {len(job_ids)} live jobs: "
+                   f"{', '.join(map(str, job_ids))}")
+            raise Terminate(3, msg)
         return job_ids[0]
 
     def get_parser(self, cfg):

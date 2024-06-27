@@ -25,21 +25,10 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
-    """
-    An Exception that can be used to exit the program.
-    """
-
-    def __init__(self, code: int, *args: Tuple[object]):
+    def __init__(self, code: int, message: Optional[str] = None):
         super().__init__()
         self._code = code
-        args = list(args)
-        message = args.pop(0) if args else None
-        if message is None:
-            self._msg = None
-        elif args:
-            self._msg = message.format(*args)
-        else:
-            self._msg = message
+        self._msg = message
 
     def exit(self):
         """ Exit the program after printing an error msg. """
@@ -54,8 +43,8 @@ def version_verify(client: ProtocolClient, timeout: Optional[int]):
     """
     version = tuple(map(int, client.version(timeout=timeout).split(".")))
     if not (VERSION_RANGE_START <= version < VERSION_RANGE_STOP):
-        raise Terminate(2, "Incompatible server version ({})",
-                        ".".join(map(str, version)))
+        raise Terminate(
+            2, f"Incompatible server version ({'.'.join(map(str, version))})")
 
 
 class Script(object):
