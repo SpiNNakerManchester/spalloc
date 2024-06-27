@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
