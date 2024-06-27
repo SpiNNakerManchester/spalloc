@@ -30,7 +30,7 @@ import sys
 from spinn_utilities.typing.json import JsonObject
 
 from spalloc_client import __version__, JobState, ProtocolClient
-from spalloc_client.term import Terminal, render_table
+from spalloc_client.term import Terminal, render_table, TableList
 from spalloc_client._utils import render_timestamp
 from .support import Script
 
@@ -49,7 +49,7 @@ def render_job_list(t: Terminal, jobs: JsonObject, args: argparse.Namespace):
     owner : str or None
         If not None, only list jobs with this owner.
     """
-    table = []
+    table: TableList = []
 
     # Add headings
     table.append(((t.underscore_bright, "ID"),

@@ -21,9 +21,13 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
+from typing import Callable, List, Tuple, Union
+from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 
+TableList: TypeAlias = List[Union[str,
+    Tuple[Callable[[Union[int, str]], str]]]]
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
@@ -180,7 +184,7 @@ class Terminal(object):
                        post=self("\033[0m"))
 
 
-def render_table(table, column_sep="  "):
+def render_table(table: TableList, column_sep: str = "  "):
     """ Render an ASCII table with optional ANSI escape codes.
 
     An example table::
