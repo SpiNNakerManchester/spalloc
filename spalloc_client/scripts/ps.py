@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=wrong-spelling-in-docstring
 """ An administrative command-line process listing utility.
 
 By default, the ``spalloc-ps`` command lists all running and queued jobs.  For

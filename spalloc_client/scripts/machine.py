@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# pylint: disable=wrong-spelling-in-docstring,wrong-spelling-in-comment
 """ Command-line administrative machine management interface.
 
 When called with no arguments the ``spalloc-machine`` command lists all
