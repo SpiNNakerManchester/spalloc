@@ -232,13 +232,13 @@ def run_command(
 
     # Make substitutions in command arguments
     commands = [arg.format(root_hostname,
-                          hostname=root_hostname,
-                          w=width,
-                          width=width,
-                          h=height,
-                          height=height,
-                          ethernet_ips=ip_file_filename,
-                          id=job_id)
+                           hostname=root_hostname,
+                           w=width,
+                           width=width,
+                           h=height,
+                           height=height,
+                           ethernet_ips=ip_file_filename,
+                           id=job_id)
                for arg in command]
 
     # NB: When using shell=True, commands should be given as a string rather
