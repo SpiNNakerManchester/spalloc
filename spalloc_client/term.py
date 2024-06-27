@@ -32,6 +32,7 @@ TableColumn: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
 TableRow: TypeAlias = Iterable[TableColumn]
 TableType: TypeError = Iterable[TableRow]
 
+
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
