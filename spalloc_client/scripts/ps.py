@@ -19,7 +19,7 @@ a real-time monitor of queued and running jobs, the ``--watch`` option may be
 added.
 
 .. image:: _static/spalloc_ps.png
-    :alt: Jobs being listed by spalloc- proces scripts
+    :alt: Jobs being listed by spalloc- process scripts
 
 This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.

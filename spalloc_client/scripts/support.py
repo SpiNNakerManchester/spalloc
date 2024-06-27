@@ -25,11 +25,12 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 
 class Terminate(Exception):
+    """
+    An Exception that can be used to exit the program.
+    """
+
     def __init__(self, code: int, *args: Tuple[object]):
-        """
-        An Exception that can be used to exit the program.
-        """
-        super().__init__()
+       super().__init__()
         self._code = code
         args = list(args)
         message = args.pop(0) if args else None
