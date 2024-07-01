@@ -16,7 +16,7 @@ import platform
 import time
 from threading import Thread, Event
 import pytest
-from mock import Mock  # type: ignore[import]
+from mock import Mock, MagicMock
 from spalloc_client import (
     Job, JobState, JobDestroyedError, ProtocolTimeoutError)
 from spalloc_client._keepalive_process import keep_job_alive
@@ -31,16 +31,16 @@ BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))
 @pytest.fixture
 def client(monkeypatch):
     # Mock out the client.
-    client = Mock()
+    client = MagicMock()
     client.version.return_value = GOOD_VERSION
     client.create_job.return_value = 123
 
     import spalloc_client.job
     monkeypatch.setattr(spalloc_client.job, "ProtocolClient",
-                        Mock(return_value=client))
+                        MagicMock(return_value=client))
     import spalloc_client._keepalive_process
     monkeypatch.setattr(spalloc_client._keepalive_process, "ProtocolClient",
-                        Mock(return_value=client))
+                        MagicMock(return_value=client))
     return client
 
 
@@ -352,9 +352,7 @@ class TestWaitForStateChange(object):
 
     def test_impossible_timeout(self, no_config_files, j, client):
         # When an impossible timeout is presented, should terminate immediately
-        # Mock acts different on Macs not with working out why
-        if platform.system() != "Darwin":
-            assert j.wait_for_state_change(2, timeout=0.0) == 2
+        assert j.wait_for_state_change(2, timeout=0.0) == 2
 
     @pytest.mark.parametrize("keepalive", [None, 5.0])
     def test_timeout(self, no_config_files, keepalive, client):
@@ -447,9 +445,6 @@ class TestWaitForStateChange(object):
 class TestWaitUntilReady(object):
 
     def test_success(self, no_config_files, j, client):
-        if platform.system() == "Darwin":
-            #  TypeError: 'Mock' object is not subscriptable
-            return
         # Simple mocked implementation where at first the job is in the wrong
         # state then eventually in the correct state.
         client.get_job_state.side_effect = [
