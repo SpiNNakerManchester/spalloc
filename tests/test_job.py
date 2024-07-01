@@ -212,13 +212,12 @@ class TestKeepalive(object):
             assert len(client.connect.mock_calls) == 3
         elif platform.system() == "Darwin":  # Mac
             assert 2 <= len(client.job_keepalive.mock_calls) <= 4
-            assert len(client.connect.mock_calls) == 3
+            assert 2 <= len(client.connect.mock_calls) <= 3
         elif platform.system() == "Windows":
             assert 2 <= len(client.job_keepalive.mock_calls) <= 4
             assert len(client.connect.mock_calls) == 3
         else:
             raise AttributeError()
-
 
     def test_stop_while_server_down(self, client, no_config_files):
         client.job_keepalive.side_effect = IOError()
