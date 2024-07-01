@@ -168,7 +168,6 @@ class ProcessListScript(Script):
                 print("")
 
 
-
     @overrides(Script.body)
     def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
@@ -178,6 +177,7 @@ class ProcessListScript(Script):
 
     def verify_arguments(self, args: argparse.Namespace):
         pass
+
 
 main = ProcessListScript()
 if __name__ == "__main__":  # pragma: no cover

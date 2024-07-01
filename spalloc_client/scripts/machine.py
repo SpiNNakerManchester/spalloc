@@ -35,8 +35,7 @@ import sys
 from typing import Any, Callable, cast, Dict, List
 
 from spinn_utilities.overrides import overrides
-from spinn_utilities.typing.json import JsonObjectArray, JsonValue
-
+from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
@@ -90,8 +89,8 @@ def list_machines(t: Terminal, machines: JsonObjectArray,
     for machine in machines:
         name = cast(str, machine["name"])
         boards = (((cast(int, machine["width"])) *
-             cast(int, machine["height"]) * 3) -
-             len(cast(list, machine["dead_boards"])))
+                   cast(int, machine["height"]) * 3) -
+                  len(cast(list, machine["dead_boards"])))
         in_use = sum(len(cast(list, job["boards"]))
                      for job in cast(dict, machine_jobs[machine["name"]]))
         the_jobs = len(machine_jobs[machine["name"]])
@@ -110,8 +109,8 @@ def _get_machine(machines, machine_name):
     raise Terminate(6, f"No machine '{machine_name}' was found")
 
 
-def show_machine(t:Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
-                 machine_name: str, compact: bool=False):
+def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
+                 machine_name: str, compact: bool = False):
     """ Display a more detailed overview of an individual machine.
 
     Parameters
