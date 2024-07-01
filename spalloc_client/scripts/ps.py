@@ -167,7 +167,6 @@ class ProcessListScript(Script):
             finally:
                 print("")
 
-
     @overrides(Script.body)
     def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
