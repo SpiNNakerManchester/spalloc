@@ -32,14 +32,14 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from typing import Any, Dict, List
+from typing import Any, Callable, cast, Dict, List
 
-from spinn_utilities.typing.json import JsonObjectArray
+from spinn_utilities.typing.json import JsonObjectArray, JsonValue
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
-    DEFAULT_BOARD_EDGES, TableType)
+    DEFAULT_BOARD_EDGES, TableRow, TableType)
 from spalloc_client.scripts.support import Terminate, Script
 
 
@@ -86,14 +86,16 @@ def list_machines(t: Terminal, machines: JsonObjectArray,
     ]]
 
     for machine in machines:
+        name = cast(str, machine["name"])
+        boards = (((cast(int, machine["width"])) *
+             cast(int, machine["height"]) * 3) -
+             len(cast(list, machine["dead_boards"])))
+        in_use = sum(len(cast(list, job["boards"]))
+                     for job in cast(dict, machine_jobs[machine["name"]]))
+        the_jobs = len(machine_jobs[machine["name"]])
+        tags = ", ".join(cast(list, machine["tags"]))
         table.append([
-            machine["name"],
-            ((machine["width"] * machine["height"] * 3) -
-             len(machine["dead_boards"])),
-            sum(len(job["boards"]) for job in machine_jobs[machine["name"]]),
-            len(machine_jobs[machine["name"]]),
-            ", ".join(machine["tags"]),
-        ])
+            name, boards, in_use, the_jobs, tags])
 
     print(render_table(table))
 
@@ -106,7 +108,8 @@ def _get_machine(machines, machine_name):
     raise Terminate(6, f"No machine '{machine_name}' was found")
 
 
-def show_machine(t, machines, jobs, machine_name, compact=False):
+def show_machine(t:Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
+                 machine_name: str, compact: bool=False):
     """ Display a more detailed overview of an individual machine.
 
     Parameters
@@ -133,7 +136,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     machine = _get_machine(machines, machine_name)
 
     # Extract list of jobs running on the machine
-    displayed_jobs = []
+    displayed_jobs: List[Dict[str, Any]] = []
     job_key_generator = iter(generate_keys())
     job_colours = [
         t.green, t.blue, t.magenta, t.yellow, t.cyan,
@@ -145,12 +148,14 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
         if job["allocated_machine_name"] == machine_name:
             displayed_jobs.append(job)
             job["key"] = next(job_key_generator)
-            job["colour"] = job_colours[job["job_id"] % len(job_colours)]
+            job["colour"] = job_colours[
+                cast(int, job["job_id"]) % len(job_colours)]
 
     # Calculate machine stats
     num_boards = ((machine["width"] * machine["height"] * 3) -
                   len(machine["dead_boards"]))
-    num_in_use = sum(map(len, (job["boards"] for job in displayed_jobs)))
+    num_in_use = sum(map(len, (cast(list, job["boards"])
+                               for job in displayed_jobs)))
 
     # Show general machine information
     info = dict()
@@ -162,7 +167,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
 
     # Draw diagram of machine
     dead_boards = set((x, y, z) for x, y, z in machine["dead_boards"])
-    board_groups = [(set([(x, y, z)
+    board_groups = [(list([(x, y, z)
                           for x in range(machine["width"])
                           for y in range(machine["height"])
                           for z in range(3)
@@ -171,25 +176,32 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)),  # Inner
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)))]  # Outer
     for job in displayed_jobs:
+        boards_list = job["boards"]
+        assert isinstance(boards_list, list)
+        boards = []
+        for board in boards_list:
+            assert isinstance(board, list)
+            (x, y, z) = board
+            boards.append((cast(int, x), cast(int, y), cast(int, z)))
+        colour_func = cast(Callable, job["colour"])
         board_groups.append((
-            job["boards"],
-            job["colour"](job["key"].center(3)),  # Label
-            tuple(map(job["colour"], DEFAULT_BOARD_EDGES)),  # Inner
+            boards,
+            colour_func(cast(str, job["key"]).center(3)),  # Label
+            tuple(map(colour_func, DEFAULT_BOARD_EDGES)),  # Inner
             tuple(map(t.bright, DEFAULT_BOARD_EDGES))  # Outer
         ))
     print("")
     print(render_boards(board_groups, machine["dead_links"],
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
-    compact = False
     # Produce table showing jobs on machine
     if compact:
         # In compact mode, produce column-aligned cells
         cells = []
         for job in displayed_jobs:
-            key = job["key"]
+            key = cast(str, job["key"])
             job_id = str(job["job_id"])
             cells.append((len(key) + len(job_id) + 1,
-                         f"{job['colour'](key)}:{job_id}"))
+                         f"{cast(Callable, job['colour'])(key)}:{job_id}"))
         print("")
         print(render_cells(cells))
     else:
@@ -201,15 +213,16 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
             (t.underscore_bright, "Owner (Host)"),
         ]]
         for job in displayed_jobs:
-            owner = job["owner"]
+            owner = str(job["owner"])
             if "keepalivehost" in job and job["keepalivehost"] is not None:
                 owner += f" {job['keepalivehost']}"
-            job_table.append([
-                (job["colour"], job["key"]),
-                job["job_id"],
-                len(job["boards"]),
+            table_row: TableRow = [
+                (cast(Callable, job["colour"]), cast(str, job["key"])),
+                cast(int, job["job_id"]),
+                len(cast(list, job["boards"])),
                 owner,
-            ])
+            ]
+            job_table.append(table_row)
         print("")
         print(render_table(job_table))
 
@@ -259,7 +272,7 @@ class ListMachinesScript(Script):
             self.parser.error(
                 "--detailed only works when a specific machine is specified")
 
-    def one_shot(self,  client: ProtocolClient, args: List[object]):
+    def one_shot(self,  client: ProtocolClient, args: argparse.Namespace):
         """
         Display the machine info once
         """
