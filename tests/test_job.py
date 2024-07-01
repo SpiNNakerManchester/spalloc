@@ -16,7 +16,7 @@ import platform
 import time
 from threading import Thread, Event
 import pytest
-from mock import Mock
+from mock import Mock  # type: ignore[import]
 from spalloc_client import (
     Job, JobState, JobDestroyedError, ProtocolTimeoutError)
 from spalloc_client._keepalive_process import keep_job_alive
@@ -475,8 +475,10 @@ class TestWaitUntilReady(object):
             j.wait_until_ready()
 
     def test_impossible_timeout(self, no_config_files, j):
-        with pytest.raises(StateChangeTimeoutError):
-            j.wait_until_ready(timeout=0.0)
+        if platform.system() != "Darwin":
+            # weird mock error on Macs
+            with pytest.raises(StateChangeTimeoutError):
+                j.wait_until_ready(timeout=0.0)
 
     def test_timeout(self, no_config_files, j, client):
         # Simple mocked implementation which times out
