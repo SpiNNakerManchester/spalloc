@@ -16,6 +16,7 @@ import datetime
 import pytest
 from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client import JobState, ProtocolError
+from spalloc_client.config import TIMEOUT
 from spalloc_client.term import Terminal
 from spalloc_client.scripts.job import (
     show_job_info, watch_job, power_job, list_ips, destroy_job, main)
@@ -355,7 +356,8 @@ class TestMain(object):
             "start_time": 0,
         }
         assert main("--hostname foo --owner bar".split()) == 0
-        client.get_job_machine_info.assert_called_once_with(123, timeout=5.0)
+        client.get_job_machine_info.assert_called_once_with(
+            123, timeout=TIMEOUT)
 
     def test_manual(self, no_config_files, client):
         client.list_jobs.return_value = [
@@ -385,7 +387,8 @@ class TestMain(object):
             "start_time": 0,
         }
         assert main("321 --hostname foo --owner bar".split()) == 0
-        client.get_job_machine_info.assert_called_once_with(321, timeout=5.0)
+        client.get_job_machine_info.assert_called_once_with(
+            321, timeout=TIMEOUT)
 
     @pytest.mark.parametrize("args", ["", "-i", "--info"])
     def test_info(self, no_config_files, client, args):
@@ -398,7 +401,7 @@ class TestMain(object):
             "start_time": None,
         }
         assert main(("321 --hostname foo --owner bar " + args).split()) == 0
-        client.get_job_state.assert_called_once_with(321, timeout=5.0)
+        client.get_job_state.assert_called_once_with(321, timeout=TIMEOUT)
 
     @pytest.mark.parametrize("args", ["-w", "--watch"])
     def test_watch(self, no_config_files, client, args):
@@ -430,10 +433,10 @@ class TestMain(object):
         assert main(("321 --hostname foo --owner bar " + args).split()) == 0
         if power:
             client.power_on_job_boards.assert_called_once_with(
-                321, timeout=5.0)
+                321, timeout=TIMEOUT)
         else:
             client.power_off_job_boards.assert_called_once_with(
-                321, timeout=5.0)
+                321, timeout=TIMEOUT)
 
     @pytest.mark.parametrize("args", ["-e", "--ethernet-ips"])
     def test_ethernet_ips(self, no_config_files, client, args):
@@ -443,7 +446,8 @@ class TestMain(object):
             "machine_name": "machine",
         }
         assert main(("321 --hostname foo --owner bar " + args).split()) == 0
-        client.get_job_machine_info.assert_called_once_with(321, timeout=5.0)
+        client.get_job_machine_info.assert_called_once_with(
+            321, timeout=TIMEOUT)
 
     @pytest.mark.parametrize("args,reason", [("-D", ""),
                                              ("--destroy", ""),
@@ -459,4 +463,5 @@ class TestMain(object):
         if not reason and owner is not None:
             reason = "Destroyed by {}".format(owner)
 
-        client.destroy_job.assert_called_once_with(321, reason, timeout=5.0)
+        client.destroy_job.assert_called_once_with(
+            321, reason, timeout=TIMEOUT)
