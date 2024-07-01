@@ -66,7 +66,7 @@ To query by chip coordinate of chips allocated to a job::
 """
 import argparse
 import sys
-from typing import Any, Dict
+from typing import Any, cast, Dict
 
 from spinn_utilities.overrides import overrides
 
@@ -160,18 +160,20 @@ class WhereIsScript(Script):
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
-        out = dict()
+        out: Dict[str, Any] = dict()
         out["Machine"] = location["machine"]
-        cabinet, frame, board = location["physical"]
+        cabinet, frame, board = cast(list, location["physical"])
         out["Physical location"] = (
             f"Cabinet {cabinet}, Frame {frame}, Board {board}")
-        out["Board coordinate"] = tuple(location["logical"])
-        out["Machine chip coordinates"] = tuple(location["chip"])
+        out["Board coordinate"] = tuple(cast(list, location["logical"]))
+        out["Machine chip coordinates"] = tuple(cast(list, location["chip"]))
         if self.show_board_chip:
-            out["Coordinates within board"] = tuple(location["board_chip"])
+            out["Coordinates within board"] = tuple(
+                cast(list, location["board_chip"]))
         out["Job using board"] = location["job_id"]
         if location["job_id"]:
-            out["Coordinates within job"] = tuple(location["job_chip"])
+            out["Coordinates within job"] = tuple(
+                cast(list, location["job_chip"]))
         print(render_definitions(out))
 
 

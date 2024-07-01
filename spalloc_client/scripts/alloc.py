@@ -243,8 +243,8 @@ def run_command(
 
     # NB: When using shell=True, commands should be given as a string rather
     # than the usual list of arguments.
-    command = " ".join(map(quote, commands))
-    p = subprocess.Popen(command, shell=True)
+    full_command = " ".join(map(quote, commands))
+    p = subprocess.Popen(full_command, shell=True)
 
     # Pass through keyboard interrupts
     while True:
@@ -259,6 +259,7 @@ def info(msg: str):
     Writes a message to the terminal
     """
     assert t is not None
+    assert arguments is not None
     if not arguments.quiet:
         t.stream.write(f"{msg}\n")
 
@@ -267,6 +268,7 @@ def update(msg: str, colour: functools.partial, *args: List[object]):
     """
     Writes a message to the terminal in the schoosen colour.
     """
+    assert t is not None
     info(t.update(colour(msg.format(*args))))
 
 
@@ -322,7 +324,7 @@ def wait_for_job_ready(job: Job):
         return 4, "Keyboard interrupt."
 
 
-def parse_argv(argv: List[str]) -> Tuple[
+def parse_argv(argv: Optional[List[str]]) -> Tuple[
         argparse.ArgumentParser, argparse.Namespace]:
     """
     Parse the arguments.
@@ -435,6 +437,7 @@ def run_job(job_args: List[str], job_kwargs: Dict[str, str],
     Run a job
     """
     assert arguments is not None
+    assert t is not None
     # Reason for destroying the job
     reason = None
 
