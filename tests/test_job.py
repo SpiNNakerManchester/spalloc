@@ -447,6 +447,9 @@ class TestWaitForStateChange(object):
 class TestWaitUntilReady(object):
 
     def test_success(self, no_config_files, j, client):
+        if platform.system() == "Darwin":
+            #  TypeError: 'Mock' object is not subscriptable
+            return
         # Simple mocked implementation where at first the job is in the wrong
         # state then eventually in the correct state.
         client.get_job_state.side_effect = [
