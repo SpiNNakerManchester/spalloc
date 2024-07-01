@@ -547,7 +547,10 @@ def main(argv: Optional[List[str]] = None):
         return 6
     finally:
         # Delete IP address list file
-        os.remove(ip_file_filename)
+        try:
+            os.remove(ip_file_filename)
+        except PermissionError:
+            pass
 
 
 if __name__ == "__main__":  # pragma: no cover
