@@ -27,5 +27,6 @@ jobs:
       flake8-packages:  spalloc_client tests
       pylint-packages: spalloc_client
       mypy-packages: spalloc_client tests
+      sphinx_directory: docs/source
     secrets: inherit
 
