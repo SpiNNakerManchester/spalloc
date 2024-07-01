@@ -89,7 +89,11 @@ def basic_config_file(monkeypatch):
     yield
     del SEARCH_PATH[:]
     SEARCH_PATH.extend(before)
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except PermissionError:
+        # Does not work on Windows! Used by another process
+        pass
 
 
 @pytest.fixture

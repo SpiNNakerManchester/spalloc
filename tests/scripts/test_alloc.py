@@ -25,7 +25,11 @@ from spalloc_client.scripts.alloc import (
 def filename():
     _, filename = tempfile.mkstemp()
     yield filename
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except PermissionError:
+        # Does not work on Windows! Used by another process
+        pass
 
 
 @pytest.fixture

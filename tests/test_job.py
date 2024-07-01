@@ -210,6 +210,15 @@ class TestKeepalive(object):
         if platform.system() == "Linux":
             assert 2 <= len(client.job_keepalive.mock_calls) <= 4
             assert len(client.connect.mock_calls) == 3
+        elif platform.system() == "Darwin":  # Mac
+            assert 2 <= len(client.job_keepalive.mock_calls) <= 4
+            assert len(client.connect.mock_calls) == 3
+        elif platform.system() == "Windows":
+            assert 2 <= len(client.job_keepalive.mock_calls) <= 4
+            assert len(client.connect.mock_calls) == 3
+        else:
+            raise AttributeError()
+
 
     def test_stop_while_server_down(self, client, no_config_files):
         client.job_keepalive.side_effect = IOError()
@@ -406,6 +415,12 @@ class TestWaitForStateChange(object):
         after = time.time()
         if platform.system() == "Linux":
             assert 0.2 <= after - before < 0.3
+        elif platform.system() == "Darwin":  # Mac
+            assert 0.2 <= after - before < 0.4
+        elif platform.system() == "Windows":
+            assert 0.2 <= after - before < 0.3
+        else:
+            raise AttributeError()
 
         j.destroy()
 
