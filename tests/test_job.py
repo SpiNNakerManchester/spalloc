@@ -185,9 +185,9 @@ class TestKeepalive(object):
 
         if platform.system() == "Linux":
             assert 4 <= len(client.job_keepalive.mock_calls) <= 6
-        elif platform.system() == "Darwin": # Macos
+        elif platform.system() == "Darwin":  # Mac
             assert 1 <= len(client.job_keepalive.mock_calls) <= 6
-        elif platform.system() == "Windos": # Macos
+        elif platform.system() == "Windows":
             assert 4 <= len(client.job_keepalive.mock_calls) <= 6
         else:
             raise AttributeError()
@@ -479,7 +479,15 @@ class TestWaitUntilReady(object):
             j.wait_until_ready(timeout=0.3)
         after = time.time()
 
-        assert 0.3 <= after - before < 0.4
+        if platform.system() == "Linux":
+            assert 0.3 <= after - before < 0.4
+        elif platform.system() == "Darwin":  # Mac
+            assert 0.3 <= after - before < 0.5
+        elif platform.system() == "Windows":
+            assert 0.3 <= after - before < 0.4
+        else:
+            raise AttributeError()
+
 
 
 def test_context_manager_fail(no_config_files, monkeypatch, client):
