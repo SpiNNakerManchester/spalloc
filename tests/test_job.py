@@ -16,7 +16,7 @@ import platform
 import time
 from threading import Thread, Event
 import pytest
-from mock import Mock, MagicMock
+from mock import Mock
 from spalloc_client import (
     Job, JobState, JobDestroyedError, ProtocolTimeoutError)
 from spalloc_client._keepalive_process import keep_job_alive
@@ -31,16 +31,16 @@ BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))
 @pytest.fixture
 def client(monkeypatch):
     # Mock out the client.
-    client = MagicMock()
+    client = Mock()
     client.version.return_value = GOOD_VERSION
     client.create_job.return_value = 123
 
     import spalloc_client.job
     monkeypatch.setattr(spalloc_client.job, "ProtocolClient",
-                        MagicMock(return_value=client))
+                        Mock(return_value=client))
     import spalloc_client._keepalive_process
     monkeypatch.setattr(spalloc_client._keepalive_process, "ProtocolClient",
-                        MagicMock(return_value=client))
+                        Mock(return_value=client))
     return client
 
 
