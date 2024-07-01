@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
+import platform
 import time
 from threading import Thread, Event
 import pytest
@@ -183,11 +183,11 @@ class TestKeepalive(object):
         time.sleep(0.55)
         event.set()
 
-        if os.system() =="Linux":
+        if platform.system() == "Linux":
             assert 4 <= len(client.job_keepalive.mock_calls) <= 6
-        elif os.system() =="Darwin": # Macos
-             assert 1 <= len(client.job_keepalive.mock_calls) <= 6
-        elif os.system() =="Windos": # Macos
+        elif platform.system() == "Darwin": # Macos
+            assert 1 <= len(client.job_keepalive.mock_calls) <= 6
+        elif platform.system() == "Windos": # Macos
             assert 4 <= len(client.job_keepalive.mock_calls) <= 6
         else:
             raise AttributeError()
@@ -207,7 +207,7 @@ class TestKeepalive(object):
 
         # Should have attempted a reconnect after a 0.1 + 0.2 second delay then
         # started sending keepalives as usual every 0.1 sec
-        if os.system() =="Linux":
+        if platform.system() == "Linux":
             assert 2 <= len(client.job_keepalive.mock_calls) <= 4
             assert len(client.connect.mock_calls) == 3
 
@@ -402,7 +402,7 @@ class TestWaitForStateChange(object):
         before = time.time()
         assert j.wait_for_state_change(2, timeout=0.2) == 2
         after = time.time()
-        if os.system() =="Linux":
+        if platform.system() == "Linux":
             assert 0.2 <= after - before < 0.3
 
         j.destroy()
