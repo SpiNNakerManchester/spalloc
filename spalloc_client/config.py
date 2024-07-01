@@ -105,7 +105,7 @@ DEFAULT_CONFIG = {
     "port": "22244",
     "keepalive": "60.0",
     "reconnect_delay": "5.0",
-    "timeout": "5.0",
+    "timeout": "10.0",
     "machine": "None",
     "tags": "None",
     "min_ratio": "0.333",
