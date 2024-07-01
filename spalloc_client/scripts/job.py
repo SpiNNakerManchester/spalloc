@@ -78,12 +78,14 @@ import argparse
 import sys
 from typing import Any, Dict
 
+from spinn_utilities.overrides import overrides
+
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
 from spalloc_client import ProtocolClient
 from spalloc_client._utils import render_timestamp
-from .support import Terminate, Script
+from spalloc_client.scripts.support import Terminate, Script
 
 
 def _state_name(mapping):
@@ -324,6 +326,7 @@ class ManageJobScript(Script):
             raise Terminate(3, msg)
         return job_ids[0]
 
+    @overrides(Script.get_parser)
     def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Manage running jobs.")
@@ -359,10 +362,12 @@ class ManageJobScript(Script):
         self.parser = parser
         return parser
 
+    @overrides(Script.verify_arguments)
     def verify_arguments(self, args: argparse.Namespace):
         if args.job_id is None and args.owner is None:
             self.parser.error("job ID (or --owner) not specified")
 
+    @overrides(Script.body)
     def body(self, client: ProtocolClient, args:  argparse.Namespace):
         jid = self.get_job_id(client, args)
 

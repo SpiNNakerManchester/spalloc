@@ -27,8 +27,9 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 from collections.abc import Sized
 import sys
-from typing import cast, Union
+from typing import Any, cast, Dict, Union
 
+from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, JobState, ProtocolClient
@@ -126,7 +127,8 @@ class ProcessListScript(Script):
     """
     An object form Job scripts.
     """
-    def get_parser(self, cfg):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)
@@ -165,12 +167,17 @@ class ProcessListScript(Script):
             finally:
                 print("")
 
-    def body(self, client, args):
+
+
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
             self.recurring(client, args)
         else:
             self.one_shot(client, args)
 
+    def verify_arguments(self, args: argparse.Namespace):
+        pass
 
 main = ProcessListScript()
 if __name__ == "__main__":  # pragma: no cover

@@ -34,7 +34,9 @@ import argparse
 import sys
 from typing import Any, Callable, cast, Dict, List
 
+from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray, JsonValue
+
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
@@ -249,7 +251,8 @@ class ListMachinesScript(Script):
         else:
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
-    def get_parser(self, cfg: Dict[str, Any]):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(
@@ -266,7 +269,8 @@ class ListMachinesScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    @overrides(Script.verify_arguments)
+    def verify_arguments(self, args: argparse.Namespace):
         # Fail if --detailed used without specifying machine
         if args.machine is None and args.detailed:
             self.parser.error(
@@ -303,7 +307,8 @@ class ListMachinesScript(Script):
             finally:
                 print("")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
             self.recurring(client, args)
         else:

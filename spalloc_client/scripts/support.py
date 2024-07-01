@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from argparse import ArgumentParser, Namespace
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
+from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 from spalloc_client import (
     config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
@@ -48,22 +50,24 @@ def version_verify(client: ProtocolClient, timeout: Optional[int]):
             2, f"Incompatible server version ({'.'.join(map(str, version))})")
 
 
-class Script(object):
+class Script(object, metaclass=AbstractBase):
     """ Base class of various Script Objects. """
     def __init__(self):
         self.client_factory = ProtocolClient
 
-    def get_parser(self, cfg):
+    def get_parser(self, cfg: Dict[str, Any]) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
         """
         raise NotImplementedError
 
-    def verify_arguments(self, args):
+    @abstractmethod
+    def verify_arguments(self, args: Namespace):
         """ Check the arguments for sanity and do any second-stage parsing\
             required.
         """
 
-    def body(self, client: ProtocolClient, args: List[str]):
+    @abstractmethod
+    def body(self, client: ProtocolClient, args: Namespace):
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
         """

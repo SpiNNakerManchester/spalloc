@@ -64,11 +64,15 @@ To query by chip coordinate of chips allocated to a job::
 
     spalloc-where-is --job-chip JOB_ID X Y
 """
-import sys
 import argparse
-from spalloc_client import __version__
+import sys
+from typing import Any, Dict
+
+from spinn_utilities.overrides import overrides
+
+from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import render_definitions
-from .support import Terminate, Script
+from spalloc_client.scripts.support import Terminate, Script
 
 
 class WhereIsScript(Script):
@@ -82,7 +86,8 @@ class WhereIsScript(Script):
         self.where_is_kwargs = None
         self.show_board_chip = None
 
-    def get_parser(self, cfg):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")
@@ -108,7 +113,8 @@ class WhereIsScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    @overrides(Script.verify_arguments)
+    def verify_arguments(self, args: argparse.Namespace):
         try:
             if args.board:
                 machine, x, y, z = args.board
@@ -147,7 +153,8 @@ class WhereIsScript(Script):
         except ValueError as e:
             self.parser.error(f"Error: {e}")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         # Ask the server
         location = client.where_is(**self.where_is_kwargs)
         if location is None:
