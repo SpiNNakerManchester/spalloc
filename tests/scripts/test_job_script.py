@@ -67,7 +67,7 @@ class TestShowJobInfo(object):
 
     def test_queued(self, capsys):
         t = Terminal(force=False)
-        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+        epoch = int(datetime.datetime( 1970, 1, 1, 0, 0, 0).timestamp())
 
         client = Mock()
         client.list_jobs.return_value = [
@@ -103,7 +103,7 @@ class TestShowJobInfo(object):
     @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
     def test_power_ready(self, capsys, state):
         t = Terminal(force=False)
-        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).timestamp())
 
         client = Mock()
         client.list_jobs.return_value = [

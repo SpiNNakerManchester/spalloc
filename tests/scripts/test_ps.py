@@ -54,7 +54,7 @@ def faux_render(monkeypatch):
 def test_render_job_list(machine, owner):
     t = Terminal(force=False)
 
-    epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+    epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).timestamp())
 
     jobs = [
         # A ready, powered-on job
