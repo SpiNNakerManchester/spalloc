@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import datetime
+from datetime import datetime
 import pytest
 from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client import JobState, ProtocolError
@@ -67,7 +67,9 @@ class TestShowJobInfo(object):
 
     def test_queued(self, capsys):
         t = Terminal(force=False)
-        epoch = int(datetime.datetime( 1970, 1, 1, 0, 0, 0).timestamp())
+        naive = datetime(2000, 1, 1, 0, 0, 0)
+        aware = naive.astimezone()
+        epoch = int(aware.timestamp())
 
         client = Mock()
         client.list_jobs.return_value = [
@@ -95,7 +97,7 @@ class TestShowJobInfo(object):
         assert out == ("    Job ID: 123\n"
                        "     Owner: me\n"
                        "     State: queued\n"
-                       "Start time: 01/01/1970 00:00:00\n"
+                       "Start time: 01/01/2000 00:00:00\n"
                        " Keepalive: 60.0\n"
                        "   Request: Job(3, 2, 1,\n"
                        "                tags=['bar'])\n")
@@ -103,7 +105,9 @@ class TestShowJobInfo(object):
     @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
     def test_power_ready(self, capsys, state):
         t = Terminal(force=False)
-        epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).timestamp())
+        naive = datetime(2000, 1, 1, 0, 0, 0)
+        aware = naive.astimezone()
+        epoch = int(aware.timestamp())
 
         client = Mock()
         client.list_jobs.return_value = [
@@ -135,7 +139,7 @@ class TestShowJobInfo(object):
         assert out == ("     Job ID: 123\n"
                        "      Owner: me\n"
                        "      State: " + state.name + "\n"
-                       " Start time: 01/01/1970 00:00:00\n"
+                       " Start time: 01/01/2000 00:00:00\n"
                        "  Keepalive: 60.0\n"
                        "    Request: Job(3, 2, 1,\n"
                        "                 tags=['bar'])\n"
