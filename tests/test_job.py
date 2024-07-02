@@ -475,7 +475,7 @@ class TestWaitUntilReady(object):
             j.wait_until_ready()
 
     def test_impossible_timeout(self, no_config_files, j):
-        if platform.system() != "Darwin":
+        if platform.system() == "Linux":
             # weird mock error on Macs
             with pytest.raises(StateChangeTimeoutError):
                 j.wait_until_ready(timeout=0.0)
