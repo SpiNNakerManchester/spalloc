@@ -40,7 +40,7 @@ def make_timeout(delay_seconds):
     return time.time() + delay_seconds
 
 
-def render_timestamp(timestamp):
+def render_timestamp(timestamp) -> str:
     """ Convert a timestamp (Unix seconds) into a local human-readable\
         timestamp string.
     """

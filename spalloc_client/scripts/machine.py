@@ -32,11 +32,16 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from spalloc_client import __version__
+from typing import Any, Callable, cast, Dict, List
+
+from spinn_utilities.overrides import overrides
+from spinn_utilities.typing.json import JsonObjectArray
+
+from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
-    DEFAULT_BOARD_EDGES)
-from .support import Terminate, Script
+    DEFAULT_BOARD_EDGES, TableRow, TableType)
+from spalloc_client.scripts.support import Terminate, Script
 
 
 def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
@@ -52,7 +57,8 @@ def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
             yield prefix + symbol
 
 
-def list_machines(t, machines, jobs):
+def list_machines(t: Terminal, machines: JsonObjectArray,
+                  jobs: JsonObjectArray):
     """ Display a table summarising the available machines and their load.
 
     Parameters
@@ -72,7 +78,7 @@ def list_machines(t, machines, jobs):
     for job in jobs:
         machine_jobs[job["allocated_machine_name"]].append(job)
 
-    table = [[
+    table: TableType = [[
         (t.underscore_bright, "Name"),
         (t.underscore_bright, "Num boards"),
         (t.underscore_bright, "In-use"),
@@ -81,14 +87,16 @@ def list_machines(t, machines, jobs):
     ]]
 
     for machine in machines:
+        name = cast(str, machine["name"])
+        boards = (((cast(int, machine["width"])) *
+                   cast(int, machine["height"]) * 3) -
+                  len(cast(list, machine["dead_boards"])))
+        in_use = sum(len(cast(list, job["boards"]))
+                     for job in cast(dict, machine_jobs[machine["name"]]))
+        the_jobs = len(machine_jobs[machine["name"]])
+        tags = ", ".join(cast(list, machine["tags"]))
         table.append([
-            machine["name"],
-            ((machine["width"] * machine["height"] * 3) -
-             len(machine["dead_boards"])),
-            sum(len(job["boards"]) for job in machine_jobs[machine["name"]]),
-            len(machine_jobs[machine["name"]]),
-            ", ".join(machine["tags"]),
-        ])
+            name, boards, in_use, the_jobs, tags])
 
     print(render_table(table))
 
@@ -98,10 +106,11 @@ def _get_machine(machines, machine_name):
         if machine["name"] == machine_name:
             return machine
     # No matching machine
-    raise Terminate(6, "No machine '{}' was found", machine_name)
+    raise Terminate(6, f"No machine '{machine_name}' was found")
 
 
-def show_machine(t, machines, jobs, machine_name, compact=False):
+def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
+                 machine_name: str, compact: bool = False):
     """ Display a more detailed overview of an individual machine.
 
     Parameters
@@ -128,7 +137,7 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
     machine = _get_machine(machines, machine_name)
 
     # Extract list of jobs running on the machine
-    displayed_jobs = []
+    displayed_jobs: List[Dict[str, Any]] = []
     job_key_generator = iter(generate_keys())
     job_colours = [
         t.green, t.blue, t.magenta, t.yellow, t.cyan,
@@ -140,24 +149,26 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
         if job["allocated_machine_name"] == machine_name:
             displayed_jobs.append(job)
             job["key"] = next(job_key_generator)
-            job["colour"] = job_colours[job["job_id"] % len(job_colours)]
+            job["colour"] = job_colours[
+                cast(int, job["job_id"]) % len(job_colours)]
 
     # Calculate machine stats
     num_boards = ((machine["width"] * machine["height"] * 3) -
                   len(machine["dead_boards"]))
-    num_in_use = sum(map(len, (job["boards"] for job in displayed_jobs)))
+    num_in_use = sum(map(len, (cast(list, job["boards"])
+                               for job in displayed_jobs)))
 
     # Show general machine information
     info = dict()
     info["Name"] = machine["name"]
     info["Tags"] = ", ".join(machine["tags"])
-    info["In-use"] = "{} of {}".format(num_in_use, num_boards)
+    info["In-use"] = f"{num_in_use} of {num_boards}"
     info["Jobs"] = len(displayed_jobs)
     print(render_definitions(info))
 
     # Draw diagram of machine
     dead_boards = set((x, y, z) for x, y, z in machine["dead_boards"])
-    board_groups = [(set([(x, y, z)
+    board_groups = [(list([(x, y, z)
                           for x in range(machine["width"])
                           for y in range(machine["height"])
                           for z in range(3)
@@ -166,56 +177,69 @@ def show_machine(t, machines, jobs, machine_name, compact=False):
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)),  # Inner
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)))]  # Outer
     for job in displayed_jobs:
+        boards_list = job["boards"]
+        assert isinstance(boards_list, list)
+        boards = []
+        for board in boards_list:
+            assert isinstance(board, list)
+            (x, y, z) = board
+            boards.append((cast(int, x), cast(int, y), cast(int, z)))
+        colour_func = cast(Callable, job["colour"])
         board_groups.append((
-            job["boards"],
-            job["colour"](job["key"].center(3)),  # Label
-            tuple(map(job["colour"], DEFAULT_BOARD_EDGES)),  # Inner
+            boards,
+            colour_func(cast(str, job["key"]).center(3)),  # Label
+            tuple(map(colour_func, DEFAULT_BOARD_EDGES)),  # Inner
             tuple(map(t.bright, DEFAULT_BOARD_EDGES))  # Outer
         ))
     print("")
     print(render_boards(board_groups, machine["dead_links"],
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
-
     # Produce table showing jobs on machine
     if compact:
         # In compact mode, produce column-aligned cells
         cells = []
         for job in displayed_jobs:
-            key = job["key"]
+            key = cast(str, job["key"])
             job_id = str(job["job_id"])
             cells.append((len(key) + len(job_id) + 1,
-                         "{}:{}".format(job["colour"](key), job_id)))
+                         f"{cast(Callable, job['colour'])(key)}:{job_id}"))
         print("")
         print(render_cells(cells))
     else:
         # In non-compact mode, produce a full table of job information
-        job_table = [[
+        job_table: TableType = [[
             (t.underscore_bright, "Key"),
             (t.underscore_bright, "Job ID"),
             (t.underscore_bright, "Num boards"),
             (t.underscore_bright, "Owner (Host)"),
         ]]
         for job in displayed_jobs:
-            owner = job["owner"]
+            owner = str(job["owner"])
             if "keepalivehost" in job and job["keepalivehost"] is not None:
-                owner += " (%s)" % job["keepalivehost"]
-            job_table.append([
-                (job["colour"], job["key"]),
-                job["job_id"],
-                len(job["boards"]),
+                owner += f" {job['keepalivehost']}"
+            table_row: TableRow = [
+                (cast(Callable, job["colour"]), cast(str, job["key"])),
+                cast(int, job["job_id"]),
+                len(cast(list, job["boards"])),
                 owner,
-            ])
+            ]
+            job_table.append(table_row)
         print("")
         print(render_table(job_table))
 
 
 class ListMachinesScript(Script):
+    """
+    A Script object to get information from a spalloc machine.
+    """
 
     def __init__(self):
         super().__init__()
         self.parser = None
 
-    def get_and_display_machine_info(self, client, args, t):
+    def get_and_display_machine_info(self, client: ProtocolClient,
+                                     args: argparse.Namespace, t: Terminal):
+        """ Gets and displays info for the machine(s) """
         # Get all information
         machines = client.list_machines(timeout=args.timeout)
         jobs = client.list_jobs(timeout=args.timeout)
@@ -226,7 +250,8 @@ class ListMachinesScript(Script):
         else:
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
-    def get_parser(self, cfg):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(
@@ -243,18 +268,25 @@ class ListMachinesScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    @overrides(Script.verify_arguments)
+    def verify_arguments(self, args: argparse.Namespace):
         # Fail if --detailed used without specifying machine
         if args.machine is None and args.detailed:
             self.parser.error(
                 "--detailed only works when a specific machine is specified")
 
-    def one_shot(self, client, args):
+    def one_shot(self,  client: ProtocolClient, args: argparse.Namespace):
+        """
+        Display the machine info once
+        """
         t = Terminal()
         # Get all information and display accordingly
         self.get_and_display_machine_info(client, args, t)
 
-    def recurring(self, client, args):
+    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
+        """
+        Repeatedly display the machine info
+        """
         t = Terminal()
         while True:
             client.notify_machine(args.machine, timeout=args.timeout)
@@ -274,7 +306,8 @@ class ListMachinesScript(Script):
             finally:
                 print("")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
             self.recurring(client, args)
         else:

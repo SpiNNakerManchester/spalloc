@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client.term import Terminal
 from spalloc_client.scripts.machine import (
     main, generate_keys, list_machines, show_machine)

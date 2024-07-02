@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import collections
-import datetime
-from mock import Mock, MagicMock
+from datetime import datetime
+from mock import Mock, MagicMock  # type: ignore[import]
 import pytest
 from spalloc_client.scripts.ps import main, render_job_list
 from spalloc_client.scripts.support import (
@@ -54,7 +54,9 @@ def faux_render(monkeypatch):
 def test_render_job_list(machine, owner):
     t = Terminal(force=False)
 
-    epoch = int(datetime.datetime(1970, 1, 1, 0, 0, 0).strftime("%s"))
+    naive = datetime(2000, 1, 1, 0, 0, 0)
+    aware = naive.astimezone()
+    epoch = int(aware.timestamp())
 
     jobs = [
         # A ready, powered-on job
@@ -161,18 +163,18 @@ def test_render_job_list(machine, owner):
     nt = collections.namedtuple("args", "machine,owner")
     assert render_job_list(t, jobs, nt(machine, owner)) == (
         "ID  State  Power  Boards  Machine  Created at           Keepalive  Owner (Host)\n" +  # noqa
-        (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me\n"      # noqa
+        (" 1  ready  on          1  a        01/01/2000 00:00:00  60.0       me\n"      # noqa
          if not owner else "") +
-        (" 1  ready  on          1  a        01/01/1970 00:00:00  60.0       me (1.2.3.4)\n"  # noqa
+        (" 1  ready  on          1  a        01/01/2000 00:00:00  60.0       me (1.2.3.4)\n"  # noqa
          if not owner else "") +
-        (" 2  ready  off         1  b        01/01/1970 00:00:00  60.0       me\n"      # noqa
+        (" 2  ready  off         1  b        01/01/2000 00:00:00  60.0       me\n"      # noqa
          if not owner and not machine else "") +
-        " 3  power  on          1  a        01/01/1970 00:00:00  60.0       you\n" +    # noqa
-        (" 4  power  off         1  b        01/01/1970 00:00:00  60.0       you\n"     # noqa
+        " 3  power  on          1  a        01/01/2000 00:00:00  60.0       you\n" +    # noqa
+        (" 4  power  off         1  b        01/01/2000 00:00:00  60.0       you\n"     # noqa
          if not machine else "") +
-        (" 5  queue                          01/01/1970 00:00:00  60.0       me\n"      # noqa
+        (" 5  queue                          01/01/2000 00:00:00  60.0       me\n"      # noqa
          if not owner and not machine else "") +
-        (" 6  -1                             01/01/1970 00:00:00  None       you"       # noqa
+        (" 6  -1                             01/01/2000 00:00:00  None       you"       # noqa
          if not machine else "")
     ).rstrip()
 

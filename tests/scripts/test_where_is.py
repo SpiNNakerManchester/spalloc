@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import pytest
-from mock import Mock, MagicMock
+from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client.scripts.where_is import main
 from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP)

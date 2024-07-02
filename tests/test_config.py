@@ -16,7 +16,7 @@ import tempfile
 import shutil
 import os.path
 import pytest
-from spalloc_client.config import read_config
+from spalloc_client.config import read_config, TIMEOUT
 
 
 @pytest.yield_fixture
@@ -62,7 +62,7 @@ def test_priority(tempdir):
      ("keepalive", "3.0", 3.0),
      ("reconnect_delay", None, 5.0),
      ("reconnect_delay", "3.0", 3.0),
-     ("timeout", None, 5.0),
+     ("timeout", None, TIMEOUT),
      ("timeout", "None", None),
      ("timeout", "3.0", 3.0),
      ("machine", None, None),

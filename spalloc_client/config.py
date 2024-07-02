@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ The spalloc command-line tool and Python library determine their default
 configuration options from a spalloc configuration file if present.
 
@@ -62,7 +63,7 @@ options available (and the default value).
     The name of a specific machine on which to run all jobs or None to use any
     available machine. (Default: None)
 ``tags``
-    The set of tags, comma seperated, to require a machine to have when
+    The set of tags, comma separated, to require a machine to have when
     allocating jobs. (Default: default)
 ``min_ratio``
     Require that when allocating a number of boards the allocation is at least
@@ -78,9 +79,11 @@ options available (and the default value).
     requires the allocation of a whole machine. If False, wrap-around links may
     or may-not be present in allocated machines. (Default: False)
 """
-import os.path
-import appdirs
 import configparser
+import os.path
+from typing import Any, Dict, List, Optional
+
+import appdirs
 
 # The application name to use in config file names
 _name = "spalloc"
@@ -88,7 +91,7 @@ _name = "spalloc"
 # Standard config file names/locations
 SYSTEM_CONFIG_FILE = appdirs.site_config_dir(_name)
 USER_CONFIG_FILE = appdirs.user_config_dir(_name)
-CWD_CONFIG_FILE = os.path.join(os.curdir, ".{}".format(_name))
+CWD_CONFIG_FILE = os.path.join(os.curdir, f".{_name}")
 
 # Search path for config files (lowest to highest priority)
 SEARCH_PATH = [
@@ -97,12 +100,14 @@ SEARCH_PATH = [
     CWD_CONFIG_FILE,
 ]
 
+TIMEOUT = 10.0
+
 SECTION = "spalloc"
 DEFAULT_CONFIG = {
     "port": "22244",
     "keepalive": "60.0",
     "reconnect_delay": "5.0",
-    "timeout": "5.0",
+    "timeout": str(TIMEOUT),
     "machine": "None",
     "tags": "None",
     "min_ratio": "0.333",
@@ -137,7 +142,7 @@ def _read_none_or_str(parser, option):
     return parser.get(SECTION, option)
 
 
-def read_config(filenames=None):
+def read_config(filenames: Optional[List[str]] = None) -> Dict[str, Any]:
     """ Attempt to read local configuration files to determine spalloc client
     settings.
 

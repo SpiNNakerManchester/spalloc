@@ -19,20 +19,27 @@ a real-time monitor of queued and running jobs, the ``--watch`` option may be
 added.
 
 .. image:: _static/spalloc_ps.png
-    :alt: Jobs being listed by spalloc-ps
+    :alt: Jobs being listed by spalloc- process scripts
 
 This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
 import argparse
+from collections.abc import Sized
 import sys
-from spalloc_client import __version__, JobState
-from spalloc_client.term import Terminal, render_table
+from typing import Any, cast, Dict, Union
+
+from spinn_utilities.overrides import overrides
+from spinn_utilities.typing.json import JsonObjectArray
+
+from spalloc_client import __version__, JobState, ProtocolClient
+from spalloc_client.term import Terminal, render_table, TableColumn, TableType
 from spalloc_client._utils import render_timestamp
 from .support import Script
 
 
-def render_job_list(t, jobs, args):
+def render_job_list(t: Terminal, jobs: JsonObjectArray,
+                    args: argparse.Namespace):
     """ Return a human-readable process listing.
 
     Parameters
@@ -46,7 +53,7 @@ def render_job_list(t, jobs, args):
     owner : str or None
         If not None, only list jobs with this owner.
     """
-    table = []
+    table: TableType = []
 
     # Add headings
     table.append(((t.underscore_bright, "ID"),
@@ -67,6 +74,7 @@ def render_job_list(t, jobs, args):
             continue
 
         # Colourise job states
+        job_state: TableColumn
         if job["state"] == JobState.queued:
             job_state = (t.blue, "queue")
         elif job["state"] == JobState.power:
@@ -77,6 +85,7 @@ def render_job_list(t, jobs, args):
             job_state = str(job["state"])
 
         # Colourise power states
+        power_state: TableColumn
         if job["power"] is not None:
             power_state = (t.green, "on") if job["power"] else (t.red, "off")
             if job["state"] == JobState.power:
@@ -84,22 +93,25 @@ def render_job_list(t, jobs, args):
         else:
             power_state = ""
 
-        num_boards = "" if job["boards"] is None else len(job["boards"])
-
+        num_boards: Union[int, str]
+        if isinstance(job["boards"],  Sized):
+            num_boards = len(job["boards"])
+        else:
+            num_boards = ""
         # Format start time
         timestamp = render_timestamp(job["start_time"])
 
         if job["allocated_machine_name"] is not None:
-            machine_name = job["allocated_machine_name"]
+            machine_name = str(job["allocated_machine_name"])
         else:
             machine_name = ""
 
-        owner = job["owner"]
+        owner = str(job["owner"])
         if "keepalivehost" in job and job["keepalivehost"] is not None:
-            owner += " (%s)" % job["keepalivehost"]
+            owner += f" ({job['keepalivehost']})"
 
         table.append((
-            job["job_id"],
+            cast(int, job["job_id"]),
             job_state,
             power_state,
             num_boards,
@@ -112,7 +124,11 @@ def render_job_list(t, jobs, args):
 
 
 class ProcessListScript(Script):
-    def get_parser(self, cfg):
+    """
+    An object form Job scripts.
+    """
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)
@@ -127,12 +143,14 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client, args):
+    def one_shot(self, client: ProtocolClient, args: argparse.Namespace):
+        """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
         print(render_job_list(t, jobs, args))
 
-    def recurring(self, client, args):
+    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
+        """ Repeatedly gets info on the job list. """
         client.notify_job(timeout=args.timeout)
         t = Terminal(stream=sys.stderr)
         while True:
@@ -149,11 +167,15 @@ class ProcessListScript(Script):
             finally:
                 print("")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         if args.watch:
             self.recurring(client, args)
         else:
             self.one_shot(client, args)
+
+    def verify_arguments(self, args: argparse.Namespace):
+        pass
 
 
 main = ProcessListScript()

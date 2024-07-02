@@ -15,18 +15,21 @@
 import os
 import tempfile
 import pytest
-from mock import Mock, PropertyMock
+from mock import Mock, PropertyMock  # type: ignore[import]
 from spalloc_client import JobState, JobDestroyedError
 from spalloc_client.scripts.alloc import (
     write_ips_to_csv, print_info, run_command, main)
-# pylint: disable=redefined-outer-name, unused-argument
 
 
 @pytest.yield_fixture
 def filename():
     _, filename = tempfile.mkstemp()
     yield filename
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except PermissionError:
+        # Does not work on Windows! Used by another process
+        pass
 
 
 @pytest.fixture

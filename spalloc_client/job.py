@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from spalloc_client.scripts.support import (
-    VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 # A high-level Python interface for allocating SpiNNaker boards.
 
@@ -21,6 +19,10 @@ import logging
 import subprocess
 import time
 import sys
+
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START, VERSION_RANGE_STOP)
+
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .config import read_config, SEARCH_PATH
 from .states import JobState
@@ -28,6 +30,7 @@ from ._utils import time_left, timed_out, make_timeout
 
 logger = logging.getLogger(__name__)
 
+# pylint: disable=wrong-spelling-in-docstring
 # In Python 2, no default handler exists for software which doesn't configure
 # its own logging so we must add one ourselves as per
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
@@ -267,11 +270,14 @@ class Job(object):
             job_state = self._get_state()
             if (job_state.state == JobState.unknown or
                     job_state.state == JobState.destroyed):
-                raise JobDestroyedError("Job {} does not exist: {}{}{}".format(
-                    resume_job_id,
-                    job_state.state.name,
-                    ": " if job_state.reason is not None else "",
-                    job_state.reason if job_state.reason is not None else ""))
+                if job_state.reason is not None:
+                    reason = job_state.reason
+                else:
+                    reason = ""
+                raise JobDestroyedError(
+                    f"Job {resume_job_id} does not exist: "
+                    f"{job_state.state.name}"
+                    f"{': ' if job_state.reason is not None else ''}{reason}")
 
             # Snag the keepalive interval from the job
             self._keepalive = job_state.keepalive
@@ -363,8 +369,7 @@ class Job(object):
         if not (VERSION_RANGE_START <= v_ints < VERSION_RANGE_STOP):
             self._client.close()
             raise ValueError(
-                "Server version {} is not compatible with this client.".format(
-                    v))
+                f"Server version {v} is not compatible with this client.")
 
     def _reconnect(self):
         """ Reconnect to the server and check version.
@@ -758,8 +763,7 @@ class _JobStateTuple(namedtuple("_JobStateTuple",
         reason the job was terminated.
     """
 
-    # Python 3.4 Workaround: https://bugs.python.org/issue24931
-    __slots__ = tuple()
+    __slots__ = ()
 
 
 class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
@@ -786,5 +790,4 @@ class _JobMachineInfoTuple(namedtuple("_JobMachineInfoTuple",
         None if none allocated yet.
     """
 
-    # Python 3.4 Workaround: https://bugs.python.org/issue24931
-    __slots__ = tuple()
+    __slots__ = ()

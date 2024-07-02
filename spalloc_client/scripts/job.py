@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# pylint: disable=wrong-spelling-in-docstring
 """ Command-line administrative job management interface.
 
 ``spalloc-job`` may be called with a job ID, or if no arguments supplied your
@@ -75,11 +76,16 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
+from typing import Any, Dict
+
+from spinn_utilities.overrides import overrides
+
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
+from spalloc_client import ProtocolClient
 from spalloc_client._utils import render_timestamp
-from .support import Terminate, Script
+from spalloc_client.scripts.support import Terminate, Script
 
 
 def _state_name(mapping):
@@ -136,8 +142,7 @@ def show_job_info(t, client, timeout, job_id):
         info["Request"] = "Job({}{}{})".format(
             ", ".join(map(str, args)),
             ",\n    " if args and kwargs else "",
-            ",\n    ".join("{}={!r}".format(k, v) for
-                           k, v in sorted(kwargs.items()))
+            ",\n    ".join(f"{k}={v!r}" for k, v in sorted(kwargs.items()))
         )
 
         if job["boards"] is not None:
@@ -241,9 +246,9 @@ def power_job(client, timeout, job_id, power):
                 raise Terminate(7) from exc
         else:
             # In an unknown state, perhaps the job was queued etc.
-            raise Terminate(8, "Error: Cannot power {} job {} in state {}",
-                            "on" if power else "off",
-                            job_id, _state_name(state))
+            raise Terminate(
+                8, (f"Error: Cannot power {'on' if power else 'off'} "
+                    f"job {job_id} in state {_state_name(state)}"))
 
 
 def list_ips(client, timeout, job_id):
@@ -267,10 +272,10 @@ def list_ips(client, timeout, job_id):
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = info["connections"]
     if connections is None:
-        raise Terminate(9, "Job {} is queued or does not exist", job_id)
+        raise Terminate(9, f"Job {job_id} is queued or does not exist")
     print("x,y,hostname")
     for ((x, y), hostname) in sorted(connections):
-        print("{},{},{}".format(x, y, hostname))
+        print(f"{x},{y},{hostname}")
 
 
 def destroy_job(client, timeout, job_id, reason=None):
@@ -296,26 +301,33 @@ def destroy_job(client, timeout, job_id, reason=None):
 
 
 class ManageJobScript(Script):
+    """
+    A tool for running Job scripts.
+    """
 
     def __init__(self):
         super().__init__()
         self.parser = None
 
-    def get_job_id(self, client, args):
+    def get_job_id(self, client: ProtocolClient, args: argparse.Namespace):
+        """
+    get a job for the owner named in the args
+        """
         if args.job_id is not None:
             return args.job_id
         # No Job ID specified, attempt to discover one
         jobs = client.list_jobs(timeout=args.timeout)
         job_ids = [job["job_id"] for job in jobs if job["owner"] == args.owner]
         if not job_ids:
-            raise Terminate(3, "Owner {} has no live jobs", args.owner)
+            raise Terminate(3, f"Owner {args.owner} has no live jobs")
         elif len(job_ids) > 1:
-            raise Terminate(3, "Ambiguous: {} has {} live jobs: {}",
-                            args.owner, len(job_ids),
-                            ", ".join(map(str, job_ids)))
+            msg = (f"Ambiguous: {args.owner} has {len(job_ids)} live jobs: "
+                   f"{', '.join(map(str, job_ids))}")
+            raise Terminate(3, msg)
         return job_ids[0]
 
-    def get_parser(self, cfg):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Manage running jobs.")
         parser.add_argument(
@@ -350,11 +362,13 @@ class ManageJobScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    @overrides(Script.verify_arguments)
+    def verify_arguments(self, args: argparse.Namespace):
         if args.job_id is None and args.owner is None:
             self.parser.error("job ID (or --owner) not specified")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args:  argparse.Namespace):
         jid = self.get_job_id(client, args)
 
         # Do as the user asked
@@ -369,7 +383,7 @@ class ManageJobScript(Script):
         elif args.destroy is not None:
             # Set default destruction message
             if args.destroy == "" and args.owner:
-                args.destroy = "Destroyed by {}".format(args.owner)
+                args.destroy = f"Destroyed by {args.owner}"
             destroy_job(client, args.timeout, jid, args.destroy)
         else:
             show_job_info(Terminal(), client, args.timeout, jid)
