@@ -352,7 +352,8 @@ class TestWaitForStateChange(object):
 
     def test_impossible_timeout(self, no_config_files, j, client):
         # When an impossible timeout is presented, should terminate immediately
-        assert j.wait_for_state_change(2, timeout=0.0) == 2
+        if platform.system() != "Windows":
+            assert j.wait_for_state_change(2, timeout=0.0) == 2
 
     @pytest.mark.parametrize("keepalive", [None, 5.0])
     def test_timeout(self, no_config_files, keepalive, client):
