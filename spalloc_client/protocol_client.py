@@ -17,13 +17,17 @@
 from collections import deque
 import errno
 import json
+import logging
 import socket
-from typing import Dict, List, Optional
 from threading import current_thread, RLock, local
+from typing import Dict, List, Optional
 
+from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray
 
 from spalloc_client._utils import time_left, timed_out, make_timeout
+
+logger = FormatAdapter(logging.getLogger(__name__))
 
 
 class ProtocolError(Exception):
@@ -374,6 +378,7 @@ class ProtocolClient(object):
         if "owner" not in kwargs:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
+        logger.info("create_job {} {}", str(args), str(kwargs))
         return self.call("create_job", *args, **kwargs)
 
     def job_keepalive(self, job_id: int,
