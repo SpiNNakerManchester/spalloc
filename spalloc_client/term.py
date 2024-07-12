@@ -21,13 +21,23 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
+from typing import Callable, Dict, Iterable, List, Tuple, Union
+from typing_extensions import TypeAlias
+
+# pylint: disable=wrong-spelling-in-docstring
+
+TableFunction: TypeAlias = Callable[[Union[int, str]], str]
+TableValue: TypeAlias = Union[int, str]
+TableColumn: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
+TableRow: TypeAlias = Iterable[TableColumn]
+TableType: TypeAlias = List[TableRow]
 
 
 class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
     """
-
+    # pylint: disable=invalid-name
     reset = 0
     bright = 1
     dim = 2
@@ -121,7 +131,7 @@ class Terminal(object):
         """
         return self("\033[2J\033[;H")
 
-    def update(self, string="", start_again=False):
+    def update(self, string: str = "", start_again: bool = False):
         """ Print before a line and it will replace the previous line prefixed\
             with :py:meth:`.update`.
 
@@ -149,8 +159,7 @@ class Terminal(object):
         """
         if not attrs:
             return ""
-        return self("\033[{}m".format(
-            ";".join(str(attr) for attr in attrs)))
+        return self(f"\033[{';'.join(str(attr) for attr in attrs)}m")
 
     def wrap(self, string=None, pre="", post=""):
         """ Wrap a string in the suppled pre and post strings or just print\
@@ -179,7 +188,7 @@ class Terminal(object):
                        post=self("\033[0m"))
 
 
-def render_table(table, column_sep="  "):
+def render_table(table: TableType, column_sep: str = "  "):
     """ Render an ASCII table with optional ANSI escape codes.
 
     An example table::
@@ -207,7 +216,7 @@ def render_table(table, column_sep="  "):
         The formatted table.
     """
     # Determine maximum column widths
-    column_widths = defaultdict(lambda: 0)
+    column_widths: Dict[int, int] = defaultdict(lambda: 0)
     for row in table:
         for i, column in enumerate(row):
             if isinstance(column, str):
@@ -215,14 +224,15 @@ def render_table(table, column_sep="  "):
             elif isinstance(column, int):
                 string = str(column)
             else:
-                _, string = column
+                string = str(column[1])
             column_widths[i] = max(len(str(string)), column_widths[i])
 
     # Render the table cells with padding [[str, ...], ...]
     out = []
     for row in table:
-        rendered_row = []
+        rendered_row: List[str] = []
         out.append(rendered_row)
+        f: TableFunction
         for i, column in enumerate(row):
             # Get string length and formatted string
             if isinstance(column, str):
@@ -233,16 +243,16 @@ def render_table(table, column_sep="  "):
                 string = str(column)
                 length = len(string)
                 right_align = True
-            elif isinstance(column[1], str):
-                f, string = column
-                length = len(string)
-                right_align = False
-                string = f(string)
-            elif isinstance(column[1], int):
-                f, string = column
-                length = len(str(string))
-                right_align = True
-                string = f(string)
+            else:
+                f = column[0]
+                value = column[1]
+                if isinstance(value, str):
+                    length = len(value)
+                    right_align = False
+                else:
+                    length = len(str(value))
+                    right_align = True
+                string = f(value)
 
             padding = " " * (column_widths[i] - length)
             if right_align:
@@ -254,7 +264,7 @@ def render_table(table, column_sep="  "):
     return "\n".join(column_sep.join(row).rstrip() for row in out)
 
 
-def render_definitions(definitions, seperator=": "):
+def render_definitions(definitions, separator=": "):
     """ Render a definition list.
 
     Such a list looks like this::
@@ -270,8 +280,8 @@ def render_definitions(definitions, seperator=": "):
     ----------
     definitions : :py:class:`collections.OrderedDict`
         The key/value set to display.
-    seperator : str
-        The seperator inserted between keys and values.
+    separator : str
+        The separator inserted between keys and values.
     """
     # Special case since max would fail
     if not definitions:
@@ -279,8 +289,8 @@ def render_definitions(definitions, seperator=": "):
 
     col_width = max(map(len, definitions))
     return "\n".join("{:>{}s}{}{}".format(
-        key, col_width, seperator, str(value).replace(
-            "\n", "\n{}".format(" "*(col_width + len(seperator)))))
+        key, col_width, separator, str(value).replace(
+            "\n", f"\n{' '*(col_width + len(separator))}"))
         for key, value in definitions.items())
 
 
@@ -383,7 +393,7 @@ def render_boards(board_groups, dead_links=frozenset(),
         Lists the groups of boards to display. Label is a 3-character string
         labelling the boards in the group, edge_inner and edge_outer are the
         characters to use to draw board edges as a tuple ("___", "\\", "/")
-        which are to be used for the inner and outer board edges repsectively.
+        which are to be used for the inner and outer board edges respectively.
         Board groups are drawn sequentially with later board groups obscuring
         earlier ones when their edges or boards overlap.
     dead_links : set([(x, y, z, link), ...])
@@ -393,10 +403,10 @@ def render_boards(board_groups, dead_links=frozenset(),
     dead_edge : ("___", "\\", "/")
         The strings to use to draw dead links.
     blank_label : "   "
-        The 3-character string to use to label non-existant boards. (Blank by
+        The 3-character string to use to label non-existent boards. (Blank by
         default)
     blank_edge : ("___", "\\", "/")
-        The characters to use to render non-existant board edges. (Blank by
+        The characters to use to render non-existent board edges. (Blank by
         default)
     """
     # pylint: disable=too-many-locals
@@ -407,11 +417,11 @@ def render_boards(board_groups, dead_links=frozenset(),
     board_edges = {}
 
     # The set of all boards defined (used to filter displaying of dead links to
-    # non-existant boards
+    # non-existent boards
     all_boards = set()
 
     for boards, label, edge_inner, edge_outer in board_groups:
-        # Convert to cartesian coords
+        # Convert to Cartesian coordinates
         boards = set(_board_to_cartesian(x, y, z) for x, y, z in boards)
         all_boards.update(boards)
 
@@ -458,7 +468,7 @@ def render_boards(board_groups, dead_links=frozenset(),
     #  .   /0 0\___/2 0\___/   0 Even
     #  .   \___/   \___/      -1 Odd
     # -1   0   1   2   3   4
-    #  Odd Evn Odd Evn Odd Evn
+    #  Odd Even Odd Even Odd Even
     out = []
     for y in range(y_max, y_min - 1, -1):
         even_row = (y % 2) == 0

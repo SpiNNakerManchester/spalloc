@@ -199,7 +199,7 @@ def test_render_definitions():
 
     # Alternative seperator
     assert render_definitions(dict([("foo", "bar")]),
-                              seperator="=") == "foo=bar"
+                              separator="=") == "foo=bar"
     # Linebreaks
     assert render_definitions({"Key": "Lines\nBroken\nUp."}) == (
         "Key: Lines\n"
