@@ -20,7 +20,11 @@ import json
 import logging
 import socket
 from threading import current_thread, RLock, local
+from typing import Dict, List, Optional
+
 from spinn_utilities.log import FormatAdapter
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray
+
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
 logger = FormatAdapter(logging.getLogger(__name__))
@@ -59,8 +63,9 @@ class ProtocolClient(object):
 
     This minimal implementation is intended to serve both simple applications
     and as an example implementation of the protocol for other applications.
-    This implementation simply implements the protocol, presenting an RPC-like
-    interface to the server. For a higher-level interface built on top of this
+    This implementation simply implements the protocol,
+    presenting a Remote procedure call-like interface to the server.
+    For a higher-level interface built on top of this
     client, see :py:class:`spalloc.Job`.
 
     Usage examples::
@@ -115,7 +120,7 @@ class ProtocolClient(object):
         self.close()
         return False
 
-    def _get_connection(self, timeout):
+    def _get_connection(self, timeout: Optional[int]) -> socket.socket:
         if self._dead:
             raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
@@ -140,7 +145,7 @@ class ProtocolClient(object):
         sock.settimeout(timeout)
         return sock
 
-    def _do_connect(self, sock):
+    def _do_connect(self, sock: socket.socket):
         success = False
         try:
             sock.connect((self._hostname, self._port))
@@ -150,10 +155,10 @@ class ProtocolClient(object):
                 raise
         return success
 
-    def _has_open_socket(self):
+    def _has_open_socket(self) -> bool:
         return self._local.sock is not None
 
-    def connect(self, timeout=None):
+    def connect(self, timeout: Optional[int] = None):
         """(Re)connect to the server.
 
         Raises
@@ -167,7 +172,7 @@ class ProtocolClient(object):
         self._dead = False
         self._connect(timeout)
 
-    def _connect(self, timeout):
+    def _connect(self, timeout: Optional[int]) -> socket.socket:
         """ Try to (re)connect to the server.
         """
         try:
@@ -201,7 +206,7 @@ class ProtocolClient(object):
             self._close(key)
         self._local = _ProtocolThreadLocal()
 
-    def _recv_json(self, timeout=None):
+    def _recv_json(self, timeout=None) -> JsonObject:
         """ Receive a line of JSON from the server.
 
         Parameters
@@ -360,10 +365,15 @@ class ProtocolClient(object):
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
 
-    def version(self, timeout=None):  # pragma: no cover
+    def version(self, timeout: Optional[int] = None) -> str:
+        """ Ask what version of spalloc is running. """
         return self.call("version", timeout=timeout)
 
-    def create_job(self, *args, **kwargs):  # pragma: no cover
+    def create_job(self, *args: List[object],
+                   **kwargs: Dict[str, object]) -> JsonObject:
+        """
+        Start a new job
+        """
         # If no owner, don't bother with the call
         if "owner" not in kwargs:
             raise SpallocServerException(
@@ -371,53 +381,80 @@ class ProtocolClient(object):
         logger.info("create_job {} {}", str(args), str(kwargs))
         return self.call("create_job", *args, **kwargs)
 
-    def job_keepalive(self, job_id, timeout=None):  # pragma: no cover
+    def job_keepalive(self, job_id: int,
+                      timeout: Optional[int] = None) -> JsonObject:
+        """
+        Send s message to keep the job alive.
+
+        Without these the job will be killed after a while.
+        """
         return self.call("job_keepalive", job_id, timeout=timeout)
 
-    def get_job_state(self, job_id, timeout=None):  # pragma: no cover
+    def get_job_state(self, job_id: int,
+                      timeout: Optional[int] = None) -> JsonObject:
+        """Get the state for this job """
         return self.call("get_job_state", job_id, timeout=timeout)
 
-    def get_job_machine_info(self, job_id, timeout=None):  # pragma: no cover
+    def get_job_machine_info(self, job_id: int,
+                             timeout: Optional[int] = None) -> JsonObject:
+        """ Get info for this job. """
         return self.call("get_job_machine_info", job_id, timeout=timeout)
 
-    def power_on_job_boards(self, job_id, timeout=None):  # pragma: no cover
+    def power_on_job_boards(self, job_id: int,
+                            timeout: Optional[int] = None) -> JsonObject:
+        """ Turn on the power on the jobs boards. """
         return self.call("power_on_job_boards", job_id, timeout=timeout)
 
-    def power_off_job_boards(self, job_id, timeout=None):  # pragma: no cover
+    def power_off_job_boards(self, job_id: int,
+                             timeout: Optional[int] = None) -> JsonObject:
+        """ Turn off the power on the jobs boards. """
         return self.call("power_off_job_boards", job_id, timeout=timeout)
 
-    def destroy_job(self, job_id, reason=None,
-                    timeout=None):  # pragma: no cover
+    def destroy_job(self, job_id: int, reason: Optional[str] = None,
+                    timeout: Optional[int] = None) -> JsonObject:
+        """ Destroy the job """
         return self.call("destroy_job", job_id, reason, timeout=timeout)
 
-    def notify_job(self, job_id=None, timeout=None):  # pragma: no cover
+    def notify_job(self, job_id: Optional[int] = None,
+                   timeout: Optional[int] = None) -> JsonObject:
+        """ Turn on notification of job status changes. """
         return self.call("notify_job", job_id, timeout=timeout)
 
-    def no_notify_job(self, job_id=None, timeout=None):  # pragma: no cover
+    def no_notify_job(self, job_id: Optional[int] = None,
+                      timeout: Optional[int] = None) -> JsonObject:
+        """ Turn off notification of job status changes. """
         return self.call("no_notify_job", job_id, timeout=timeout)
 
-    def notify_machine(self, machine_name=None,
-                       timeout=None):  # pragma: no cover
+    def notify_machine(self, machine_name: Optional[str] = None,
+                       timeout: Optional[int] = None) -> JsonObject:
+        """ Turn on notification of machine status changes. """
         return self.call("notify_machine", machine_name, timeout=timeout)
 
-    def no_notify_machine(self, machine_name=None,
-                          timeout=None):  # pragma: no cover
+    def no_notify_machine(self, machine_name: Optional[str] = None,
+                          timeout: Optional[int] = None) -> JsonObject:
+        """ Turn off notification of machine status changes. """
         return self.call("no_notify_machine", machine_name, timeout=timeout)
 
-    def list_jobs(self, timeout=None):  # pragma: no cover
+    def list_jobs(self, timeout: Optional[int] = None) -> JsonObjectArray:
+        """ Obtains a list of jobs currently running. """
         return self.call("list_jobs", timeout=timeout)
 
-    def list_machines(self, timeout=None):  # pragma: no cover
+    def list_machines(self,
+                      timeout: Optional[float] = None) -> JsonObjectArray:
+        """ Obtains a list of currently supported machines. """
         return self.call("list_machines", timeout=timeout)
 
-    def get_board_position(self, machine_name, x, y, z,
-                           timeout=None):  # pragma: no cover
+    def get_board_position(self, machine_name: str, x: int, y: int, z: int,
+                           timeout: Optional[int] = None):  # pragma: no cover
+        """ Gets the position of board x, y, z on the given machine. """
         # pylint: disable=too-many-arguments
         return self.call("get_board_position", machine_name, x, y, z,
                          timeout=timeout)
 
-    def get_board_at_position(self, machine_name, x, y, z,
-                              timeout=None):  # pragma: no cover
+    def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
+                              timeout: Optional[int] = None
+                              ) -> JsonObject:  # pragma: no cover
+        """ Gets the board x, y, z on the requested machine. """
         # pylint: disable=too-many-arguments
         return self.call("get_board_at_position", machine_name, x, y, z,
                          timeout=timeout)
@@ -428,11 +465,12 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, timeout=None, **kwargs):
+    def where_is(self, timeout: Optional[int] = None, **kwargs) -> JsonObject:
+        """ Reports where ion the Machine a job is running """
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)
         if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
             raise SpallocServerException(
-                "Invalid arguments: {}".format(", ".join(keywords)))
+                f"Invalid arguments: {', '.join(keywords)}")
         kwargs["timeout"] = timeout
         return self.call("where_is", **kwargs)

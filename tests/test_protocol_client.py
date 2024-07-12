@@ -17,7 +17,7 @@ import threading
 import time
 import logging
 import pytest
-from mock import Mock
+from mock import Mock  # type: ignore[import]
 from spalloc_client import (
     ProtocolClient, SpallocServerException, ProtocolTimeoutError,
     ProtocolError)

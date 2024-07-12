@@ -64,14 +64,21 @@ To query by chip coordinate of chips allocated to a job::
 
     spalloc-where-is --job-chip JOB_ID X Y
 """
-import sys
 import argparse
-from spalloc_client import __version__
+import sys
+from typing import Any, cast, Dict
+
+from spinn_utilities.overrides import overrides
+
+from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import render_definitions
-from .support import Terminate, Script
+from spalloc_client.scripts.support import Terminate, Script
 
 
 class WhereIsScript(Script):
+    """
+    An script object to find where a board is
+    """
 
     def __init__(self):
         super().__init__()
@@ -79,7 +86,8 @@ class WhereIsScript(Script):
         self.where_is_kwargs = None
         self.show_board_chip = None
 
-    def get_parser(self, cfg):
+    @overrides(Script.get_parser)
+    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")
@@ -105,7 +113,8 @@ class WhereIsScript(Script):
         self.parser = parser
         return parser
 
-    def verify_arguments(self, args):
+    @overrides(Script.verify_arguments)
+    def verify_arguments(self, args: argparse.Namespace):
         try:
             if args.board:
                 machine, x, y, z = args.board
@@ -142,25 +151,29 @@ class WhereIsScript(Script):
                 }
                 self.show_board_chip = True
         except ValueError as e:
-            self.parser.error("Error: {}".format(e))
+            self.parser.error(f"Error: {e}")
 
-    def body(self, client, args):
+    @overrides(Script.body)
+    def body(self, client: ProtocolClient, args: argparse.Namespace):
         # Ask the server
         location = client.where_is(**self.where_is_kwargs)
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
-        out = dict()
+        out: Dict[str, Any] = dict()
         out["Machine"] = location["machine"]
-        out["Physical location"] = "Cabinet {}, Frame {}, Board {}".format(
-            *location["physical"])
-        out["Board coordinate"] = tuple(location["logical"])
-        out["Machine chip coordinates"] = tuple(location["chip"])
+        cabinet, frame, board = cast(list, location["physical"])
+        out["Physical location"] = (
+            f"Cabinet {cabinet}, Frame {frame}, Board {board}")
+        out["Board coordinate"] = tuple(cast(list, location["logical"]))
+        out["Machine chip coordinates"] = tuple(cast(list, location["chip"]))
         if self.show_board_chip:
-            out["Coordinates within board"] = tuple(location["board_chip"])
+            out["Coordinates within board"] = tuple(
+                cast(list, location["board_chip"]))
         out["Job using board"] = location["job_id"]
         if location["job_id"]:
-            out["Coordinates within job"] = tuple(location["job_chip"])
+            out["Coordinates within job"] = tuple(
+                cast(list, location["job_chip"]))
         print(render_definitions(out))
 
 

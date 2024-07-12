@@ -22,6 +22,7 @@ class JobState(IntEnum):
     """ All the possible states that a job may be in.
     """
 
+    # pylint: disable=invalid-name
     unknown = 0
     """ The job ID requested was not recognised.
     """

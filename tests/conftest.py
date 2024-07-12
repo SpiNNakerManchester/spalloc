@@ -17,7 +17,7 @@ import sys
 import threading
 import tempfile
 import pytest
-from mock import Mock
+from mock import Mock  # type: ignore[import]
 from spalloc_client import ProtocolClient
 from spalloc_client.config import SEARCH_PATH
 from .common import MockServer
@@ -89,7 +89,11 @@ def basic_config_file(monkeypatch):
     yield
     del SEARCH_PATH[:]
     SEARCH_PATH.extend(before)
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except PermissionError:
+        # Does not work on Windows! Used by another process
+        pass
 
 
 @pytest.fixture
