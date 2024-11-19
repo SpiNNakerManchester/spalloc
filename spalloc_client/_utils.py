@@ -14,6 +14,7 @@
 
 from datetime import datetime
 import time
+from typing import Optional
 
 
 def time_left(timestamp):
@@ -32,7 +33,7 @@ def timed_out(timestamp):
     return timestamp < time.time()
 
 
-def make_timeout(delay_seconds):
+def make_timeout(delay_seconds: Optional[float]) -> Optional[float]:
     """ Convert a delay (in seconds) into a timestamp.
     """
     if delay_seconds is None:

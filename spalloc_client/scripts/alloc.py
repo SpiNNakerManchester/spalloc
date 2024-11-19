@@ -113,7 +113,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 from shlex import quote
 from spalloc_client import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
@@ -264,7 +264,8 @@ def info(msg: str) -> None:
         t.stream.write(f"{msg}\n")
 
 
-def update(msg: str, colour: functools.partial, *args: List[object]) -> None:
+def update(msg: str, colour: functools.partial,
+           *args: Union[int, str, List[object]]) -> None:
     """
     Writes a message to the terminal in the schoosen colour.
     """
@@ -431,7 +432,7 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
     return parser, parser.parse_args(argv)
 
 
-def run_job(job_args: List[str], job_kwargs: Dict[str, str],
+def run_job(job_args: List[int], job_kwargs: Dict[str, Any],
             ip_file_filename: str) -> int:
     """
     Run a job

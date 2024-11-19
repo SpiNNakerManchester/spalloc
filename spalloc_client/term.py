@@ -188,7 +188,7 @@ class Terminal(object):
                        post=self("\033[0m"))
 
 
-def render_table(table: TableType, column_sep: str = "  "):
+def render_table(table: TableType, column_sep: str = "  ") -> str:
     """ Render an ASCII table with optional ANSI escape codes.
 
     An example table::

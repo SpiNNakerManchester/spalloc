@@ -33,14 +33,14 @@ class Terminate(Exception):
         self._code = code
         self._msg = message
 
-    def exit(self):
+    def exit(self) -> None:
         """ Exit the program after printing an error msg. """
         if self._msg is not None:
             sys.stderr.write(self._msg + "\n")
         sys.exit(self._code)
 
 
-def version_verify(client: ProtocolClient, timeout: Optional[int]):
+def version_verify(client: ProtocolClient, timeout: Optional[int]) -> None:
     """
     Verify that the current version of the client is compatible
     """
@@ -52,7 +52,7 @@ def version_verify(client: ProtocolClient, timeout: Optional[int]):
 
 class Script(object, metaclass=AbstractBase):
     """ Base class of various Script Objects. """
-    def __init__(self):
+    def __init__(self) -> None:
         self.client_factory = ProtocolClient
 
     def get_parser(self, cfg: Dict[str, Any]) -> ArgumentParser:
@@ -61,7 +61,7 @@ class Script(object, metaclass=AbstractBase):
         raise NotImplementedError
 
     @abstractmethod
-    def verify_arguments(self, args: Namespace):
+    def verify_arguments(self, args: Namespace) -> None:
         """ Check the arguments for sanity and do any second-stage parsing\
             required.
         """
@@ -74,7 +74,7 @@ class Script(object, metaclass=AbstractBase):
         raise NotImplementedError
 
     def build_server_arg_group(self, server_args: Any,
-                               cfg: Dict[str, object]):
+                               cfg: Dict[str, object]) -> None:
         """
         Adds a few more arguments
 
@@ -95,12 +95,12 @@ class Script(object, metaclass=AbstractBase):
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
-    def __call__(self, argv=None):
+    def __call__(self) -> int:
         cfg = config.read_config()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)
-        args = parser.parse_args(argv)
+        args = parser.parse_args()
 
         # Fail if server not specified
         if args.hostname is None:
@@ -122,3 +122,5 @@ class Script(object, metaclass=AbstractBase):
             return 1
         except Terminate as t:
             t.exit()
+            return 1
+

@@ -18,7 +18,13 @@ from collections import namedtuple
 import logging
 import subprocess
 import time
+from types import TracebackType
+from typing import Any, cast, Dict, List, Optional, Tuple, Type
 import sys
+
+from typing_extensions import Literal, Self
+
+from spinn_utilities.typing.json import JsonArray
 
 from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP)
@@ -121,7 +127,7 @@ class Job(object):
         allocated.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: int, **kwargs: Dict[str, Any]):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
@@ -235,7 +241,8 @@ class Job(object):
             specified.)
         """
         # Read configuration
-        config_filenames = kwargs.pop("config_filenames", SEARCH_PATH)
+        config_filenames = cast(
+            list, kwargs.pop("config_filenames", SEARCH_PATH))
         config = read_config(config_filenames)
 
         # Get protocol client options
@@ -249,8 +256,7 @@ class Job(object):
             raise ValueError("A hostname must be specified.")
 
         # Cached responses of _get_state and _get_machine_info
-        self._last_state = None
-        self._last_machine_info = None
+        self._last_machine_info: Optional["_JobMachineInfoTuple"] = None
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
@@ -261,7 +267,7 @@ class Job(object):
         self._assert_compatible_version()
 
         # Resume/create the job
-        resume_job_id = kwargs.get("resume_job_id", None)
+        resume_job_id = cast(int, kwargs.get("resume_job_id", None))
         if resume_job_id:
             self.id = resume_job_id
 
@@ -317,13 +323,15 @@ class Job(object):
             logger.info("Created spalloc job %d", self.id)
 
         # Set-up and start background keepalive thread
-        self._keepalive_process = subprocess.Popen(map(str, [
-                sys.executable, "-m", "spalloc_client._keepalive_process",
-                hostname, port, self.id, self._keepalive, self._timeout,
-                self._reconnect_delay]), stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self._keepalive_process = subprocess.Popen(
+            [sys.executable, "-m", "spalloc_client._keepalive_process",
+             str(hostname), str(port), str(self.id), str(self._keepalive),
+             str(self._timeout), str(self._reconnect_delay)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         # Wait for it to announce that it is working
         stdout = self._keepalive_process.stdout
+        assert stdout is not None
         while not stdout.closed:
             line = stdout.readline().decode("utf-8").strip()
             if line == "KEEPALIVE":
@@ -334,7 +342,7 @@ class Job(object):
             if line:
                 raise ValueError(f"Keepalive process wrote odd line: {line}")
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """ Convenience context manager for common case where a new job is to
         be created and then destroyed once some code has executed.
 
@@ -356,11 +364,13 @@ class Job(object):
             self.destroy()
             raise
 
-    def __exit__(self, _type, _value, _traceback):
+    def __exit__(self, exc_type: Optional[Type],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> Literal[False]:
         self.destroy()
         return False
 
-    def _assert_compatible_version(self):
+    def _assert_compatible_version(self) -> None:
         """ Assert that the server version is compatible.
         """
         v = self._client.version(timeout=self._timeout)
@@ -388,7 +398,7 @@ class Job(object):
                 "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
-    def destroy(self, reason=None):
+    def destroy(self, reason: Optional[str] = None) -> None:
         """ Destroy the job and disconnect from the server.
 
         Parameters
@@ -407,7 +417,7 @@ class Job(object):
 
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """ Disconnect from the server and stop keeping the job alive.
 
         .. warning::
@@ -425,7 +435,7 @@ class Job(object):
         # Disconnect
         self._client.close()
 
-    def _get_state(self):
+    def _get_state(self) -> "_JobStateTuple":
         """ Get the state of the job.
 
         Returns
@@ -434,12 +444,12 @@ class Job(object):
         """
         state = self._client.get_job_state(self.id, timeout=self._timeout)
         return _JobStateTuple(
-            state=JobState(state["state"]),
+            state=JobState(cast(int, state["state"])),
             power=state["power"],
             keepalive=state["keepalive"],
             reason=state["reason"])
 
-    def set_power(self, power):
+    def set_power(self, power: bool) -> None:
         """ Turn the boards allocated to the job on or off.
 
         Does nothing if the job has not yet been allocated any boards.
@@ -458,7 +468,7 @@ class Job(object):
         else:
             self._client.power_off_job_boards(self.id, timeout=self._timeout)
 
-    def reset(self):
+    def reset(self) -> None:
         """ Reset (power-cycle) the boards allocated to the job.
 
         Does nothing if the job has not been allocated.
@@ -468,7 +478,7 @@ class Job(object):
         """
         self.set_power(True)
 
-    def _get_machine_info(self):
+    def _get_machine_info(self) -> "_JobMachineInfoTuple":
         """ Get information about the boards allocated to the job, e.g. the IPs
         and system dimensions.
 
@@ -479,39 +489,37 @@ class Job(object):
         info = self._client.get_job_machine_info(
             self.id, timeout=self._timeout)
 
+        info_connections = cast(list, info["connections"])
         return _JobMachineInfoTuple(
             width=info["width"],
             height=info["height"],
             connections=({(x, y): hostname
-                          for (x, y), hostname in info["connections"]}
-                         if info["connections"] is not None
+                          for (x, y), hostname in info_connections}
+                         if info_connections is not None
                          else None),
             machine_name=info["machine_name"],
             boards=info["boards"])
 
     @property
-    def state(self):
+    def state(self) -> JobState:
         """ The current state of the job.
         """
-        self._last_state = self._get_state()
-        return self._last_state.state
+        return self._get_state().state
 
     @property
-    def power(self):
+    def power(self) -> int:
         """ Are the boards powered/powering on or off?
         """
-        self._last_state = self._get_state()
-        return self._last_state.power
+        return self._get_state().power
 
     @property
-    def reason(self):
+    def reason(self) -> str:
         """ For what reason was the job destroyed (if any and if destroyed).
         """
-        self._last_state = self._get_state()
-        return self._last_state.reason
+        return self._get_state().reason
 
     @property
-    def connections(self):
+    def connections(self) -> Dict[Tuple[int, int], str]:
         """ The list of Ethernet connected chips and their IPs.
 
         Returns
@@ -527,13 +535,13 @@ class Job(object):
         return self._last_machine_info.connections
 
     @property
-    def hostname(self):
+    def hostname(self) -> Optional[str]:
         """ The hostname of chip 0, 0 (or None if not allocated yet).
         """
         return self.connections[(0, 0)]
 
     @property
-    def width(self):
+    def width(self) -> int:
         """ The width of the allocated machine in chips (or None).
         """
         # Note that the dimensions of a job will never change once defined so
@@ -545,7 +553,7 @@ class Job(object):
         return self._last_machine_info.width
 
     @property
-    def height(self):
+    def height(self) -> int:
         """ The height of the allocated machine in chips (or None).
         """
         # Note that the dimensions of a job will never change once defined so
@@ -557,7 +565,7 @@ class Job(object):
         return self._last_machine_info.height
 
     @property
-    def machine_name(self):
+    def machine_name(self) -> str:
         """ The name of the machine the job is allocated on (or None).
         """
         # Note that the machine will never change once defined so only need to
@@ -569,7 +577,7 @@ class Job(object):
         return self._last_machine_info.machine_name
 
     @property
-    def boards(self):
+    def boards(self) -> Optional[JsonArray]:
         """ The coordinates of the boards allocated for the job (or None).
         """
         # Note that the machine will never change once defined so only need to
@@ -580,7 +588,8 @@ class Job(object):
 
         return self._last_machine_info.boards
 
-    def wait_for_state_change(self, old_state, timeout=None):
+    def wait_for_state_change(self, old_state: JobState,
+                              timeout: Optional[int] = None) -> JobState:
         """ Block until the job's state changes from the supplied state.
 
         Parameters
@@ -626,7 +635,7 @@ class Job(object):
         # return the old state
         return old_state
 
-    def _do_wait_for_a_change(self, finish_time):
+    def _do_wait_for_a_change(self, finish_time: Optional[float]) -> bool:
         """ Wait for a state change and keep the job alive.
         """
         # Since we're about to block holding the client lock, we must be
@@ -656,7 +665,7 @@ class Job(object):
         # The user's timeout expired while waiting for a state change
         return False
 
-    def _do_reconnect(self, finish_time):
+    def _do_reconnect(self, finish_time: Optional[float]) -> None:
         """ Reconnect after the reconnection delay (or timeout, whichever
         came first).
         """
@@ -668,7 +677,7 @@ class Job(object):
         time.sleep(max(0.0, delay))
         self._reconnect()
 
-    def wait_until_ready(self, timeout=None):
+    def wait_until_ready(self, timeout:Optional[int] = None) -> None:
         """ Block until the job is allocated and ready.
 
         Parameters
@@ -715,7 +724,8 @@ class Job(object):
         # Timed out!
         raise StateChangeTimeoutError()
 
-    def where_is_machine(self, chip_x, chip_y):
+    def where_is_machine(
+            self, chip_x: int, chip_y: int) -> Tuple[int, int, int]:
         """ Locates and returns cabinet, frame, board for a given chip in a\
         machine allocated to this job.
 
@@ -727,8 +737,8 @@ class Job(object):
             job_id=self.id, chip_x=chip_x, chip_y=chip_y)
         if result is None:
             raise ValueError("received None instead of machine location")
-        return result['physical']
-
+        [cabinet, frame, board] = cast(list, result['physical'])
+        return (cast(int, cabinet), cast(int, frame), cast(int, board))
 
 class StateChangeTimeoutError(Exception):
     """ Thrown when a state change takes too long to occur.

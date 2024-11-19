@@ -116,7 +116,7 @@ class ProtocolClient(object):
         self.close()
         return False
 
-    def _get_connection(self, timeout: Optional[int]) -> socket.socket:
+    def _get_connection(self, timeout: Optional[float]) -> socket.socket:
         if self._dead:
             raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
@@ -154,7 +154,7 @@ class ProtocolClient(object):
     def _has_open_socket(self) -> bool:
         return self._local.sock is not None
 
-    def connect(self, timeout: Optional[int] = None):
+    def connect(self, timeout: Optional[float] = None):
         """(Re)connect to the server.
 
         Raises
@@ -168,7 +168,7 @@ class ProtocolClient(object):
         self._dead = False
         self._connect(timeout)
 
-    def _connect(self, timeout: Optional[int]) -> socket.socket:
+    def _connect(self, timeout: Optional[float]) -> socket.socket:
         """ Try to (re)connect to the server.
         """
         try:
@@ -202,7 +202,7 @@ class ProtocolClient(object):
             self._close(key)
         self._local = _ProtocolThreadLocal()
 
-    def _recv_json(self, timeout=None) -> JsonObject:
+    def _recv_json(self, timeout:Optional[float]=None) -> JsonObject:
         """ Receive a line of JSON from the server.
 
         Parameters
@@ -242,7 +242,7 @@ class ProtocolClient(object):
         line, _, self._local.buffer = self._local.buffer.partition(b"\n")
         return json.loads(line.decode("utf-8"))
 
-    def _send_json(self, obj, timeout=None):
+    def _send_json(self, obj, timeout:Optional[float] = None):
         """ Attempt to send a line of JSON to the server.
 
         Parameters
@@ -365,8 +365,8 @@ class ProtocolClient(object):
         """ Ask what version of spalloc is running. """
         return self.call("version", timeout=timeout)
 
-    def create_job(self, *args: List[object],
-                   **kwargs: Dict[str, object]) -> JsonObject:
+    def create_job(self, *args: int,
+                   **kwargs: Dict[str, object]) -> int:
         """
         Start a new job
         """
@@ -377,7 +377,7 @@ class ProtocolClient(object):
         return self.call("create_job", *args, **kwargs)
 
     def job_keepalive(self, job_id: int,
-                      timeout: Optional[int] = None) -> JsonObject:
+                      timeout: Optional[float] = None) -> JsonObject:
         """
         Send s message to keep the job alive.
 
@@ -460,7 +460,8 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, timeout: Optional[int] = None, **kwargs) -> JsonObject:
+    def where_is(self, timeout: Optional[int] = None,
+                 **kwargs: int) -> JsonObject:
         """ Reports where ion the Machine a job is running """
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)

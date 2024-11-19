@@ -32,10 +32,10 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from typing import Any, Callable, cast, Dict, List
+from typing import Any, Callable, cast, Dict, Iterator, List, Optional
 
 from spinn_utilities.overrides import overrides
-from spinn_utilities.typing.json import JsonObjectArray
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import (
@@ -44,7 +44,7 @@ from spalloc_client.term import (
 from spalloc_client.scripts.support import Terminate, Script
 
 
-def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+def generate_keys(alphabet: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") -> Iterator:
     """ Generate ascending values in spreadsheet-column-name style.
 
     For example, A, B, C, ..., Y, Z, AA, AB, AC...
@@ -58,7 +58,7 @@ def generate_keys(alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
 
 
 def list_machines(t: Terminal, machines: JsonObjectArray,
-                  jobs: JsonObjectArray):
+                  jobs: JsonObjectArray) -> None:
     """ Display a table summarising the available machines and their load.
 
     Parameters
@@ -100,8 +100,7 @@ def list_machines(t: Terminal, machines: JsonObjectArray,
 
     print(render_table(table))
 
-
-def _get_machine(machines, machine_name):
+def _get_machine(machines: JsonObjectArray, machine_name: str) -> JsonObject:
     for machine in machines:
         if machine["name"] == machine_name:
             return machine
@@ -110,7 +109,7 @@ def _get_machine(machines, machine_name):
 
 
 def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
-                 machine_name: str, compact: bool = False):
+                 machine_name: str, compact: bool = False) -> None:
     """ Display a more detailed overview of an individual machine.
 
     Parameters
@@ -153,24 +152,26 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
                 cast(int, job["job_id"]) % len(job_colours)]
 
     # Calculate machine stats
-    num_boards = ((machine["width"] * machine["height"] * 3) -
-                  len(machine["dead_boards"]))
+    num_boards = ((cast(int, machine["width"]) *
+                   cast(int, machine["height"]) * 3) -
+                  len(cast(list, machine["dead_boards"])))
     num_in_use = sum(map(len, (cast(list, job["boards"])
                                for job in displayed_jobs)))
 
     # Show general machine information
     info = dict()
     info["Name"] = machine["name"]
-    info["Tags"] = ", ".join(machine["tags"])
+    info["Tags"] = ", ".join(cast(list, machine["tags"]))
     info["In-use"] = f"{num_in_use} of {num_boards}"
     info["Jobs"] = len(displayed_jobs)
     print(render_definitions(info))
 
     # Draw diagram of machine
-    dead_boards = set((x, y, z) for x, y, z in machine["dead_boards"])
+    dead_boards = set((x, y, z) for x, y, z in cast(
+        list, machine["dead_boards"]))
     board_groups = [(list([(x, y, z)
-                          for x in range(machine["width"])
-                          for y in range(machine["height"])
+                          for x in range(cast(int, machine["width"]))
+                          for y in range(cast(int, machine["height"]))
                           for z in range(3)
                           if (x, y, z) not in dead_boards]),
                      t.dim(" . "),  # Label
@@ -233,12 +234,13 @@ class ListMachinesScript(Script):
     A Script object to get information from a spalloc machine.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.parser = None
+        self.parser: Optional[argparse.ArgumentParser] = None
 
-    def get_and_display_machine_info(self, client: ProtocolClient,
-                                     args: argparse.Namespace, t: Terminal):
+    def get_and_display_machine_info(
+            self, client: ProtocolClient,
+            args: argparse.Namespace, t: Terminal) -> None:
         """ Gets and displays info for the machine(s) """
         # Get all information
         machines = client.list_machines(timeout=args.timeout)
@@ -269,13 +271,15 @@ class ListMachinesScript(Script):
         return parser
 
     @overrides(Script.verify_arguments)
-    def verify_arguments(self, args: argparse.Namespace):
+    def verify_arguments(self, args: argparse.Namespace) -> None:
         # Fail if --detailed used without specifying machine
         if args.machine is None and args.detailed:
+            assert self.parser is not None
             self.parser.error(
                 "--detailed only works when a specific machine is specified")
 
-    def one_shot(self,  client: ProtocolClient, args: argparse.Namespace):
+    def one_shot(self,  client: ProtocolClient,
+                 args: argparse.Namespace) -> None:
         """
         Display the machine info once
         """
@@ -283,7 +287,8 @@ class ListMachinesScript(Script):
         # Get all information and display accordingly
         self.get_and_display_machine_info(client, args, t)
 
-    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
+    def recurring(self, client: ProtocolClient,
+                  args: argparse.Namespace) -> None:
         """
         Repeatedly display the machine info
         """
@@ -307,7 +312,7 @@ class ListMachinesScript(Script):
                 print("")
 
     @overrides(Script.body)
-    def body(self, client: ProtocolClient, args: argparse.Namespace):
+    def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:
         if args.watch:
             self.recurring(client, args)
         else:

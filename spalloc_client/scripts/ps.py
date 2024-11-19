@@ -39,7 +39,7 @@ from .support import Script
 
 
 def render_job_list(t: Terminal, jobs: JsonObjectArray,
-                    args: argparse.Namespace):
+                    args: argparse.Namespace) -> str:
     """ Return a human-readable process listing.
 
     Parameters
@@ -143,13 +143,14 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client: ProtocolClient, args: argparse.Namespace):
+    def one_shot(self, client: ProtocolClient, args: argparse.Namespace) -> None:
         """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
         print(render_job_list(t, jobs, args))
 
-    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
+    def recurring(
+            self, client: ProtocolClient, args: argparse.Namespace) -> None:
         """ Repeatedly gets info on the job list. """
         client.notify_job(timeout=args.timeout)
         t = Terminal(stream=sys.stderr)
@@ -168,13 +169,14 @@ class ProcessListScript(Script):
                 print("")
 
     @overrides(Script.body)
-    def body(self, client: ProtocolClient, args: argparse.Namespace):
+    def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:
         if args.watch:
             self.recurring(client, args)
         else:
             self.one_shot(client, args)
+        return 0
 
-    def verify_arguments(self, args: argparse.Namespace):
+    def verify_arguments(self, args: argparse.Namespace) -> None:
         pass
 
 
