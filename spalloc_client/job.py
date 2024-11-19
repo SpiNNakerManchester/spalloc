@@ -371,7 +371,7 @@ class Job(object):
             raise ValueError(
                 f"Server version {v} is not compatible with this client.")
 
-    def _reconnect(self):
+    def _reconnect(self) -> None:
         """ Reconnect to the server and check version.
 
         If reconnection fails, the error is reported as a warning but no

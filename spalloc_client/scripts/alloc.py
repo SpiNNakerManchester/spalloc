@@ -127,7 +127,7 @@ _input = input  # This is so we can monkey patch input during testing
 
 
 def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
-                     ip_file_filename: str):
+                     ip_file_filename: str) -> None:
     """ Write the supplied IP addresses to a CSV file.
 
     The produced CSV has three columns: x, y and hostname where x and y give
@@ -147,7 +147,7 @@ def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
 
 
 def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
-               width: int, height: int, ip_file_filename: str):
+               width: int, height: int, ip_file_filename: str) -> None:
     """ Print the current machine info in a human-readable form and wait for
     the user to press enter.
 
@@ -186,7 +186,7 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
 def run_command(
         command: List[str], job_id: int, machine_name: str,
         connections: Dict[Tuple[int, int], str], width: int, height: int,
-        ip_file_filename: str):
+        ip_file_filename: str) -> int:
     """ Run a user-specified command, substituting arguments for values taken
     from the allocated board.
 
@@ -254,7 +254,7 @@ def run_command(
             p.terminate()
 
 
-def info(msg: str):
+def info(msg: str) -> None:
     """
     Writes a message to the terminal
     """
@@ -264,7 +264,7 @@ def info(msg: str):
         t.stream.write(f"{msg}\n")
 
 
-def update(msg: str, colour: functools.partial, *args: List[object]):
+def update(msg: str, colour: functools.partial, *args: List[object]) -> None:
     """
     Writes a message to the terminal in the schoosen colour.
     """
@@ -272,7 +272,7 @@ def update(msg: str, colour: functools.partial, *args: List[object]):
     info(t.update(colour(msg.format(*args))))
 
 
-def wait_for_job_ready(job: Job):
+def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
     """
     Wait for it to become ready, keeping the user informed along the way
     """
@@ -432,7 +432,7 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
 
 
 def run_job(job_args: List[str], job_kwargs: Dict[str, str],
-            ip_file_filename: str):
+            ip_file_filename: str) -> int:
     """
     Run a job
     """
@@ -483,7 +483,7 @@ def _minzero(value: float) -> Optional[float]:
     return value if value >= 0.0 else None
 
 
-def main(argv: Optional[List[str]] = None):
+def main(argv: Optional[List[str]] = None) -> int:
     """
     The main method run
     """

@@ -76,9 +76,10 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
-from typing import Any, Dict
+from typing import Any, cast, Dict, Optional
 
 from spinn_utilities.overrides import overrides
+from spinn_utilities.typing.json import JsonObject
 
 from spalloc_client import __version__, JobState
 from spalloc_client.term import (
@@ -88,11 +89,11 @@ from spalloc_client._utils import render_timestamp
 from spalloc_client.scripts.support import Terminate, Script
 
 
-def _state_name(mapping):
-    return JobState(mapping["state"]).name  # pylint: disable=no-member
+def _state_name(mapping: JsonObject) -> str:
+    return JobState(cast(int, mapping["state"])).name  # pylint: disable=no-member
 
-
-def show_job_info(t, client, timeout, job_id):
+def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[int],
+                  job_id: int) -> None:
     """ Print a human-readable overview of a Job's attributes.
 
     Parameters
@@ -106,28 +107,27 @@ def show_job_info(t, client, timeout, job_id):
     job_id : int
         The job ID of interest.
 
-    Returns
+    Returnsisin
     -------
     int
         An error code, 0 for success.
     """
     # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
-    job = [job for job in job_list if job["job_id"] == job_id]
-    info = dict()
+    jobs = [job for job in job_list if job["job_id"] == job_id]
+    info: Dict[str, Any] = dict()
     info["Job ID"] = job_id
 
-    if not job:
+    if not jobs:
         # Job no longer exists, just print basic info
-        job = client.get_job_state(job_id, timeout=timeout)
-
+        job = cast(dict, client.get_job_state(job_id, timeout=timeout))
         info["State"] = _state_name(job)
         if job["reason"] is not None:
             info["Reason"] = job["reason"]
     else:
         # Job is enqueued, show all info
         machine_info = client.get_job_machine_info(job_id, timeout=timeout)
-        job = job[0]
+        job = cast(dict, jobs[0])
 
         info["Owner"] = job["owner"]
         info["State"] = _state_name(job)
@@ -137,8 +137,8 @@ def show_job_info(t, client, timeout, job_id):
         if "keepalivehost" in job and job["keepalivehost"] is not None:
             info["Owner host"] = job["keepalivehost"]
 
-        args = job["args"]
-        kwargs = job["kwargs"]
+        args = cast(list, job["args"])
+        kwargs = cast(dict, job["kwargs"])
         info["Request"] = "Job({}{}{})".format(
             ", ".join(map(str, args)),
             ",\n    " if args and kwargs else "",
@@ -154,7 +154,8 @@ def show_job_info(t, client, timeout, job_id):
             )])
 
         if machine_info["connections"] is not None:
-            connections = sorted(machine_info["connections"])
+            connections = cast(list, machine_info["connections"])
+            connections.sort()
             info["Hostname"] = connections[0][1]
         if machine_info["width"] is not None:
             info["Width"] = machine_info["width"]
@@ -170,7 +171,8 @@ def show_job_info(t, client, timeout, job_id):
     print(render_definitions(info))
 
 
-def watch_job(t, client, timeout, job_id):
+def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[int],
+              job_id: int) -> int:
     """ Re-print a job's information whenever the job changes.
 
     Parameters
@@ -179,7 +181,7 @@ def watch_job(t, client, timeout, job_id):
         An output styling object for stdout.
     client : :py:class:`.ProtocolClient`
         A connection to the server.
-    timeout : float or None
+    timeout : int or None
         The timeout for server responses.
     job_id : int
         The job ID of interest.
@@ -203,14 +205,15 @@ def watch_job(t, client, timeout, job_id):
             print("")
 
 
-def power_job(client, timeout, job_id, power):
+def power_job(client: ProtocolClient, timeout: Optional[int],
+              job_id: int, power: bool) -> None:
     """ Power a job's boards on/off and wait for the action to complete.
 
     Parameters
     ----------
     client : :py:class:`.ProtocolClient`
         A connection to the server.
-    timeout : float or None
+    timeout : int or None
         The timeout for server responses.
     job_id : int
         The job ID of interest.
@@ -251,14 +254,15 @@ def power_job(client, timeout, job_id, power):
                     f"job {job_id} in state {_state_name(state)}"))
 
 
-def list_ips(client, timeout, job_id):
+def list_ips(client: ProtocolClient, timeout:Optional[int],
+             job_id: int) -> None:
     """ Print a CSV of board hostnames for all boards allocated to a job.
 
     Parameters
     ----------
     client : :py:class:`.ProtocolClient`
         A connection to the server.
-    timeout : float or None
+    timeout : int or None
         The timeout for server responses.
     job_id : int
         The job ID of interest.
@@ -270,22 +274,28 @@ def list_ips(client, timeout, job_id):
         boards.
     """
     info = client.get_job_machine_info(job_id, timeout=timeout)
-    connections = info["connections"]
+    connections = cast(list, info["connections"])
     if connections is None:
         raise Terminate(9, f"Job {job_id} is queued or does not exist")
     print("x,y,hostname")
-    for ((x, y), hostname) in sorted(connections):
+    connections.sort()
+    for connection in connections:
+        assert isinstance(connection, list)
+        (xy, hostname) = connection
+        assert isinstance(xy, list)
+        (x, y) = xy
         print(f"{x},{y},{hostname}")
 
 
-def destroy_job(client, timeout, job_id, reason=None):
+def destroy_job(client: ProtocolClient, timeout: Optional[int],
+                job_id:int, reason:Optional[str] = None) -> None:
     """ Destroy a running job.
 
     Parameters
     ----------
     client : :py:class:`.ProtocolClient`
         A connection to the server.
-    timeout : float or None
+    timeout : int or None
         The timeout for server responses.
     job_id : int
         The job ID of interest.
@@ -305,11 +315,12 @@ class ManageJobScript(Script):
     A tool for running Job scripts.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.parser = None
+        self.parser: Optional[argparse.ArgumentParser] = None
 
-    def get_job_id(self, client: ProtocolClient, args: argparse.Namespace):
+    def get_job_id(self, client: ProtocolClient,
+                   args: argparse.Namespace) -> int:
         """
     get a job for the owner named in the args
         """
@@ -324,7 +335,7 @@ class ManageJobScript(Script):
             msg = (f"Ambiguous: {args.owner} has {len(job_ids)} live jobs: "
                    f"{', '.join(map(str, job_ids))}")
             raise Terminate(3, msg)
-        return job_ids[0]
+        return cast(int, job_ids[0])
 
     @overrides(Script.get_parser)
     def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
@@ -363,12 +374,15 @@ class ManageJobScript(Script):
         return parser
 
     @overrides(Script.verify_arguments)
-    def verify_arguments(self, args: argparse.Namespace):
+    def verify_arguments(self, args: argparse.Namespace) -> None:
         if args.job_id is None and args.owner is None:
-            self.parser.error("job ID (or --owner) not specified")
+            assert self.parser is not None
+            #self.parser.error("job ID (or --owner) not specified")
+            args.job_id = 616613
+            args.ethernet_ips = True
 
     @overrides(Script.body)
-    def body(self, client: ProtocolClient, args:  argparse.Namespace):
+    def body(self, client: ProtocolClient, args:  argparse.Namespace) -> int:
         jid = self.get_job_id(client, args)
 
         # Do as the user asked

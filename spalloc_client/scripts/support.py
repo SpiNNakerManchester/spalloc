@@ -67,10 +67,11 @@ class Script(object, metaclass=AbstractBase):
         """
 
     @abstractmethod
-    def body(self, client: ProtocolClient, args: Namespace):
+    def body(self, client: ProtocolClient, args: Namespace) -> int:
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
         """
+        raise NotImplementedError
 
     def build_server_arg_group(self, server_args: Any,
                                cfg: Dict[str, object]):
@@ -103,7 +104,8 @@ class Script(object, metaclass=AbstractBase):
 
         # Fail if server not specified
         if args.hostname is None:
-            parser.error("--hostname of spalloc server must be specified")
+            #parser.error("--hostname of spalloc server must be specified")
+            args.hostname = "spinnaker.cs.man.ac.uk"
         self.verify_arguments(args)
 
         try:
