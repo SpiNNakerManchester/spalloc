@@ -271,7 +271,7 @@ class ProtocolClient(object):
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name, *args, **kwargs):
+    def call(self, name, *args, **kwargs) -> Optional[JsonObject]:
         """ Send a command to the server and return the reply.
 
         Parameters
@@ -316,7 +316,8 @@ class ProtocolClient(object):
         except (IOError, OSError) as e:
             raise ProtocolError(str(e)) from e
 
-    def wait_for_notification(self, timeout=None):
+    def wait_for_notification(
+            self, timeout:Optional[float] = None) -> Optional[JsonObject]:
         """ Return the next notification to arrive.
 
         Parameters
@@ -439,8 +440,9 @@ class ProtocolClient(object):
         """ Obtains a list of currently supported machines. """
         return self.call("list_machines", timeout=timeout)
 
-    def get_board_position(self, machine_name: str, x: int, y: int, z: int,
-                           timeout: Optional[int] = None):  # pragma: no cover
+    def get_board_position(
+            self, machine_name: str, x: int, y: int, z: int,
+            timeout: Optional[int] = None) -> JsonObject:  # pragma: no cover
         """ Gets the position of board x, y, z on the given machine. """
         # pylint: disable=too-many-arguments
         return self.call("get_board_position", machine_name, x, y, z,
@@ -461,7 +463,7 @@ class ProtocolClient(object):
         frozenset("job_id chip_x chip_y".split())])
 
     def where_is(self, timeout: Optional[int] = None,
-                 **kwargs: int) -> JsonObject:
+                 **kwargs: Optional[int]) -> JsonObject:
         """ Reports where ion the Machine a job is running """
         # Test for whether sane arguments are passed.
         keywords = frozenset(kwargs)
