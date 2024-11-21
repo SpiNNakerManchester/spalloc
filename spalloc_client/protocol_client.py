@@ -409,7 +409,7 @@ class ProtocolClient(object):
     def destroy_job(self, job_id: int, reason: Optional[str] = None,
                     timeout: Optional[int] = None) -> JsonObject:
         """ Destroy the job """
-        return self.call("destroy_job", job_id, reason, timeout=timeout)
+        return self.call("destroy_job", job_id, reason=reason, timeout=timeout)
 
     def notify_job(self, job_id: Optional[int] = None,
                    timeout: Optional[int] = None) -> JsonObject:
