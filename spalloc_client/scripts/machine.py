@@ -201,8 +201,10 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
         for job in displayed_jobs:
             key = cast(str, job["key"])
             job_id = str(job["job_id"])
+            colour_func = job_colours[
+                cast(int, job["job_id"]) % len(job_colours)]
             cells.append((len(key) + len(job_id) + 1,
-                         f"{cast(Callable, job['colour'])(key)}:{job_id}"))
+                         f"{colour_func(key)}:{job_id}"))
         print("")
         print(render_cells(cells))
     else:
@@ -217,8 +219,10 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
             owner = str(job["owner"])
             if "keepalivehost" in job and job["keepalivehost"] is not None:
                 owner += f" {job['keepalivehost']}"
+            colour_func = job_colours[
+                cast(int, job["job_id"]) % len(job_colours)]
             table_row: TableRow = [
-                (cast(Callable, job["colour"]), cast(str, job["key"])),
+                (colour_func, cast(str, job["key"])),
                 cast(int, job["job_id"]),
                 len(cast(list, job["boards"])),
                 owner,

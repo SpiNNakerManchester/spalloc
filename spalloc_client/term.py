@@ -379,7 +379,7 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 
 def render_boards(
         board_groups: List[Tuple[List[Tuple[int, int, int]], str,
-        Tuple[str, str, str], Tuple[str, str, str]]],
+            Tuple[str, str, str], Tuple[str, str, str]]],
         dead_links: List = [],
         dead_edge: Tuple[str, str, str] = ("XXX", "X", "X"),
         blank_label: str = "   ",
