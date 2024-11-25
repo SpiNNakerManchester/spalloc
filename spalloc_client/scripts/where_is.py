@@ -164,7 +164,7 @@ class WhereIsScript(Script):
             raise Terminate(4, "No boards at the specified location")
 
         out: Dict[str, Any] = dict()
-        out["Machine"] = location["machine"]
+        out["Machine"] = cast(str, location["machine"])
         cabinet, frame, board = cast(list, location["physical"])
         out["Physical location"] = (
             f"Cabinet {cabinet}, Frame {frame}, Board {board}")

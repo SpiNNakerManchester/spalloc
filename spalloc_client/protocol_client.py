@@ -18,11 +18,13 @@ from collections import deque
 import errno
 import json
 import socket
-from typing import cast, Dict, Optional
-from threading import current_thread, RLock, local
+from types import TracebackType
+from typing import cast, Dict, Literal, Optional, Type, Union
+from typing_extensions import Self
+from threading import current_thread, RLock, local, Thread
 
 from spinn_utilities.typing.json import (
-    JsonArray, JsonObject, JsonObjectArray, JsonValue)
+    JsonObject, JsonObjectArray, JsonValue)
 
 from spalloc_client._utils import time_left, timed_out, make_timeout
 
@@ -48,10 +50,10 @@ class _ProtocolThreadLocal(local):
         of our state in each thread.
     """
     # See https://github.com/SpiNNakerManchester/spalloc/issues/12
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.buffer = b""
-        self.sock = None
+        self.sock: Optional[socket.socket] = None
 
 
 class ProtocolClient(object):
@@ -81,7 +83,8 @@ class ProtocolClient(object):
         # Done!
     """
 
-    def __init__(self, hostname, port=22244, timeout=None):
+    def __init__(self, hostname: str, port: int = 22244,
+                 timeout: Optional[float] = None):
         """ Define a new connection.
 
         .. note::
@@ -92,28 +95,30 @@ class ProtocolClient(object):
         ----------
         hostname : str
             The hostname of the server.
-        port : str or int
+        port : int
             The port to use (default: 22244).
         """
         self._hostname = hostname
         self._port = port
         # Mapping from threads to sockets. Kept because we need to have way to
         # shut down all sockets at once.
-        self._socks = dict()
+        self._socks: Dict[Thread, socket.socket] = dict()
         # Thread local variables
         self._local = _ProtocolThreadLocal()
         # A queue of unprocessed notifications
-        self._notifications = deque()
+        self._notifications: deque = deque()
         self._dead = True
         self._socks_lock = RLock()
         self._notifications_lock = RLock()
         self._default_timeout = timeout
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         self.connect(self._default_timeout)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Optional[Type],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> Literal[False]:
         self.close()
         return False
 
@@ -142,7 +147,7 @@ class ProtocolClient(object):
         sock.settimeout(timeout)
         return sock
 
-    def _do_connect(self, sock: socket.socket):
+    def _do_connect(self, sock: socket.socket) -> bool:
         success = False
         try:
             sock.connect((self._hostname, self._port))
@@ -155,7 +160,7 @@ class ProtocolClient(object):
     def _has_open_socket(self) -> bool:
         return self._local.sock is not None
 
-    def connect(self, timeout: Optional[float] = None):
+    def connect(self, timeout: Optional[float] = None) -> None:
         """(Re)connect to the server.
 
         Raises
@@ -180,7 +185,7 @@ class ProtocolClient(object):
             # Pass on the exception
             raise
 
-    def _close(self, key=None):
+    def _close(self, key: Optional[Thread]=None) -> None:
         if key is None:
             key = current_thread()
         with self._socks_lock:
@@ -193,7 +198,7 @@ class ProtocolClient(object):
             self._local.buffer = b""
         sock.close()
 
-    def close(self):
+    def close(self) -> None:
         """ Disconnect from the server.
         """
         self._dead = True
@@ -243,7 +248,8 @@ class ProtocolClient(object):
         line, _, self._local.buffer = self._local.buffer.partition(b"\n")
         return json.loads(line.decode("utf-8"))
 
-    def _send_json(self, obj, timeout:Optional[float] = None):
+    def _send_json(
+            self, obj: JsonObject, timeout:Optional[float] = None) -> None:
         """ Attempt to send a line of JSON to the server.
 
         Parameters
@@ -272,8 +278,9 @@ class ProtocolClient(object):
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name:str, timeout: Optional[float] = None, *args,
-             **kwargs) -> JsonValue:
+    def call(self, name:str, timeout: Optional[float] = None,
+             *args: Union[int, str, None],
+             **kwargs: JsonValue) -> JsonValue:
         """ Send a command to the server and return the reply.
 
         Parameters
@@ -300,7 +307,10 @@ class ProtocolClient(object):
             finish_time = make_timeout(timeout)
 
             # Construct the command message
-            command = {"command": name, "args": args, "kwargs": kwargs}
+            command: JsonObject = {}
+            command["command"] = name
+            command["args"] = list(args)
+            command["kwargs"] = kwargs
             self._send_json(command, timeout=timeout)
 
             # Command sent! Attempt to receive the response...
@@ -369,8 +379,7 @@ class ProtocolClient(object):
         """ Ask what version of spalloc is running. """
         return cast(str, self.call("version", timeout))
 
-    def create_job(self, *args: int,
-                   **kwargs: Dict[str, object]) -> int:
+    def create_job(self, *args: int, **kwargs: str) -> int:
         """
         Start a new job
         """

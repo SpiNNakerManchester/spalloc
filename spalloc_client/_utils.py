@@ -17,7 +17,7 @@ import time
 from typing import Optional
 
 
-def time_left(timestamp):
+def time_left(timestamp: Optional[float]) -> Optional[float]:
     """ Convert a timestamp into how long to wait for it.
     """
     if timestamp is None:
@@ -25,7 +25,7 @@ def time_left(timestamp):
     return max(0.0, timestamp - time.time())
 
 
-def timed_out(timestamp):
+def timed_out(timestamp: Optional[float]) -> bool:
     """ Check if a timestamp has been reached.
     """
     if timestamp is None:
@@ -41,7 +41,7 @@ def make_timeout(delay_seconds: Optional[float]) -> Optional[float]:
     return time.time() + delay_seconds
 
 
-def render_timestamp(timestamp) -> str:
+def render_timestamp(timestamp: float) -> str:
     """ Convert a timestamp (Unix seconds) into a local human-readable\
         timestamp string.
     """

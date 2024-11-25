@@ -99,7 +99,7 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
         else:
             num_boards = ""
         # Format start time
-        timestamp = render_timestamp(job["start_time"])
+        timestamp = render_timestamp(cast(float, job["start_time"]))
 
         if job["allocated_machine_name"] is not None:
             machine_name = str(job["allocated_machine_name"])

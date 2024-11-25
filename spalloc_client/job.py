@@ -19,7 +19,7 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import Any, cast, Dict, List, Optional, Tuple, Type
+from typing import Any, cast, Dict, Optional, Tuple, Type
 import sys
 
 from typing_extensions import Literal, Self
@@ -589,7 +589,7 @@ class Job(object):
         return self._last_machine_info.boards
 
     def wait_for_state_change(self, old_state: JobState,
-                              timeout: Optional[int] = None) -> JobState:
+                              timeout: Optional[float] = None) -> JobState:
         """ Block until the job's state changes from the supplied state.
 
         Parameters

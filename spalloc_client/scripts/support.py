@@ -95,7 +95,7 @@ class Script(object, metaclass=AbstractBase):
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
-    def __call__(self, argv=None) -> int:
+    def __call__(self, argv: Optional[str] = None) -> int:
         cfg = config.read_config()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
