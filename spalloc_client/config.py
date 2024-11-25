@@ -81,7 +81,7 @@ options available (and the default value).
 """
 import configparser
 import os.path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import appdirs
 
@@ -117,26 +117,22 @@ DEFAULT_CONFIG = {
     "ignore_version": "False"}
 
 
-def _read_none_or_float(parser, option):
+def _read_none_or_float(
+        parser: configparser.ConfigParser, option: str) -> Optional[float]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getfloat(SECTION, option)
 
 
-def _read_none_or_int(parser, option):
+def _read_none_or_int(
+        parser: configparser.ConfigParser, option: str) -> Optional[int]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getint(SECTION, option)
 
 
-def _read_any_str(parser, option):
-    try:
-        return parser.get(SECTION, option)
-    except configparser.NoOptionError:
-        return None
-
-
-def _read_none_or_str(parser, option):
+def _read_none_or_str(
+        parser: configparser.ConfigParser, option: str) -> Optional[str]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.get(SECTION, option)
@@ -174,9 +170,9 @@ def read_config(filenames: Optional[List[str]] = None) -> Dict[str, Any]:
             # File did not exist, keep trying
             pass
 
-    cfg = {
-        "hostname":        _read_any_str(parser, "hostname"),
-        "owner":           _read_any_str(parser, "owner"),
+    cfg: Dict[str, Union[float, str, List[str], None]] = {
+        "hostname":        _read_none_or_str(parser, "hostname"),
+        "owner":           _read_none_or_str(parser, "owner"),
         "port":            parser.getint(SECTION, "port"),
         "keepalive":       _read_none_or_float(parser, "keepalive"),
         "reconnect_delay": parser.getfloat(SECTION, "reconnect_delay"),

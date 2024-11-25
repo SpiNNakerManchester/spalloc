@@ -148,8 +148,6 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
         if job["allocated_machine_name"] == machine_name:
             displayed_jobs.append(job)
             job["key"] = next(job_key_generator)
-            job["colour"] = job_colours[
-                cast(int, job["job_id"]) % len(job_colours)]
 
     # Calculate machine stats
     num_boards = ((cast(int, machine["width"]) *
@@ -185,7 +183,8 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
             assert isinstance(board, list)
             (x, y, z) = board
             boards.append((cast(int, x), cast(int, y), cast(int, z)))
-        colour_func = cast(Callable, job["colour"])
+        colour_func = job_colours[
+                cast(int, job["job_id"]) % len(job_colours)]
         board_groups.append((
             boards,
             colour_func(cast(str, job["key"]).center(3)),  # Label
@@ -193,7 +192,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
             tuple(map(t.bright, DEFAULT_BOARD_EDGES))  # Outer
         ))
     print("")
-    print(render_boards(board_groups, machine["dead_links"],
+    print(render_boards(board_groups, cast(list, machine["dead_links"]),
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
     # Produce table showing jobs on machine
     if compact:

@@ -262,12 +262,12 @@ class TestRenderBoards(object):
               for y in range(2)
               for z in range(3)], "ABC",
              INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
-        ], dead_links=set([
+        ], dead_links=[
             (0, 0, 0, 0),  # 0, 0, East
             (0, 0, 0, 2),  # 0, 0, North
             (0, 0, 0, 1),  # 0, 0, North East
             (0, 0, 1, 4),  # 1, 1, South West
-        ]))
+        ])
         assert out == (r" ___     ___."
                        r"/ABC\___/ABC\___."
                        r"\===,ABC`===,ABC\."

@@ -21,8 +21,9 @@ from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
-from typing import Callable, Dict, Iterable, List, Tuple, Union
-from typing_extensions import TypeAlias
+from typing import (
+    Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union)
+from typing_extensions import Self, TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 
@@ -100,7 +101,8 @@ class Terminal(object):
         Is colour enabled?
     """
 
-    def __init__(self, stream=None, force=None):
+    def __init__(self, stream: Optional[TextIO] = None,
+                 force: Optional[bool] = None):
         """
         Parameters
         ----------
@@ -120,18 +122,18 @@ class Terminal(object):
 
         self._location_saved = False
 
-    def __call__(self, string):
+    def __call__(self, string: str) -> str:
         """ If enabled, passes through the given value, otherwise passes\
             through an empty string.
         """
         return string if self.enabled else ""
 
-    def clear_screen(self):
+    def clear_screen(self) -> str:
         """ Clear the screen and reset cursor to top-left corner.
         """
         return self("\033[2J\033[;H")
 
-    def update(self, string: str = "", start_again: bool = False):
+    def update(self, string: str = "", start_again: bool = False) -> str:
         """ Print before a line and it will replace the previous line prefixed\
             with :py:meth:`.update`.
 
@@ -153,7 +155,7 @@ class Terminal(object):
         # Restore to previous location and clear line.
         return "".join((self("\0338\033[K"), str(string)))
 
-    def set_attrs(self, attrs=tuple()):
+    def set_attrs(self, attrs:List = []) -> str:
         """ Construct an ANSI control sequence which sets the given attribute\
             numbers.
         """
@@ -161,7 +163,8 @@ class Terminal(object):
             return ""
         return self(f"\033[{';'.join(str(attr) for attr in attrs)}m")
 
-    def wrap(self, string=None, pre="", post=""):
+    def wrap(self, string: Optional[str] = None,
+             pre: str = "", post: str = "") -> str:
         """ Wrap a string in the suppled pre and post strings or just print\
             the pre string if no string given.
         """
@@ -169,7 +172,7 @@ class Terminal(object):
             return pre
         return "".join((pre, str(string), post))
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> partial:
         """ Implements all the 'magic' style methods.
         """
         attrs = []
@@ -264,7 +267,7 @@ def render_table(table: TableType, column_sep: str = "  ") -> str:
     return "\n".join(column_sep.join(row).rstrip() for row in out)
 
 
-def render_definitions(definitions, separator=": "):
+def render_definitions(definitions: Dict, separator: str = ": ") -> str:
     """ Render a definition list.
 
     Such a list looks like this::
@@ -294,7 +297,7 @@ def render_definitions(definitions, separator=": "):
         for key, value in definitions.items())
 
 
-def _board_to_cartesian(x, y, z):
+def _board_to_cartesian(x: int, y: int, z: int) -> Tuple[int, int]:
     r""" Translate from logical board coordinates (x, y, z) into Cartesian
         coordinates for printing hexagons.
 
@@ -374,9 +377,13 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 """
 
 
-def render_boards(board_groups, dead_links=frozenset(),
-                  dead_edge=("XXX", "X", "X"),
-                  blank_label="   ", blank_edge=("   ", " ", " ")):
+def render_boards(
+        board_groups: List[Tuple[List[Tuple[int, int, int]], str,
+        Tuple[str, str, str], Tuple[str, str, str]]],
+        dead_links: List = [],
+        dead_edge: Tuple[str, str, str] = ("XXX", "X", "X"),
+        blank_label: str = "   ",
+        blank_edge: Tuple[str, str, str] = ("   ", " ", " ")) -> str:
     r""" Render an ASCII art diagram of a set of boards with sets of boards.
 
     For example::
@@ -396,7 +403,7 @@ def render_boards(board_groups, dead_links=frozenset(),
         which are to be used for the inner and outer board edges respectively.
         Board groups are drawn sequentially with later board groups obscuring
         earlier ones when their edges or boards overlap.
-    dead_links : set([(x, y, z, link), ...])
+    dead_links : list([(x, y, z, link), ...])
         Enumeration of all dead links. These links are re-drawn in the style
         defined by the dead_edge argument after all board groups have been
         drawn.
@@ -420,9 +427,9 @@ def render_boards(board_groups, dead_links=frozenset(),
     # non-existent boards
     all_boards = set()
 
-    for boards, label, edge_inner, edge_outer in board_groups:
+    for _boards, label, edge_inner, edge_outer in board_groups:
         # Convert to Cartesian coordinates
-        boards = set(_board_to_cartesian(x, y, z) for x, y, z in boards)
+        boards = set(_board_to_cartesian(x, y, z) for x, y, z in _boards)
         all_boards.update(boards)
 
         # Set board labels and basic edge style
@@ -486,7 +493,8 @@ def render_boards(board_groups, dead_links=frozenset(),
     return "\n".join(filter(None, map(str.rstrip, out)))
 
 
-def render_cells(cells, width=80, col_spacing=2):
+def render_cells(cells: List[Tuple[int, str]], width: int = 80,
+                 col_spacing: int = 2) -> str:
     """ Given a list of short (~10 char) strings, display these aligned in\
         columns.
 
