@@ -271,7 +271,8 @@ class ProtocolClient(object):
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name, *args, **kwargs) -> Optional[JsonObject]:
+    def call(self, name:str, timeout: Optional[float] = None, *args,
+             **kwargs) -> Optional[JsonObject]:
         """ Send a command to the server and return the reply.
 
         Parameters
@@ -295,7 +296,6 @@ class ProtocolClient(object):
             If the connection is unavailable or is closed.
         """
         try:
-            timeout = kwargs.pop("timeout", None)
             finish_time = make_timeout(timeout)
 
             # Construct the command message
@@ -364,7 +364,7 @@ class ProtocolClient(object):
 
     def version(self, timeout: Optional[int] = None) -> str:
         """ Ask what version of spalloc is running. """
-        return self.call("version", timeout=timeout)
+        return self.call("version", timeout)
 
     def create_job(self, *args: int,
                    **kwargs: Dict[str, object]) -> int:
@@ -375,7 +375,7 @@ class ProtocolClient(object):
         if "owner" not in kwargs:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
-        return self.call("create_job", *args, **kwargs)
+        return self.call("create_job", None,*args, **kwargs)
 
     def job_keepalive(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:
@@ -384,77 +384,74 @@ class ProtocolClient(object):
 
         Without these the job will be killed after a while.
         """
-        return self.call("job_keepalive", job_id, timeout=timeout)
+        return self.call("job_keepalive", timeout, job_id)
 
     def get_job_state(self, job_id: int,
                       timeout: Optional[int] = None) -> JsonObject:
         """Get the state for this job """
-        return self.call("get_job_state", job_id, timeout=timeout)
+        return self.call("get_job_state", timeout, job_id)
 
     def get_job_machine_info(self, job_id: int,
                              timeout: Optional[int] = None) -> JsonObject:
         """ Get info for this job. """
-        return self.call("get_job_machine_info", job_id, timeout=timeout)
+        return self.call("get_job_machine_info", timeout, job_id)
 
     def power_on_job_boards(self, job_id: int,
                             timeout: Optional[int] = None) -> JsonObject:
         """ Turn on the power on the jobs boards. """
-        return self.call("power_on_job_boards", job_id, timeout=timeout)
+        return self.call("power_on_job_boards", timeout, job_id)
 
     def power_off_job_boards(self, job_id: int,
                              timeout: Optional[int] = None) -> JsonObject:
         """ Turn off the power on the jobs boards. """
-        return self.call("power_off_job_boards", job_id, timeout=timeout)
+        return self.call("power_off_job_boards", timeout, job_id)
 
     def destroy_job(self, job_id: int, reason: Optional[str] = None,
                     timeout: Optional[int] = None) -> JsonObject:
         """ Destroy the job """
-        return self.call("destroy_job", job_id, reason=reason, timeout=timeout)
-
+        return self.call("destroy_job", timeout, job_id, reason=reason)
     def notify_job(self, job_id: Optional[int] = None,
                    timeout: Optional[int] = None) -> JsonObject:
         """ Turn on notification of job status changes. """
-        return self.call("notify_job", job_id, timeout=timeout)
+        return self.call("notify_job", timeout, job_id)
 
     def no_notify_job(self, job_id: Optional[int] = None,
                       timeout: Optional[int] = None) -> JsonObject:
         """ Turn off notification of job status changes. """
-        return self.call("no_notify_job", job_id, timeout=timeout)
+        return self.call("no_notify_job", timeout, job_id)
 
     def notify_machine(self, machine_name: Optional[str] = None,
                        timeout: Optional[int] = None) -> JsonObject:
         """ Turn on notification of machine status changes. """
-        return self.call("notify_machine", machine_name, timeout=timeout)
+        return self.call("notify_machine", timeout, machine_name)
 
     def no_notify_machine(self, machine_name: Optional[str] = None,
                           timeout: Optional[int] = None) -> JsonObject:
         """ Turn off notification of machine status changes. """
-        return self.call("no_notify_machine", machine_name, timeout=timeout)
+        return self.call("no_notify_machine", timeout, machine_name)
 
     def list_jobs(self, timeout: Optional[int] = None) -> JsonObjectArray:
         """ Obtains a list of jobs currently running. """
-        return self.call("list_jobs", timeout=timeout)
+        return self.call("list_jobs", timeout)
 
     def list_machines(self,
                       timeout: Optional[float] = None) -> JsonObjectArray:
         """ Obtains a list of currently supported machines. """
-        return self.call("list_machines", timeout=timeout)
+        return self.call("list_machines", timeout)
 
     def get_board_position(
             self, machine_name: str, x: int, y: int, z: int,
             timeout: Optional[int] = None) -> JsonObject:  # pragma: no cover
         """ Gets the position of board x, y, z on the given machine. """
         # pylint: disable=too-many-arguments
-        return self.call("get_board_position", machine_name, x, y, z,
-                         timeout=timeout)
+        return self.call("get_board_position", timeout, machine_name, x, y, z)
 
     def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
                               timeout: Optional[int] = None
                               ) -> JsonObject:  # pragma: no cover
         """ Gets the board x, y, z on the requested machine. """
         # pylint: disable=too-many-arguments
-        return self.call("get_board_at_position", machine_name, x, y, z,
-                         timeout=timeout)
+        return self.call("get_board_at_position", timeout, machine_name, x, y, z)
 
     _acceptable_kwargs_for_where_is = frozenset([
         frozenset("machine x y z".split()),
@@ -470,5 +467,4 @@ class ProtocolClient(object):
         if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
             raise SpallocServerException(
                 f"Invalid arguments: {', '.join(keywords)}")
-        kwargs["timeout"] = timeout
-        return self.call("where_is", **kwargs)
+        return self.call("where_is", timeout, **kwargs)

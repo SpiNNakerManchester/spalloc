@@ -159,25 +159,27 @@ def test_send_json_fails(c):
 def test_call(c, s, bg_accept):
     c.connect()
     bg_accept.join()
+    no_timeout = None
 
     # Basic calls should work
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
 
     # Should be able to cope with notifications arriving before return value
     s.send({"notification": 1})
     s.send({"notification": 2})
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert list(c._notifications) == [{"notification": 1}, {"notification": 2}]
     c._notifications.clear()
 
     # Should be able to timeout immediately
     before = time.time()
+    timeout = 0.1
     with pytest.raises(ProtocolTimeoutError):
-        c.call("foo", 1, bar=2, timeout=0.1)
+        c.call("foo", timeout, 1, bar=2)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert 0.1 < after - before < 0.2
@@ -185,8 +187,9 @@ def test_call(c, s, bg_accept):
     # Should be able to timeout after getting a notification
     s.send({"notification": 3})
     before = time.time()
+    timeout = 0.1
     with pytest.raises(ProtocolTimeoutError):
-        c.call("foo", 1, bar=2, timeout=0.1)
+        c.call("foo", timeout, 1, bar=2)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert 0.1 < after - before < 0.2
@@ -195,13 +198,14 @@ def test_call(c, s, bg_accept):
     # Exceptions should transfer
     s.send({"exception": "something informative"})
     with pytest.raises(SpallocServerException) as e:
-        c.call("foo")
+        c.call("foo", no_timeout)
     assert "something informative" in str(e.value)
 
 
 def test_wait_for_notification(c, s, bg_accept):
     c.connect()
     bg_accept.join()
+    no_timeout = None
 
     # Should be able to timeout
     with pytest.raises(ProtocolTimeoutError):
@@ -214,7 +218,7 @@ def test_wait_for_notification(c, s, bg_accept):
     s.send({"notification": 1})
     s.send({"notification": 2})
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert c.wait_for_notification() == {"notification": 1}
     assert c.wait_for_notification() == {"notification": 2}
