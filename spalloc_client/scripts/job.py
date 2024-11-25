@@ -377,8 +377,7 @@ class ManageJobScript(Script):
     def verify_arguments(self, args: argparse.Namespace) -> None:
         if args.job_id is None and args.owner is None:
             assert self.parser is not None
-            #self.parser.error("job ID (or --owner) not specified")
-            args.job_id = 617379
+            self.parser.error("job ID (or --owner) not specified")
 
     @overrides(Script.body)
     def body(self, client: ProtocolClient, args:  argparse.Namespace) -> int:

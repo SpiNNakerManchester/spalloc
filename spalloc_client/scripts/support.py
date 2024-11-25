@@ -95,17 +95,16 @@ class Script(object, metaclass=AbstractBase):
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
-    def __call__(self) -> int:
+    def __call__(self, argv=None) -> int:
         cfg = config.read_config()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)
-        args = parser.parse_args()
+        args = parser.parse_args(argv)
 
         # Fail if server not specified
         if args.hostname is None:
-            #parser.error("--hostname of spalloc server must be specified")
-            args.hostname = "spinnaker.cs.man.ac.uk"
+            parser.error("--hostname of spalloc server must be specified")
         self.verify_arguments(args)
 
         try:
