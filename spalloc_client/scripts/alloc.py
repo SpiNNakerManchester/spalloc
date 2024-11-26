@@ -428,9 +428,9 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
     return parser, parser.parse_args(argv)
 
 
-def run_job(job_args: List[int],
-            job_kwargs: Dict[str, Union[float, str, None]],
-            ip_file_filename: str) -> int:
+def run_job(ip_file_filename: str,
+            job_args: List[int],
+            job_kwargs: Dict[str, Union[float, str, None]])-> int:
     """
     Run a job
     """
@@ -539,7 +539,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     _, ip_file_filename = tempfile.mkstemp(".csv", "spinnaker_ips_")
 
     try:
-        return run_job(job_args, job_kwargs, ip_file_filename)
+        return run_job(ip_file_filename, job_args, job_kwargs)
     except SpallocServerException as e:  # pragma: no cover
         info(t.red(f"Error from server: {e}"))
         return 6
