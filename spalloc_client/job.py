@@ -32,7 +32,7 @@ from spalloc_client.scripts.support import (
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
 from .spalloc_config import SpallocConfig, SEARCH_PATH
 from .states import JobState
-from ._utils import time_left, timed_out, make_timeout
+from ._utils import time_left, time_left_float, timed_out, make_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -249,8 +249,8 @@ class Job(object):
         hostname = cast(str, kwargs.get("hostname", config.hostname))
         owner = kwargs.get("owner", config.owner)
         port = cast(int, kwargs.get("port", config.port))
-        self._reconnect_delay = kwargs.get("reconnect_delay",
-                                           config.reconnect_delay)
+        self._reconnect_delay = cast(float, kwargs.get("reconnect_delay",
+                                           config.reconnect_delay))
         self._timeout = cast(float, kwargs.get("timeout", config.timeout))
         if hostname is None:
             raise ValueError("A hostname must be specified.")
@@ -671,7 +671,7 @@ class Job(object):
         """
         self._client.close()
         if finish_time is not None:
-            delay = min(time_left(finish_time), self._reconnect_delay)
+            delay = min(time_left_float(finish_time), self._reconnect_delay)
         else:
             delay = self._reconnect_delay
         time.sleep(max(0.0, delay))

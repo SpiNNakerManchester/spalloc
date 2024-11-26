@@ -33,6 +33,7 @@ from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, JobState, ProtocolClient
+from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import Terminal, render_table, TableColumn, TableType
 from spalloc_client._utils import render_timestamp
 from .support import Script
@@ -128,7 +129,7 @@ class ProcessListScript(Script):
     An object form Job scripts.
     """
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)

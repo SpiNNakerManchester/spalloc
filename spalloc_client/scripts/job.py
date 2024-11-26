@@ -86,6 +86,7 @@ from spalloc_client.term import (
     Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
 from spalloc_client import ProtocolClient
 from spalloc_client._utils import render_timestamp
+from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.scripts.support import Terminate, Script
 
 
@@ -340,7 +341,7 @@ class ManageJobScript(Script):
         return cast(int, job_ids[0])
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Manage running jobs.")
         parser.add_argument(

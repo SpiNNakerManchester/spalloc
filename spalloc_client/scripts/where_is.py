@@ -72,8 +72,8 @@ from spinn_utilities.overrides import overrides
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import render_definitions
-
 from spalloc_client.scripts.support import Terminate, Script
+from spalloc_client.spalloc_config import SpallocConfig
 
 
 class WhereIsScript(Script):
@@ -88,7 +88,7 @@ class WhereIsScript(Script):
         self.show_board_chip = False
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")

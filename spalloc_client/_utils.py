@@ -17,6 +17,10 @@ import time
 from typing import Optional
 
 
+def time_left_float(timestamp: float) -> float:
+    return max(0.0, timestamp - time.time())
+
+
 def time_left(timestamp: Optional[float]) -> Optional[float]:
     """ Convert a timestamp into how long to wait for it.
     """

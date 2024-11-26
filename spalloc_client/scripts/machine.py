@@ -38,6 +38,7 @@ from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray
 
 from spalloc_client import __version__, ProtocolClient
+from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import (
     Terminal, render_table, render_definitions, render_boards, render_cells,
     DEFAULT_BOARD_EDGES, TableRow, TableType)
@@ -257,7 +258,7 @@ class ListMachinesScript(Script):
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(
