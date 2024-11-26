@@ -20,8 +20,9 @@ import json
 import socket
 from types import TracebackType
 from typing import cast, Dict, Literal, Optional, Type, Union
-from typing_extensions import Self
 from threading import current_thread, RLock, local, Thread
+
+from typing_extensions import Self
 
 from spinn_utilities.typing.json import (
     JsonObject, JsonObjectArray, JsonValue)
@@ -278,7 +279,7 @@ class ProtocolClient(object):
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name: str, timeout: Optional[float] = None,
+    def call(self, name: str, timeout: Optional[float],
              *args: Union[int, str, None],
              **kwargs: JsonValue) -> JsonValue:
         """ Send a command to the server and return the reply.

@@ -153,7 +153,7 @@ def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[int],
                 t.dim(" . "),
                 tuple(map(t.dim, DEFAULT_BOARD_EDGES)),
                 tuple(map(t.bright, DEFAULT_BOARD_EDGES)),
-            )])
+            )], [])
 
         if machine_info["connections"] is not None:
             connections = cast(list, machine_info["connections"])

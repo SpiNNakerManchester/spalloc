@@ -77,7 +77,7 @@ def test_set_attr():
     t = Terminal(force=True)
 
     # Empty list
-    assert t.set_attrs() == ""
+    assert t.set_attrs([]) == ""
 
     # Single item
     assert t.set_attrs([1]) == "\033[1m"
@@ -87,7 +87,7 @@ def test_set_attr():
 
     # When disabled should do nothing
     t.enabled = False
-    assert t.set_attrs() == ""
+    assert t.set_attrs([]) == ""
     assert t.set_attrs([1]) == ""
     assert t.set_attrs([1, 2, 3]) == ""
 
@@ -215,12 +215,12 @@ OUTER_BOARD_EDGES = DEFAULT_BOARD_EDGES
 class TestRenderBoards(object):
 
     def test_empty(self):
-        assert render_boards([]) == ""
+        assert render_boards([], []) == ""
 
     def test_single(self):
         out = render_boards([
             ([(0, 0, 0)], "ABC", INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
-        ])
+        ], [])
         assert out == (r" ___."
                        r"/ABC\."
                        r"\___/".replace(".", "\n"))
@@ -229,7 +229,7 @@ class TestRenderBoards(object):
         out = render_boards([
             ([(0, 0, z) for z in range(3)], "ABC",
              INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
-        ])
+        ], [])
         assert out == (r" ___."
                        r"/ABC\___."
                        r"\===,ABC\."
@@ -244,7 +244,7 @@ class TestRenderBoards(object):
               for y in range(2)
               for z in range(3)], "ABC",
              INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
-        ])
+        ], [])
         assert out == (r" ___     ___."
                        r"/ABC\___/ABC\___."
                        r"\===,ABC`===,ABC\."
@@ -286,7 +286,7 @@ class TestRenderBoards(object):
               for x in range(2) for y in range(2) for z in range(3)
               if (x, y) != (0, 0)], "ABC",
              INNER_BOARD_EDGES, OUTER_BOARD_EDGES),
-        ])
+        ], [])
         assert out == (r" ___     ___."
                        r"/ABC\___/ABC\___."
                        r"\===,ABC`===,ABC\."
