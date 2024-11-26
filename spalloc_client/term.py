@@ -23,7 +23,7 @@ from enum import IntEnum
 from functools import partial
 from typing import (
     Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union)
-from typing_extensions import Self, TypeAlias
+from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 
@@ -155,7 +155,7 @@ class Terminal(object):
         # Restore to previous location and clear line.
         return "".join((self("\0338\033[K"), str(string)))
 
-    def set_attrs(self, attrs:List = []) -> str:
+    def set_attrs(self, attrs: List = []) -> str:
         """ Construct an ANSI control sequence which sets the given attribute\
             numbers.
         """
@@ -379,7 +379,7 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 
 def render_boards(
         board_groups: List[Tuple[List[Tuple[int, int, int]], str,
-            Tuple[str, str, str], Tuple[str, str, str]]],
+                           Tuple[str, str, str], Tuple[str, str, str]]],
         dead_links: List = [],
         dead_edge: Tuple[str, str, str] = ("XXX", "X", "X"),
         blank_label: str = "   ",

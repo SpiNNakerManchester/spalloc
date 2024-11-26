@@ -100,6 +100,7 @@ def list_machines(t: Terminal, machines: JsonObjectArray,
 
     print(render_table(table))
 
+
 def _get_machine(machines: JsonObjectArray, machine_name: str) -> JsonObject:
     for machine in machines:
         if machine["name"] == machine_name:

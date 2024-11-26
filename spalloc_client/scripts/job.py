@@ -90,7 +90,9 @@ from spalloc_client.scripts.support import Terminate, Script
 
 
 def _state_name(mapping: JsonObject) -> str:
-    return JobState(cast(int, mapping["state"])).name  # pylint: disable=no-member
+    state = JobState(cast(int, mapping["state"]))
+    return state.name  # pylint: disable=no-member
+
 
 def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[int],
                   job_id: int) -> None:
@@ -254,7 +256,7 @@ def power_job(client: ProtocolClient, timeout: Optional[int],
                     f"job {job_id} in state {_state_name(state)}"))
 
 
-def list_ips(client: ProtocolClient, timeout:Optional[int],
+def list_ips(client: ProtocolClient, timeout: Optional[int],
              job_id: int) -> None:
     """ Print a CSV of board hostnames for all boards allocated to a job.
 
@@ -288,7 +290,7 @@ def list_ips(client: ProtocolClient, timeout:Optional[int],
 
 
 def destroy_job(client: ProtocolClient, timeout: Optional[int],
-                job_id:int, reason:Optional[str] = None) -> None:
+                job_id: int, reason: Optional[str] = None) -> None:
     """ Destroy a running job.
 
     Parameters

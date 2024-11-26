@@ -36,7 +36,7 @@ def wait_for_exit(stop_event: threading.Event) -> None:
 
 
 def keep_job_alive(
-        hostname: str, port: int, job_id: int, keepalive_period:float,
+        hostname: str, port: int, job_id: int, keepalive_period: float,
         timeout: float, reconnect_delay: float,
         stop_event: threading.Event) -> None:
     """ Keeps a Spalloc job alive. Run as a separate process to the main\

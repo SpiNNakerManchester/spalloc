@@ -677,7 +677,7 @@ class Job(object):
         time.sleep(max(0.0, delay))
         self._reconnect()
 
-    def wait_until_ready(self, timeout:Optional[int] = None) -> None:
+    def wait_until_ready(self, timeout: Optional[int] = None) -> None:
         """ Block until the job is allocated and ready.
 
         Parameters
@@ -739,6 +739,7 @@ class Job(object):
             raise ValueError("received None instead of machine location")
         [cabinet, frame, board] = cast(list, result['physical'])
         return (cast(int, cabinet), cast(int, frame), cast(int, board))
+
 
 class StateChangeTimeoutError(Exception):
     """ Thrown when a state change takes too long to occur.

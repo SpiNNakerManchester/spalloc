@@ -185,7 +185,7 @@ class ProtocolClient(object):
             # Pass on the exception
             raise
 
-    def _close(self, key: Optional[Thread]=None) -> None:
+    def _close(self, key: Optional[Thread] = None) -> None:
         if key is None:
             key = current_thread()
         with self._socks_lock:
@@ -208,7 +208,7 @@ class ProtocolClient(object):
             self._close(key)
         self._local = _ProtocolThreadLocal()
 
-    def _recv_json(self, timeout:Optional[float]=None) -> JsonObject:
+    def _recv_json(self, timeout: Optional[float] = None) -> JsonObject:
         """ Receive a line of JSON from the server.
 
         Parameters
@@ -249,7 +249,7 @@ class ProtocolClient(object):
         return json.loads(line.decode("utf-8"))
 
     def _send_json(
-            self, obj: JsonObject, timeout:Optional[float] = None) -> None:
+            self, obj: JsonObject, timeout: Optional[float] = None) -> None:
         """ Attempt to send a line of JSON to the server.
 
         Parameters
@@ -278,7 +278,7 @@ class ProtocolClient(object):
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name:str, timeout: Optional[float] = None,
+    def call(self, name: str, timeout: Optional[float] = None,
              *args: Union[int, str, None],
              **kwargs: JsonValue) -> JsonValue:
         """ Send a command to the server and return the reply.
@@ -330,7 +330,7 @@ class ProtocolClient(object):
             raise ProtocolError(str(e)) from e
 
     def wait_for_notification(
-            self, timeout:Optional[float] = None) -> Optional[JsonObject]:
+            self, timeout: Optional[float] = None) -> Optional[JsonObject]:
         """ Return the next notification to arrive.
 
         Parameters
@@ -387,7 +387,7 @@ class ProtocolClient(object):
         if "owner" not in kwargs:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
-        return cast(int, self.call("create_job", None,*args, **kwargs))
+        return cast(int, self.call("create_job", None, *args, **kwargs))
 
     def job_keepalive(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:
@@ -423,6 +423,7 @@ class ProtocolClient(object):
         """ Destroy the job """
         return cast(dict, self.call("destroy_job", timeout,
                                     job_id, reason=reason))
+
     def notify_job(self, job_id: Optional[int] = None,
                    timeout: Optional[int] = None) -> JsonObject:
         """ Turn on notification of job status changes. """

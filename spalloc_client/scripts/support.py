@@ -122,4 +122,3 @@ class Script(object, metaclass=AbstractBase):
         except Terminate as t:
             t.exit()
             return 1
-

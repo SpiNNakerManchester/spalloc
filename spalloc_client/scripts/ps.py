@@ -143,7 +143,8 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client: ProtocolClient, args: argparse.Namespace) -> None:
+    def one_shot(self, client: ProtocolClient,
+                 args: argparse.Namespace) -> None:
         """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
