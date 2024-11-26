@@ -55,7 +55,7 @@ class Script(object, metaclass=AbstractBase):
     def __init__(self) -> None:
         self.client_factory = ProtocolClient
 
-    def get_parser(self, cfg: Dict[str, Any]) -> ArgumentParser:
+    def get_parser(self, cfg: Dict[str, str]) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
         """
         raise NotImplementedError

@@ -88,7 +88,7 @@ class WhereIsScript(Script):
         self.show_board_chip = False
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")

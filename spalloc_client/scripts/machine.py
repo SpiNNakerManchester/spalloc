@@ -257,7 +257,7 @@ class ListMachinesScript(Script):
             show_machine(t, machines, jobs, args.machine, not args.detailed)
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Get the state of individual machines.")
         parser.add_argument(

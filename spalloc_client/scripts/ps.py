@@ -128,7 +128,7 @@ class ProcessListScript(Script):
     An object form Job scripts.
     """
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)

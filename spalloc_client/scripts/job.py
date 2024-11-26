@@ -340,7 +340,7 @@ class ManageJobScript(Script):
         return cast(int, job_ids[0])
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: Dict[str, str]) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Manage running jobs.")
         parser.add_argument(
