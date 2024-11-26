@@ -479,12 +479,9 @@ class ProtocolClient(object):
         frozenset("machine chip_x chip_y".split()),
         frozenset("job_id chip_x chip_y".split())])
 
-    def where_is(self, timeout: Optional[int] = None,
-                 **kwargs: Optional[int]) -> JsonObject:
+    def where_is(self, job_id: int, chip_x: int, chip_y: int,
+                 timeout: Optional[int] = None) -> JsonObject:
         """ Reports where ion the Machine a job is running """
         # Test for whether sane arguments are passed.
-        keywords = frozenset(kwargs)
-        if keywords not in ProtocolClient._acceptable_kwargs_for_where_is:
-            raise SpallocServerException(
-                f"Invalid arguments: {', '.join(keywords)}")
-        return cast(dict, self.call("where_is", timeout, **kwargs))
+        return cast(dict, self.call("where_is", timeout, job_id=job_id,
+                                    chip_x=chip_x, chip_y=chip_y))

@@ -244,16 +244,3 @@ def test_commands_as_methods(c, s, bg_accept):
     # Should fail for arbitrary external method names
     with pytest.raises(AttributeError):
         c.bar()
-
-
-def test_where_is_sanity(c):
-    with pytest.raises(SpallocServerException):
-        c.where_is(foo=1, bar=2)
-    with pytest.raises(SpallocServerException):
-        c.where_is(machine=1, x=2, y=3, z=4, foo=5)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4, timeout=5)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4, timeout=None)
