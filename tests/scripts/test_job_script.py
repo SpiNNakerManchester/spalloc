@@ -16,7 +16,7 @@ from datetime import datetime
 import pytest
 from mock import Mock, MagicMock  # type: ignore[import]
 from spalloc_client import JobState, ProtocolError
-from spalloc_client.config import TIMEOUT
+from spalloc_client.spalloc_config import TIMEOUT
 from spalloc_client.term import Terminal
 from spalloc_client.scripts.job import (
     show_job_info, watch_job, power_job, list_ips, destroy_job, main)

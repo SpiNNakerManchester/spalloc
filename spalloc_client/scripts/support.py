@@ -17,7 +17,7 @@ import sys
 from typing import Any, Dict, Optional
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 from spalloc_client import (
-    config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
+    spalloc_config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
 
 # The acceptable range of server version numbers
@@ -96,7 +96,7 @@ class Script(object, metaclass=AbstractBase):
                  "default: %(default)s)")
 
     def __call__(self, argv: Optional[str] = None) -> int:
-        cfg = config.read_config()
+        cfg = spalloc_config.read_config()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)

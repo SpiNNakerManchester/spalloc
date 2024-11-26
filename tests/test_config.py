@@ -16,7 +16,7 @@ import tempfile
 import shutil
 import os.path
 import pytest
-from spalloc_client.config import read_config, TIMEOUT
+from spalloc_client.spalloc_config import read_config, TIMEOUT
 
 
 @pytest.yield_fixture

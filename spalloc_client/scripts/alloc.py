@@ -116,7 +116,7 @@ import tempfile
 from typing import Dict, List, Optional, Tuple, Union
 from shlex import quote
 from spalloc_client import (
-    config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
+    spalloc_config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
 from spalloc_client.term import Terminal, render_definitions
 
@@ -325,7 +325,7 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
     """
     Parse the arguments.
     """
-    cfg = config.read_config()
+    cfg = spalloc_config.read_config()
 
     parser = argparse.ArgumentParser(
         description="Request (and allocate) a SpiNNaker machine.")

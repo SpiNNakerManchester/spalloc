@@ -30,7 +30,7 @@ from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
-from .config import read_config, SEARCH_PATH
+from .spalloc_config import read_config, SEARCH_PATH
 from .states import JobState
 from ._utils import time_left, timed_out, make_timeout
 
