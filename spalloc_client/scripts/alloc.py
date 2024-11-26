@@ -113,7 +113,7 @@ import os
 import subprocess
 import sys
 import tempfile
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from shlex import quote
 from spalloc_client import (
     config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,

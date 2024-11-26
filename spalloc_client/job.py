@@ -19,7 +19,7 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import Any, cast, Dict, Optional, Tuple, Type, Union
+from typing import cast, Dict, Optional, Tuple, Type, Union
 import sys
 
 from typing_extensions import Literal, Self
