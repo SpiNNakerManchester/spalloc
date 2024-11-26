@@ -41,7 +41,7 @@ class Terminate(Exception):
         sys.exit(self._code)
 
 
-def version_verify(client: ProtocolClient, timeout: Optional[int]) -> None:
+def version_verify(client: ProtocolClient, timeout: Optional[float]) -> None:
     """
     Verify that the current version of the client is compatible
     """

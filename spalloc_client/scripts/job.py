@@ -94,7 +94,7 @@ def _state_name(mapping: JsonObject) -> str:
     return state.name  # pylint: disable=no-member
 
 
-def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[int],
+def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[float],
                   job_id: int) -> None:
     """ Print a human-readable overview of a Job's attributes.
 
@@ -173,7 +173,7 @@ def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[int],
     print(render_definitions(info))
 
 
-def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[int],
+def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[float],
               job_id: int) -> int:
     """ Re-print a job's information whenever the job changes.
 
@@ -207,7 +207,7 @@ def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[int],
             print("")
 
 
-def power_job(client: ProtocolClient, timeout: Optional[int],
+def power_job(client: ProtocolClient, timeout: Optional[float],
               job_id: int, power: bool) -> None:
     """ Power a job's boards on/off and wait for the action to complete.
 
@@ -256,7 +256,7 @@ def power_job(client: ProtocolClient, timeout: Optional[int],
                     f"job {job_id} in state {_state_name(state)}"))
 
 
-def list_ips(client: ProtocolClient, timeout: Optional[int],
+def list_ips(client: ProtocolClient, timeout: Optional[float],
              job_id: int) -> None:
     """ Print a CSV of board hostnames for all boards allocated to a job.
 
@@ -289,7 +289,7 @@ def list_ips(client: ProtocolClient, timeout: Optional[int],
         print(f"{x},{y},{hostname}")
 
 
-def destroy_job(client: ProtocolClient, timeout: Optional[int],
+def destroy_job(client: ProtocolClient, timeout: Optional[float],
                 job_id: int, reason: Optional[str] = None) -> None:
     """ Destroy a running job.
 

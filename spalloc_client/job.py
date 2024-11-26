@@ -246,12 +246,12 @@ class Job(object):
         config = SpallocConfig(config_filenames)
 
         # Get protocol client options
-        hostname = kwargs.get("hostname", config.hostname)
+        hostname = cast(str, kwargs.get("hostname", config.hostname))
         owner = kwargs.get("owner", config.owner)
-        port = kwargs.get("port", config.port)
+        port = cast(int, kwargs.get("port", config.port))
         self._reconnect_delay = kwargs.get("reconnect_delay",
                                            config.reconnect_delay)
-        self._timeout = kwargs.get("timeout", config.timeout)
+        self._timeout = cast(float, kwargs.get("timeout", config.timeout))
         if hostname is None:
             raise ValueError("A hostname must be specified.")
 
@@ -677,7 +677,7 @@ class Job(object):
         time.sleep(max(0.0, delay))
         self._reconnect()
 
-    def wait_until_ready(self, timeout: Optional[int] = None) -> None:
+    def wait_until_ready(self, timeout: Optional[float] = None) -> None:
         """ Block until the job is allocated and ready.
 
         Parameters
