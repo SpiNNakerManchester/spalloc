@@ -264,13 +264,12 @@ def info(msg: str) -> None:
         t.stream.write(f"{msg}\n")
 
 
-def update(msg: str, colour: functools.partial,
-           *args: Union[int, str, List[object]]) -> None:
+def update(msg: str, colour: functools.partial) -> None:
     """
     Writes a message to the terminal in the schoosen colour.
     """
     assert t is not None
-    info(t.update(colour(msg.format(*args))))
+    info(t.update(colour(msg)))
 
 
 def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
@@ -285,11 +284,9 @@ def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
             # Show debug info on state-change
             if old_state != cur_state:
                 if cur_state == JobState.queued:
-                    update("Job {}: Waiting in queue...", t.yellow,
-                           job.id)
+                    update(f"Job {job.id}: Waiting in queue...", t.yellow)
                 elif cur_state == JobState.power:
-                    update("Job {}: Waiting for power on...", t.yellow,
-                           job.id)
+                    update(f"Job {job.id}: Waiting for power on...", t.yellow)
                 elif cur_state == JobState.ready:
                     # Here we go!
                     return 0, None
@@ -302,26 +299,24 @@ def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
                         pass
 
                     if reason is not None:
-                        update("Job {}: Destroyed: {}", t.red,
-                               job.id, reason)
+                        update(f"Job {job.id}: Destroyed: {reason}", t.red)
                     else:
-                        update("Job {}: Destroyed.", t.red,
-                               job.id)
+                        update(f"Job {job.id}: Destroyed.", t.red)
                     return 1, reason
                 elif cur_state == JobState.unknown:
-                    update("Job {}: Job not recognised by server.", t.red,
-                           job.id)
+                    update(f"Job {job.id}: Job not recognised by server.",
+                           t.red)
                     return 2, None
                 else:
-                    update("Job {}: Entered an unrecognised state {}.",
-                           t.red, job.id, cur_state)
+                    update(f"Job {job.id}: Entered an unrecognised state "
+                           f"{cur_state}.", t.red)
                     return 3, None
 
             old_state, cur_state = \
                 cur_state, job.wait_for_state_change(cur_state)
     except KeyboardInterrupt:
         # Gracefully terminate from keyboard interrupt
-        update("Job {}: Keyboard interrupt.", t.red, job.id)
+        update(f"Job {job.id}: Keyboard interrupt.", t.red)
         return 4, "Keyboard interrupt."
 
 
@@ -459,7 +454,7 @@ def run_job(job_args: List[int], job_kwargs: Dict[str, Any],
         # Machine is now ready
         write_ips_to_csv(job.connections, ip_file_filename)
 
-        update("Job {}: Ready!", t.green, job.id)
+        update(f"Job {job.id}: Ready!", t.green)
 
         # Either run the user's application or just print the details.
         if not arguments.command:
