@@ -19,8 +19,7 @@ import logging
 import pytest
 from mock import Mock  # type: ignore[import]
 from spalloc_client import (
-    ProtocolClient, SpallocServerException, ProtocolTimeoutError,
-    ProtocolError)
+    ProtocolClient, SpallocServerException, ProtocolTimeoutError)
 from .common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)
