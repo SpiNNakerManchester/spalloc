@@ -350,7 +350,7 @@ class ManageJobScript(Script):
             help="the job ID of interest, optional if the current owner only "
             "has one job")
         parser.add_argument(
-            "--owner", "-o", default=cfg["owner"],
+            "--owner", "-o", default=cfg.owner,
             help="if no job ID is provided and this owner has only one job, "
             "this job is assumed (default: %(default)s)")
         control_args = parser.add_mutually_exclusive_group()

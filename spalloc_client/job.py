@@ -30,7 +30,7 @@ from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
-from .spalloc_config import read_config, SEARCH_PATH
+from .spalloc_config import SpallocConfig, SEARCH_PATH
 from .states import JobState
 from ._utils import time_left, timed_out, make_timeout
 
@@ -243,15 +243,15 @@ class Job(object):
         # Read configuration
         config_filenames = cast(
             list, kwargs.pop("config_filenames", SEARCH_PATH))
-        config = read_config(config_filenames)
+        config = SpallocConfig(config_filenames)
 
         # Get protocol client options
-        hostname = kwargs.get("hostname", config["hostname"])
-        owner = kwargs.get("owner", config["owner"])
-        port = kwargs.get("port", config["port"])
+        hostname = kwargs.get("hostname", config.hostname)
+        owner = kwargs.get("owner", config.owner)
+        port = kwargs.get("port", config.port)
         self._reconnect_delay = kwargs.get("reconnect_delay",
-                                           config["reconnect_delay"])
-        self._timeout = kwargs.get("timeout", config["timeout"])
+                                           config.reconnect_delay)
+        self._timeout = kwargs.get("timeout", config.timeout)
         if hostname is None:
             raise ValueError("A hostname must be specified.")
 
@@ -294,16 +294,16 @@ class Job(object):
             job_args = args
             job_kwargs = {
                 "owner": owner,
-                "keepalive": kwargs.get("keepalive", config["keepalive"]),
-                "machine": kwargs.get("machine", config["machine"]),
-                "tags": kwargs.get("tags", config["tags"]),
-                "min_ratio": kwargs.get("min_ratio", config["min_ratio"]),
+                "keepalive": kwargs.get("keepalive", config.keepalive),
+                "machine": kwargs.get("machine", config.machine),
+                "tags": kwargs.get("tags", config.tags),
+                "min_ratio": kwargs.get("min_ratio", config.min_ratio),
                 "max_dead_boards":
-                    kwargs.get("max_dead_boards", config["max_dead_boards"]),
+                    kwargs.get("max_dead_boards", config.max_dead_boards),
                 "max_dead_links":
-                    kwargs.get("max_dead_links", config["max_dead_links"]),
+                    kwargs.get("max_dead_links", config.max_dead_links),
                 "require_torus":
-                    kwargs.get("require_torus", config["require_torus"]),
+                    kwargs.get("require_torus", config.require_torus),
                 "timeout": self._timeout,
             }
 

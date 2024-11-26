@@ -116,8 +116,9 @@ import tempfile
 from typing import Dict, List, Optional, Tuple, Union
 from shlex import quote
 from spalloc_client import (
-    spalloc_config, Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
+    Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
+from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import Terminal, render_definitions
 
 # pylint: disable=invalid-name
@@ -325,7 +326,7 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
     """
     Parse the arguments.
     """
-    cfg = spalloc_config.read_config()
+    cfg = SpallocConfig()
 
     parser = argparse.ArgumentParser(
         description="Request (and allocate) a SpiNNaker machine.")
@@ -354,38 +355,38 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
         help="if given, resume keeping the specified job alive rather than "
         "creating a new job (all allocation requirements will be ignored)")
     allocation_args.add_argument(
-        "--machine", "-m", nargs="?", default=cfg["machine"],
+        "--machine", "-m", nargs="?", default=cfg.machine,
         help="only allocate boards which are part of a specific machine, or "
         "any machine if no machine is given (default: %(default)s)")
     allocation_args.add_argument(
         "--tags", "-t", nargs="*", metavar="TAG",
-        default=cfg["tags"] or ["default"],
+        default=cfg.tags or ["default"],
         help="only allocate boards which have (at least) the specified flags "
-        f"(default: {' '.join(cfg['tags'] or [])})")
+        f"(default: {' '.join(cfg.tags or [])})")
     allocation_args.add_argument(
-        "--min-ratio", type=float, metavar="RATIO", default=cfg["min_ratio"],
+        "--min-ratio", type=float, metavar="RATIO", default=cfg.min_ratio,
         help="when allocating by number of boards, require that the "
         "allocation be at least as square as this ratio (default: "
         "%(default)s)")
     allocation_args.add_argument(
         "--max-dead-boards", type=int, metavar="NUM", default=(
-            -1 if cfg["max_dead_boards"] is None else cfg["max_dead_boards"]),
+            -1 if cfg.max_dead_boards is None else cfg.max_dead_boards),
         help="boards allowed to be dead in the allocation, or -1 to allow "
         "any number of dead boards (default: %(default)s)")
     allocation_args.add_argument(
         "--max-dead-links", type=int, metavar="NUM", default=(
-            -1 if cfg["max_dead_links"] is None else cfg["max_dead_links"]),
+            -1 if cfg.max_dead_links is None else cfg.max_dead_links),
         help="inter-board links allowed to be dead in the allocation, or -1 "
         "to allow any number of dead links (default: %(default)s)")
     allocation_args.add_argument(
         "--require-torus", "-w", action="store_true",
-        default=cfg["require_torus"],
+        default=cfg.require_torus,
         help="require that the allocation contain torus (a.k.a. wrap-around) "
-        f"links {'(default)' if cfg['require_torus'] else ''}")
+        f"links {'(default)' if cfg.require_torus else ''}")
     allocation_args.add_argument(
         "--no-require-torus", "-W", action="store_false", dest="require_torus",
         help="do not require that the allocation contain torus (a.k.a. "
-        f"wrap-around) links {'' if cfg['require_torus'] else '(default)'}")
+        f"wrap-around) links {'' if cfg.require_torus else '(default)'}")
 
     command_args = parser.add_argument_group("command wrapping arguments")
     command_args.add_argument(
@@ -400,28 +401,28 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
 
     server_args = parser.add_argument_group("spalloc server arguments")
     server_args.add_argument(
-        "--owner", default=cfg["owner"],
+        "--owner", default=cfg.owner,
         help="by convention, the email address of the owner of the job "
         "(default: %(default)s)")
     server_args.add_argument(
-        "--hostname", "-H", default=cfg["hostname"],
+        "--hostname", "-H", default=cfg.hostname,
         help="hostname or IP of the spalloc server (default: %(default)s)")
     server_args.add_argument(
-        "--port", "-P", default=cfg["port"], type=int,
+        "--port", "-P", default=cfg.port, type=int,
         help="port number of the spalloc server (default: %(default)s)")
     server_args.add_argument(
         "--keepalive", type=int, metavar="SECONDS",
-        default=(-1 if cfg["keepalive"] is None else cfg["keepalive"]),
+        default=(-1 if cfg.keepalive is None else cfg.keepalive),
         help="the interval at which to require keepalive messages to be "
         "sent to prevent the server cancelling the job, or -1 to not "
         "require keepalive messages (default: %(default)s)")
     server_args.add_argument(
-        "--reconnect-delay", default=cfg["reconnect_delay"], type=float,
+        "--reconnect-delay", default=cfg.reconnect_delay, type=float,
         metavar="SECONDS",
         help="seconds to wait before reconnecting to the server if the "
         "connection is lost (default: %(default)s)")
     server_args.add_argument(
-        "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
+        "--timeout", default=cfg.timeout, type=float, metavar="SECONDS",
         help="seconds to wait for a response from the server "
         "(default: %(default)s)")
     return parser, parser.parse_args(argv)

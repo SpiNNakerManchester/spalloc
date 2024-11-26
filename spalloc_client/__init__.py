@@ -23,5 +23,5 @@ from spalloc_client.states import JobState
 
 __all__ = [
     "Job", "JobDestroyedError", "JobState", "ProtocolClient",
-    "ProtocolError", "ProtocolTimeoutError", "SpallocServerException",
-    "StateChangeTimeoutError"]
+    "ProtocolError", "ProtocolTimeoutError",
+    "SpallocServerException", "StateChangeTimeoutError"]

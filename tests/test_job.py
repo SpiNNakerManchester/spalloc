@@ -76,6 +76,7 @@ class TestConstructor(object):
             basic_job_kwargs.pop("port")
             basic_job_kwargs.pop("reconnect_delay")
             assert len(client.create_job.mock_calls) == 1
+            a = client.create_job
             args = client.create_job.mock_calls[0][1]
             kwargs = client.create_job.mock_calls[0][2]
             assert args == tuple()

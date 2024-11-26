@@ -146,58 +146,109 @@ def _read_none_or_str(
     return parser.get(SECTION, option)
 
 
-def read_config(filenames: Optional[List[str]] = None) -> Dict[str, Any]:
-    """ Attempt to read local configuration files to determine spalloc client
-    settings.
+class SpallocConfig(object):
 
-    Parameters
-    ----------
-    filenames : [str, ...]
-        Filenames to attempt to read. Later config file have higher priority.
+    __slots__ = ("_hostname", "_ignore_version", "_keepalive", "_machine",
+                 "_max_dead_boards", "_max_dead_links", "_min_ratio",
+                 "_owner", "_port", "_reconnect_delay", "_require_torus",
+                 "_tags", "_timeout")
 
-    Returns
-    -------
-    dict
-        The configuration loaded.
-    """
-    if filenames is None:  # pragma: no cover
-        filenames = SEARCH_PATH
-    parser = configparser.ConfigParser()
+    def __init__(self, filenames: Optional[List[str]] = None):
+        """ Attempt to read local configuration files to determine spalloc client
+        settings.
 
-    # Set default config values (NB: No read_dict in Python 2.7)
-    parser.add_section(SECTION)
-    for key, value in DEFAULT_CONFIG.items():
-        parser.set(SECTION, key, value)
+        Parameters
+        ----------
+        filenames : [str, ...]
+            Filenames to attempt to read. Later config file have higher priority.
 
-    # Attempt to read from each possible file location in turn
-    for filename in filenames:
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                parser.read_file(f, filename)
-        except (IOError, OSError):
-            # File did not exist, keep trying
-            pass
+        """
+        if filenames is None:  # pragma: no cover
+            filenames = SEARCH_PATH
+        parser = configparser.ConfigParser()
 
-    cfg: Dict[str, Union[float, str, List[str], None]] = {
-        "hostname":        _read_any_str(parser, "hostname"),
-        "owner":           _read_any_str(parser, "owner"),
-        "port":            parser.getint(SECTION, "port"),
-        "keepalive":       _read_none_or_float(parser, "keepalive"),
-        "reconnect_delay": parser.getfloat(SECTION, "reconnect_delay"),
-        "timeout":         _read_none_or_float(parser, "timeout"),
-        "machine":         _read_none_or_str(parser, "machine"),
-        "min_ratio":       parser.getfloat(SECTION, "min_ratio"),
-        "max_dead_boards": _read_none_or_int(parser, "max_dead_boards"),
-        "max_dead_links":  _read_none_or_int(parser, "max_dead_links"),
-        "require_torus":   parser.getboolean(SECTION, "require_torus"),
-        "ignore_version":  parser.getboolean(SECTION, "ignore_version")}
+        # Set default config values (NB: No read_dict in Python 2.7)
+        parser.add_section(SECTION)
+        for key, value in DEFAULT_CONFIG.items():
+            parser.set(SECTION, key, value)
 
-    tags = _read_none_or_str(parser, "tags")
-    cfg["tags"] = None if tags is None else list(
-        map(str.strip, tags.split(",")))
+        # Attempt to read from each possible file location in turn
+        for filename in filenames:
+            try:
+                with open(filename, "r", encoding="utf-8") as f:
+                    parser.read_file(f, filename)
+            except (IOError, OSError):
+                # File did not exist, keep trying
+                pass
 
-    return cfg
+        self._hostname =  _read_any_str(parser, "hostname")
+        self._owner = _read_any_str(parser, "owner")
+        self._port = parser.getint(SECTION, "port")
+        self._keepalive = _read_none_or_float(parser, "keepalive")
+        self._reconnect_delay = parser.getfloat(SECTION, "reconnect_delay")
+        self._timeout = _read_none_or_float(parser, "timeout")
+        self._machine = _read_none_or_str(parser, "machine")
+        self._min_ratio = parser.getfloat(SECTION, "min_ratio")
+        self._max_dead_boards = _read_none_or_int(parser, "max_dead_boards")
+        self._max_dead_links = _read_none_or_int(parser, "max_dead_links")
+        self._require_torus = parser.getboolean(SECTION, "require_torus")
+        self._ignore_version = parser.getboolean(SECTION, "ignore_version")
 
+        tags = _read_none_or_str(parser, "tags")
+        self._tags = None if tags is None else list(
+            map(str.strip, tags.split(",")))
+
+    @property
+    def hostname(self) -> Optional[str]:
+        return self._hostname
+
+    @property
+    def ignore_version(self) -> bool:
+        return self._ignore_version
+
+    @property
+    def keepalive(self) -> Optional[float]:
+        return self._keepalive
+
+    @property
+    def machine(self) -> Optional[str]:
+        return self._machine
+
+    @property
+    def max_dead_boards(self) -> Optional[int]:
+        return self._max_dead_boards
+
+    @property
+    def max_dead_links(self) -> Optional[int]:
+        return self._max_dead_links
+
+    @property
+    def min_ratio(self) -> float:
+        return self._min_ratio
+
+    @property
+    def owner(self) -> Optional[str]:
+        return self._owner
+
+    @property
+    def port(self) -> int:
+        return self._port
+
+    @property
+    def reconnect_delay(self) -> float:
+        return self._reconnect_delay
+
+    @property
+    def require_torus(self) -> bool:
+        return self._require_torus
+
+    @property
+    def tags(self) -> Optional[List[str]]:
+        return self._tags
+
+    @property
+    def timeout(self) -> Optional[float]:
+        return self._timeout
 
 if __name__ == "__main__":  # pragma: no cover
     print("Default search path (lowest-priority first):")

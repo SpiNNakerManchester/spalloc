@@ -17,8 +17,9 @@ import sys
 from typing import Any, Dict, Optional
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 from spalloc_client import (
-    spalloc_config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
+    ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
+from spalloc_client.spalloc_config import SpallocConfig
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
@@ -55,7 +56,7 @@ class Script(object, metaclass=AbstractBase):
     def __init__(self) -> None:
         self.client_factory = ProtocolClient
 
-    def get_parser(self, cfg: Dict[str, str]) -> ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
         """
         raise NotImplementedError
@@ -74,29 +75,29 @@ class Script(object, metaclass=AbstractBase):
         raise NotImplementedError
 
     def build_server_arg_group(self, server_args: Any,
-                               cfg: Dict[str, object]) -> None:
+                               cfg: SpallocConfig) -> None:
         """
         Adds a few more arguments
 
         :param argparse._ArguementGroup server_args:
         """
         server_args.add_argument(
-            "--hostname", "-H", default=cfg["hostname"],
+            "--hostname", "-H", default=cfg.hostname,
             help="hostname or IP of the spalloc server (default: %(default)s)")
         server_args.add_argument(
-            "--port", "-P", default=cfg["port"], type=int,
+            "--port", "-P", default=cfg.port, type=int,
             help="port number of the spalloc server (default: %(default)s)")
         server_args.add_argument(
-            "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
+            "--timeout", default=cfg.timeout, type=float, metavar="SECONDS",
             help="seconds to wait for a response from the server (default: "
             "%(default)s)")
         server_args.add_argument(
-            "--ignore_version", default=cfg["ignore_version"], type=bool,
+            "--ignore_version", default=cfg.ignore_version, type=bool,
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
     def __call__(self, argv: Optional[str] = None) -> int:
-        cfg = spalloc_config.read_config()
+        cfg = SpallocConfig()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)
