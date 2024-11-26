@@ -147,6 +147,7 @@ def _read_none_or_str(
 
 
 class SpallocConfig(object):
+    """ Typed configs """
 
     __slots__ = ("_hostname", "_ignore_version", "_keepalive", "_machine",
                  "_max_dead_boards", "_max_dead_links", "_min_ratio",
@@ -201,54 +202,67 @@ class SpallocConfig(object):
 
     @property
     def hostname(self) -> Optional[str]:
+        """ Name of the spalloc server if specified """
         return self._hostname
 
     @property
     def ignore_version(self) -> bool:
+        """ Flag to say version can be ignored """
         return self._ignore_version
 
     @property
     def keepalive(self) -> Optional[float]:
+        """ Time to keep job allive """
         return self._keepalive
 
     @property
     def machine(self) -> Optional[str]:
+        """ Name of the spalloc machine to use"""
         return self._machine
 
     @property
     def max_dead_boards(self) -> Optional[int]:
+        """ How many dead boards are allowed in the job"""
         return self._max_dead_boards
 
     @property
     def max_dead_links(self) -> Optional[int]:
+        """ How many dead links are allowed in the Job"""
         return self._max_dead_links
 
     @property
     def min_ratio(self) -> float:
+        """ Min ratio"""
         return self._min_ratio
 
     @property
     def owner(self) -> Optional[str]:
+        """ Owner to assign job to """
         return self._owner
 
     @property
     def port(self) -> int:
+        """ Spalloc server port"""
         return self._port
 
     @property
     def reconnect_delay(self) -> float:
+        """ Reconnect delay """
         return self._reconnect_delay
 
     @property
     def require_torus(self) -> bool:
+        """ Flag to say a torus is required """
         return self._require_torus
 
     @property
     def tags(self) -> Optional[List[str]]:
+        """ List of tags """
         return self._tags
 
     @property
     def timeout(self) -> Optional[float]:
+        """ Time before a command should timeout """
         return self._timeout
 
 
