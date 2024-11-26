@@ -427,7 +427,8 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
     return parser, parser.parse_args(argv)
 
 
-def run_job(job_args: List[int], job_kwargs: Dict[str, Any],
+def run_job(job_args: List[int],
+            job_kwargs: Dict[str, Union[float, str, None]],
             ip_file_filename: str) -> int:
     """
     Run a job
@@ -497,7 +498,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("--hostname of spalloc server must be specified")
 
     # Set universal job arguments
-    job_kwargs = {
+    job_kwargs: Dict[str, Union[float, str, None]] = {
         "hostname": arguments.hostname,
         "port": arguments.port,
         "reconnect_delay": _minzero(arguments.reconnect_delay),

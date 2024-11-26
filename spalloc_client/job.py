@@ -19,7 +19,7 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import Any, cast, Dict, Optional, Tuple, Type
+from typing import Any, cast, Dict, Optional, Tuple, Type, Union
 import sys
 
 from typing_extensions import Literal, Self
@@ -127,7 +127,7 @@ class Job(object):
         allocated.
     """
 
-    def __init__(self, *args: int, **kwargs: Dict[str, Any]):
+    def __init__(self, *args: int, **kwargs: Union[float, str, None]):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
