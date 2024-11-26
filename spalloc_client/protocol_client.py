@@ -462,7 +462,7 @@ class ProtocolClient(object):
         """ Gets the position of board x, y, z on the given machine. """
         # pylint: disable=too-many-arguments
         return cast(dict, self.call("get_board_position", timeout,
-                                     machine_name, x, y, z))
+                                    machine_name, x, y, z))
 
     def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
                               timeout: Optional[int] = None

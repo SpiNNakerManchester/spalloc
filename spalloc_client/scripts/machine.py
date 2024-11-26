@@ -32,7 +32,7 @@ real-time.
 from collections import defaultdict
 import argparse
 import sys
-from typing import Any, Callable, cast, Dict, Iterator, List, Optional
+from typing import Any, cast, Dict, Iterator, List, Optional
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray

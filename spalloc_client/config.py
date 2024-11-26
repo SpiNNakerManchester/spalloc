@@ -138,6 +138,7 @@ def _read_any_str(
     except configparser.NoOptionError:
         return None
 
+
 def _read_none_or_str(
         parser: configparser.ConfigParser, option: str) -> Optional[str]:
     if parser.get(SECTION, option) == "None":
