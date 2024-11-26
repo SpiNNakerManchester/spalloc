@@ -14,7 +14,7 @@
 
 from argparse import ArgumentParser, Namespace
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 from spalloc_client import (
     ProtocolClient, ProtocolError, ProtocolTimeoutError,

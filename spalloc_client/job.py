@@ -249,8 +249,8 @@ class Job(object):
         hostname = cast(str, kwargs.get("hostname", config.hostname))
         owner = kwargs.get("owner", config.owner)
         port = cast(int, kwargs.get("port", config.port))
-        self._reconnect_delay = cast(float, kwargs.get("reconnect_delay",
-                                           config.reconnect_delay))
+        self._reconnect_delay = cast(
+            float, kwargs.get("reconnect_delay", config.reconnect_delay))
         self._timeout = cast(float, kwargs.get("timeout", config.timeout))
         if hostname is None:
             raise ValueError("A hostname must be specified.")

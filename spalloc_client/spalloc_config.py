@@ -81,7 +81,7 @@ options available (and the default value).
 """
 import configparser
 import os.path
-from typing import Any, Dict, List, Optional, Union
+from typing import List, Optional
 
 import appdirs
 
@@ -154,13 +154,14 @@ class SpallocConfig(object):
                  "_tags", "_timeout")
 
     def __init__(self, filenames: Optional[List[str]] = None):
-        """ Attempt to read local configuration files to determine spalloc client
-        settings.
+        """ Attempt to read local configuration files
+        to determine spalloc client settings.
 
         Parameters
         ----------
         filenames : [str, ...]
-            Filenames to attempt to read. Later config file have higher priority.
+            Filenames to attempt to read.
+            Later config file have higher priority.
 
         """
         if filenames is None:  # pragma: no cover
@@ -181,7 +182,7 @@ class SpallocConfig(object):
                 # File did not exist, keep trying
                 pass
 
-        self._hostname =  _read_any_str(parser, "hostname")
+        self._hostname = _read_any_str(parser, "hostname")
         self._owner = _read_any_str(parser, "owner")
         self._port = parser.getint(SECTION, "port")
         self._keepalive = _read_none_or_float(parser, "keepalive")
@@ -249,6 +250,7 @@ class SpallocConfig(object):
     @property
     def timeout(self) -> Optional[float]:
         return self._timeout
+
 
 if __name__ == "__main__":  # pragma: no cover
     print("Default search path (lowest-priority first):")

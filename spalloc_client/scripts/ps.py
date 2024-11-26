@@ -27,7 +27,7 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 from collections.abc import Sized
 import sys
-from typing import cast, Dict, Union
+from typing import cast, Union
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray

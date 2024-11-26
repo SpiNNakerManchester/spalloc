@@ -95,8 +95,8 @@ def _state_name(mapping: JsonObject) -> str:
     return state.name  # pylint: disable=no-member
 
 
-def show_job_info(t: Terminal, client: ProtocolClient, timeout: Optional[float],
-                  job_id: int) -> None:
+def show_job_info(t: Terminal, client: ProtocolClient,
+                  timeout: Optional[float], job_id: int) -> None:
     """ Print a human-readable overview of a Job's attributes.
 
     Parameters
