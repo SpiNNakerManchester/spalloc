@@ -232,7 +232,8 @@ def test_commands_as_methods(c, s, bg_accept):
     bg_accept.join()
 
     s.send({"return": "Woo"})
-    assert c.create_job(1, bar=2, owner="dummy") == "Woo"
+    no_timeout = None
+    assert c.create_job(no_timeout, 1, bar=2, owner="dummy") == "Woo"
     assert s.recv() == {
         "command": "create_job", "args": [1], "kwargs": {
             "bar": 2, "owner": "dummy"}}

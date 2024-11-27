@@ -380,7 +380,7 @@ class ProtocolClient(object):
         """ Ask what version of spalloc is running. """
         return cast(str, self.call("version", timeout))
 
-    def create_job(self, *args: int,
+    def create_job(self, timeout: Optional[float], *args: int,
                    **kwargs: Union[float, str, List[str], None]) -> int:
         """
         Start a new job
@@ -389,7 +389,7 @@ class ProtocolClient(object):
         if "owner" not in kwargs:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
-        return cast(int, self.call("create_job", None, *args, **kwargs))
+        return cast(int, self.call("create_job", timeout, *args, **kwargs))
 
     def job_keepalive(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:

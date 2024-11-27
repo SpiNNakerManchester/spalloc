@@ -354,7 +354,6 @@ class Job(object):
                     pick_num(max_dead_links, config.max_dead_links),
                 "require_torus":
                     pick_bool(require_torus, config.require_torus),
-                "timeout": self._timeout,
             }
 
             # Sanity check arguments
@@ -368,7 +367,8 @@ class Job(object):
             self._keepalive = job_kwargs["keepalive"]
 
             # Create the job (failing fast if can't communicate)
-            self.id = self._client.create_job(*job_args, **job_kwargs)
+            self.id = self._client.create_job(
+                self._timeout, *job_args, **job_kwargs)
 
             logger.info("Created spalloc job %d", self.id)
 
