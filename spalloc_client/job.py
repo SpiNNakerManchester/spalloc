@@ -552,7 +552,7 @@ class Job(object):
         return self._get_state().state
 
     @property
-    def power(self) -> int:
+    def power(self) -> bool:
         """ Are the boards powered/powering on or off?
         """
         return self._get_state().power
