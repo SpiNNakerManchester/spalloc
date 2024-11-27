@@ -341,34 +341,29 @@ class Job(object):
             logger.info("Spalloc resumed job %d", self.id)
         else:
             # Get job creation arguments
-            job_args = args
-            job_kwargs = {
-                "owner": owner,
-                "keepalive": pick_num(keepalive, config.keepalive),
-                "machine": pick_str(machine, config.machine),
-                "tags": pick_list(tags, config.tags),
-                "min_ratio": pick_num(min_ratio, config.min_ratio),
-                "max_dead_boards":
-                    pick_num(max_dead_boards, config.max_dead_boards),
-                "max_dead_links":
-                    pick_num(max_dead_links, config.max_dead_links),
-                "require_torus":
-                    pick_bool(require_torus, config.require_torus),
-            }
+            machine = pick_str(machine, config.machine)
+            tags = pick_list(tags, config.tags)
 
             # Sanity check arguments
-            if job_kwargs["owner"] is None:
+            if owner is None:
                 raise ValueError("An owner must be specified.")
-            if (job_kwargs["tags"] is not None and
-                    job_kwargs["machine"] is not None):
+            if tags is not None and machine is not None:
                 raise ValueError(
                     "Only one of tags and machine may be specified.")
 
-            self._keepalive = job_kwargs["keepalive"]
+            self._keepalive = pick_num(keepalive, config.keepalive)
 
             # Create the job (failing fast if can't communicate)
             self.id = self._client.create_job(
-                self._timeout, *job_args, **job_kwargs)
+                self._timeout, *args, owner = owner,
+                keepalive = self._keepalive, machine = machine, tags = tags,
+                min_ratio = pick_num(min_ratio, config.min_ratio),
+                max_dead_boards = pick_num(
+                    max_dead_boards, config.max_dead_boards),
+                max_dead_links = pick_num(
+                    max_dead_links, config.max_dead_links),
+                require_torus = pick_bool(
+                    require_torus, config.require_torus))
 
             logger.info("Created spalloc job %d", self.id)
 
