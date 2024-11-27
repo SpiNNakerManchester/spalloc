@@ -441,7 +441,7 @@ def run_job(ip_file_filename: str,
 
     # Create the job
     try:
-        job = Job(*job_args, **job_kwargs)
+        job = Job(*job_args, **job_kwargs) # type: ignore[arg-type]
     except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
         info(t.red(f"Could not connect to server: {e}"))
         return 6

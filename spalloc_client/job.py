@@ -19,7 +19,8 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import cast, Dict, Optional, Tuple, Type, Union
+from typing import (
+    Any, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union)
 import sys
 
 from typing_extensions import Literal, Self
@@ -41,6 +42,39 @@ logger = logging.getLogger(__name__)
 # its own logging so we must add one ourselves as per
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 logger.addHandler(logging.StreamHandler())
+
+NO_STR = "n0N@"
+NO_INT = -9834
+F = TypeVar('F', bound='float')
+
+def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == NO_STR:
+        return config
+    return param
+
+
+def pick_list(param: Optional[List[str]],
+              config: Optional[List[str]]) -> Optional[List[str]]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == [NO_STR]:
+        return config
+    return param
+
+
+def pick_num(param: Optional[F], config: Optional[F]) -> Optional[F]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == NO_INT:
+        return config
+    return param
+
+
+def pick_bool(param: Any, config: Optional[bool]) -> Optional[bool]:
+    """ Use the param if None or a bool, otherwise use config"""
+    if param is None or isinstance(param, bool):
+        return param
+    else:
+        return config
 
 
 class Job(object):
@@ -127,7 +161,20 @@ class Job(object):
         allocated.
     """
 
-    def __init__(self, *args: int, **kwargs: Union[float, str, None]):
+    def __init__(self, *args: int, hostname: Optional[str] = NO_STR,
+                 port:Optional[int] = NO_INT,
+                 reconnect_delay: Optional[float] = NO_INT,
+                 timeout: Optional[float] = NO_INT,
+                 config_filenames: Optional[List[str]] = [NO_STR],
+                 resume_job_id: Optional[int] = None,
+                 owner: Optional[str] = NO_STR,
+                 keepalive: Optional[float] = NO_INT,
+                 machine: Optional[str] = NO_STR,
+                 tags: Optional[List[str]] = [NO_STR],
+                 min_ratio: Optional[float] = NO_INT,
+                 max_dead_boards: Optional[int] = NO_INT,
+                 max_dead_links: Optional[int] = NO_INT,
+                 require_torus: Any = NO_STR):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
@@ -151,7 +198,7 @@ class Job(object):
             >>> Job(4, 2, require_torus=True)
 
             >>> # Board x=3, y=2, z=1 on the machine named "m"
-            >>> Job(3, 2, 1, machine="m")
+            >>> Job(3, 2, 1, machine="m")config_filenames
 
             >>> # Keep using (and keeping-alive) an existing allocation
             >>> Job(resume_job_id=123)
@@ -241,19 +288,23 @@ class Job(object):
             specified.)
         """
         # Read configuration
-        config_filenames = cast(
-            list, kwargs.pop("config_filenames", SEARCH_PATH))
+        config_filenames = pick_list(config_filenames, SEARCH_PATH)
         config = SpallocConfig(config_filenames)
 
         # Get protocol client options
-        hostname = cast(str, kwargs.get("hostname", config.hostname))
-        owner = kwargs.get("owner", config.owner)
-        port = cast(int, kwargs.get("port", config.port))
-        self._reconnect_delay = cast(
-            float, kwargs.get("reconnect_delay", config.reconnect_delay))
-        self._timeout = cast(float, kwargs.get("timeout", config.timeout))
+        hostname = pick_str(hostname, config.hostname)
+        owner = pick_str(owner, config.owner)
+        port = pick_num(port, config.port)
+        reconnect_delay = pick_num(reconnect_delay, config.reconnect_delay)
+        if reconnect_delay is None:
+            raise ValueError("A reconnect_delay must be specified.")
+        self._reconnect_delay = reconnect_delay
+        self._timeout = pick_num(timeout, config.timeout)
+
         if hostname is None:
             raise ValueError("A hostname must be specified.")
+        if port is None:
+            raise ValueError("A port must be specified.")
 
         # Cached responses of _get_state and _get_machine_info
         self._last_machine_info: Optional["_JobMachineInfoTuple"] = None
@@ -267,7 +318,6 @@ class Job(object):
         self._assert_compatible_version()
 
         # Resume/create the job
-        resume_job_id = cast(int, kwargs.get("resume_job_id", None))
         if resume_job_id:
             self.id = resume_job_id
 
@@ -294,16 +344,16 @@ class Job(object):
             job_args = args
             job_kwargs = {
                 "owner": owner,
-                "keepalive": kwargs.get("keepalive", config.keepalive),
-                "machine": kwargs.get("machine", config.machine),
-                "tags": kwargs.get("tags", config.tags),
-                "min_ratio": kwargs.get("min_ratio", config.min_ratio),
+                "keepalive": pick_num(keepalive, config.keepalive),
+                "machine": pick_str(machine, config.machine),
+                "tags": pick_list(tags, config.tags),
+                "min_ratio": pick_num(min_ratio, config.min_ratio),
                 "max_dead_boards":
-                    kwargs.get("max_dead_boards", config.max_dead_boards),
+                    pick_num(max_dead_boards, config.max_dead_boards),
                 "max_dead_links":
-                    kwargs.get("max_dead_links", config.max_dead_links),
+                    pick_num(max_dead_links, config.max_dead_links),
                 "require_torus":
-                    kwargs.get("require_torus", config.require_torus),
+                    pick_bool(require_torus, config.require_torus),
                 "timeout": self._timeout,
             }
 
@@ -649,12 +699,12 @@ class Job(object):
                 # user-specified timeout or half the keepalive interval.
                 if finish_time is not None and self._keepalive is not None:
                     wait_timeout = min(self._keepalive / 2.0,
-                                       time_left(finish_time))
+                                       time_left_float(finish_time))
                 elif finish_time is None:
                     wait_timeout = None if self._keepalive is None \
                         else self._keepalive / 2.0
                 else:
-                    wait_timeout = time_left(finish_time)
+                    wait_timeout = time_left_float(finish_time)
                 if wait_timeout is None or wait_timeout >= 0.0:
                     self._client.wait_for_notification(wait_timeout)
                     return True
