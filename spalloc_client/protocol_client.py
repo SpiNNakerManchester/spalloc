@@ -381,15 +381,29 @@ class ProtocolClient(object):
         return cast(str, self.call("version", timeout))
 
     def create_job(self, timeout: Optional[float], *args: int,
-                   **kwargs: Union[float, str, List[str], None]) -> int:
+                   owner: Optional[str] = None,
+                   keepalive: Optional[float] = None,
+                   machine: Optional[str] = None,
+                   tags: Optional[List[str]] = None,
+                   min_ratio: Optional[float] = None,
+                   max_dead_boards: Optional[int] = None,
+                   max_dead_links: Optional[int] = None,
+                   require_torus: Optional[bool] = None) -> int:
         """
         Start a new job
         """
         # If no owner, don't bother with the call
-        if "owner" not in kwargs:
+        if owner is None:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
-        return cast(int, self.call("create_job", timeout, *args, **kwargs))
+        if tags is not None and machine is not None:
+            raise SpallocServerException(
+                f"Unexpected {tags=} and {machine=} are both not None")
+        return cast(int, self.call(
+            "create_job", timeout, *args, owner=owner,
+            keepalive=keepalive, machine=machine, tags=tags,
+            min_ratio=min_ratio, max_dead_boards=max_dead_boards,
+            max_dead_links =max_dead_links, require_torus=require_torus))
 
     def job_keepalive(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:

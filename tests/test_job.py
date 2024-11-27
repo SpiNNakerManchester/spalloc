@@ -18,7 +18,8 @@ from threading import Thread, Event
 import pytest
 from mock import Mock  # type: ignore[import]
 from spalloc_client import (
-    Job, JobState, JobDestroyedError, ProtocolTimeoutError)
+    Job, JobState, JobDestroyedError, ProtocolTimeoutError,
+    SpallocServerException)
 from spalloc_client._keepalive_process import keep_job_alive
 from spalloc_client.job import (
     _JobStateTuple, _JobMachineInfoTuple, StateChangeTimeoutError,

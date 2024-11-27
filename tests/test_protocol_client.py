@@ -233,10 +233,13 @@ def test_commands_as_methods(c, s, bg_accept):
 
     s.send({"return": "Woo"})
     no_timeout = None
-    assert c.create_job(no_timeout, 1, bar=2, owner="dummy") == "Woo"
-    assert s.recv() == {
+    assert c.create_job(no_timeout, 1, keepalive=2, owner="dummy") == "Woo"
+    commands = s.recv()
+    commands["kwargs"] = {k: v for k, v in commands["kwargs"].items()
+                          if v is not None}
+    assert commands == {
         "command": "create_job", "args": [1], "kwargs": {
-            "bar": 2, "owner": "dummy"}}
+            "keepalive": 2, "owner": "dummy"}}
 
     # Should fail for arbitrary internal method names
     with pytest.raises(AttributeError):
