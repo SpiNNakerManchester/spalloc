@@ -430,7 +430,7 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
 
 def run_job(ip_file_filename: str,
             job_args: List[int],
-            job_kwargs: Dict[str, Union[float, str, None]])-> int:
+            job_kwargs: Dict[str, Union[float, str, None]]) -> int:
     """
     Run a job
     """
@@ -441,7 +441,7 @@ def run_job(ip_file_filename: str,
 
     # Create the job
     try:
-        job = Job(*job_args, **job_kwargs) # type: ignore[arg-type]
+        job = Job(*job_args, **job_kwargs)  # type: ignore[arg-type]
     except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
         info(t.red(f"Could not connect to server: {e}"))
         return 6

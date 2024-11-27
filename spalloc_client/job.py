@@ -19,8 +19,7 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import (
-    Any, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union)
+from typing import (Any, cast, Dict, List, Optional, Tuple, Type, TypeVar)
 import sys
 
 from typing_extensions import Literal, Self
@@ -46,6 +45,7 @@ logger.addHandler(logging.StreamHandler())
 NO_STR = "n0N@"
 NO_INT = -9834
 F = TypeVar('F', bound='float')
+
 
 def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
     """ Use the param unless it is the default value, otherwise use config"""
@@ -162,7 +162,7 @@ class Job(object):
     """
 
     def __init__(self, *args: int, hostname: Optional[str] = NO_STR,
-                 port:Optional[int] = NO_INT,
+                 port: Optional[int] = NO_INT,
                  reconnect_delay: Optional[float] = NO_INT,
                  timeout: Optional[float] = NO_INT,
                  config_filenames: Optional[List[str]] = [NO_STR],
@@ -355,14 +355,14 @@ class Job(object):
 
             # Create the job (failing fast if can't communicate)
             self.id = self._client.create_job(
-                self._timeout, *args, owner = owner,
-                keepalive = self._keepalive, machine = machine, tags = tags,
-                min_ratio = pick_num(min_ratio, config.min_ratio),
-                max_dead_boards = pick_num(
+                self._timeout, *args, owner=owner,
+                keepalive=self._keepalive, machine=machine, tags=tags,
+                min_ratio=pick_num(min_ratio, config.min_ratio),
+                max_dead_boards=pick_num(
                     max_dead_boards, config.max_dead_boards),
-                max_dead_links = pick_num(
+                max_dead_links=pick_num(
                     max_dead_links, config.max_dead_links),
-                require_torus = pick_bool(
+                require_torus=pick_bool(
                     require_torus, config.require_torus))
 
             logger.info("Created spalloc job %d", self.id)

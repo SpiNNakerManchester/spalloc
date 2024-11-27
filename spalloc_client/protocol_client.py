@@ -403,7 +403,7 @@ class ProtocolClient(object):
             "create_job", timeout, *args, owner=owner,
             keepalive=keepalive, machine=machine, tags=tags,
             min_ratio=min_ratio, max_dead_boards=max_dead_boards,
-            max_dead_links =max_dead_links, require_torus=require_torus))
+            max_dead_links=max_dead_links, require_torus=require_torus))
 
     def job_keepalive(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:
