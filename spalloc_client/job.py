@@ -19,10 +19,10 @@ import logging
 import subprocess
 import time
 from types import TracebackType
-from typing import (Any, cast, Dict, List, Optional, Tuple, Type, TypeVar)
+from typing import (cast, Dict, List, Optional, Tuple, Type, TypeVar, Union)
 import sys
 
-from typing_extensions import Literal, Self
+from typing_extensions import Literal, Self, TypeAlias
 
 from spinn_utilities.typing.json import JsonArray
 
@@ -42,34 +42,38 @@ logger = logging.getLogger(__name__)
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 logger.addHandler(logging.StreamHandler())
 
-NO_STR = "n0N@"
-NO_INT = -9834
 F = TypeVar('F', bound='float')
+_INT: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
+_FLOAT: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
+_LIST: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
+_BOOL: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
 
 
 def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
     """ Use the param unless it is the default value, otherwise use config"""
-    if param == NO_STR:
+    if param == "USE_CONFIG":
         return config
     return param
 
 
-def pick_list(param: Optional[List[str]],
+def pick_list(param: _LIST,
               config: Optional[List[str]]) -> Optional[List[str]]:
     """ Use the param unless it is the default value, otherwise use config"""
-    if param == [NO_STR]:
+    if param == "USE_CONFIG":
         return config
-    return param
+    else:
+        return param
 
 
-def pick_num(param: Optional[F], config: Optional[F]) -> Optional[F]:
+def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
+             config: Optional[F]) -> Optional[F]:
     """ Use the param unless it is the default value, otherwise use config"""
-    if param == NO_INT:
+    if param == "USE_CONFIG":
         return config
     return param
 
 
-def pick_bool(param: Any, config: Optional[bool]) -> Optional[bool]:
+def pick_bool(param: _BOOL, config: Optional[bool]) -> Optional[bool]:
     """ Use the param if None or a bool, otherwise use config"""
     if param is None or isinstance(param, bool):
         return param
@@ -161,20 +165,20 @@ class Job(object):
         allocated.
     """
 
-    def __init__(self, *args: int, hostname: Optional[str] = NO_STR,
-                 port: Optional[int] = NO_INT,
-                 reconnect_delay: Optional[float] = NO_INT,
-                 timeout: Optional[float] = NO_INT,
-                 config_filenames: Optional[List[str]] = list([NO_STR]),
+    def __init__(self, *args: int, hostname: Optional[str] = "USE_CONFIG",
+                 port: _INT = "USE_CONFIG",
+                 reconnect_delay: _FLOAT = "USE_CONFIG",
+                 timeout: _FLOAT = "USE_CONFIG",
+                 config_filenames: _LIST = "USE_CONFIG",
                  resume_job_id: Optional[int] = None,
-                 owner: Optional[str] = NO_STR,
-                 keepalive: Optional[float] = NO_INT,
-                 machine: Optional[str] = NO_STR,
-                 tags: Optional[List[str]] = list([NO_STR]),
-                 min_ratio: Optional[float] = NO_INT,
-                 max_dead_boards: Optional[int] = NO_INT,
-                 max_dead_links: Optional[int] = NO_INT,
-                 require_torus: Any = NO_STR):
+                 owner: Optional[str] = "USE_CONFIG",
+                 keepalive: _FLOAT = "USE_CONFIG",
+                 machine: Optional[str] = "USE_CONFIG",
+                 tags: _LIST = "USE_CONFIG",
+                 min_ratio: _FLOAT = "USE_CONFIG",
+                 max_dead_boards: _INT = "USE_CONFIG",
+                 max_dead_links: _INT = "USE_CONFIG",
+                 require_torus: _BOOL = "USE_CONFIG"):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
