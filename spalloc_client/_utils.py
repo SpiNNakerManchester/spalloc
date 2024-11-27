@@ -18,6 +18,8 @@ from typing import Optional
 
 
 def time_left_float(timestamp: float) -> float:
+    """ Convert a not None timestamp into how long to wait for it.
+    """
     return max(0.0, timestamp - time.time())
 
 
