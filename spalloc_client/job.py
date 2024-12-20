@@ -202,7 +202,7 @@ class Job(object):
             >>> Job(4, 2, require_torus=True)
 
             >>> # Board x=3, y=2, z=1 on the machine named "m"
-            >>> Job(3, 2, 1, machine="m")config_filenames
+            >>> Job(3, 2, 1, machine="m")
 
             >>> # Keep using (and keeping-alive) an existing allocation
             >>> Job(resume_job_id=123)
