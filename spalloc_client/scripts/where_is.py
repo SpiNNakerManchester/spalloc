@@ -66,13 +66,14 @@ To query by chip coordinate of chips allocated to a job::
 """
 import argparse
 import sys
-from typing import Any, cast, Dict
+from typing import Any, cast, Dict, Optional
 
 from spinn_utilities.overrides import overrides
 
 from spalloc_client import __version__, ProtocolClient
 from spalloc_client.term import render_definitions
 from spalloc_client.scripts.support import Terminate, Script
+from spalloc_client.spalloc_config import SpallocConfig
 
 
 class WhereIsScript(Script):
@@ -80,14 +81,14 @@ class WhereIsScript(Script):
     An script object to find where a board is
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
-        self.parser = None
-        self.where_is_kwargs = None
-        self.show_board_chip = None
+        self.parser: Optional[argparse.ArgumentParser] = None
+        self.where_is_kwargs: Optional[dict] = None
+        self.show_board_chip = False
 
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(
             description="Find out the location (physical or logical) of a "
                         "chip or board.")
@@ -114,7 +115,7 @@ class WhereIsScript(Script):
         return parser
 
     @overrides(Script.verify_arguments)
-    def verify_arguments(self, args: argparse.Namespace):
+    def verify_arguments(self, args: argparse.Namespace) -> None:
         try:
             if args.board:
                 machine, x, y, z = args.board
@@ -151,17 +152,19 @@ class WhereIsScript(Script):
                 }
                 self.show_board_chip = True
         except ValueError as e:
+            assert self.parser is not None
             self.parser.error(f"Error: {e}")
 
     @overrides(Script.body)
-    def body(self, client: ProtocolClient, args: argparse.Namespace):
+    def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:
         # Ask the server
+        assert self.where_is_kwargs is not None
         location = client.where_is(**self.where_is_kwargs)
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
         out: Dict[str, Any] = dict()
-        out["Machine"] = location["machine"]
+        out["Machine"] = cast(str, location["machine"])
         cabinet, frame, board = cast(list, location["physical"])
         out["Physical location"] = (
             f"Cabinet {cabinet}, Frame {frame}, Board {board}")
@@ -175,6 +178,7 @@ class WhereIsScript(Script):
             out["Coordinates within job"] = tuple(
                 cast(list, location["job_chip"]))
         print(render_definitions(out))
+        return 0
 
 
 main = WhereIsScript()

@@ -75,10 +75,11 @@ class TestConstructor(object):
             basic_job_kwargs.pop("hostname")
             basic_job_kwargs.pop("port")
             basic_job_kwargs.pop("reconnect_delay")
+            timeout = basic_job_kwargs.pop("timeout")
             assert len(client.create_job.mock_calls) == 1
             args = client.create_job.mock_calls[0][1]
             kwargs = client.create_job.mock_calls[0][2]
-            assert args == tuple()
+            assert args == (timeout,)
             assert kwargs == basic_job_kwargs
         finally:
             j.close()
@@ -107,9 +108,8 @@ class TestConstructor(object):
             assert len(client.create_job.mock_calls) == 1
             args = client.create_job.mock_calls[0][1]
             kwargs = client.create_job.mock_calls[0][2]
-            assert args == tuple()
-            assert kwargs == dict(timeout=0.2,
-                                  owner="mossblaser",
+            assert args == (0.2,)
+            assert kwargs == dict(owner="mossblaser",
                                   keepalive=0.3,
                                   machine=None,
                                   tags=["baz", "quz"],

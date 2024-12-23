@@ -19,7 +19,7 @@ import tempfile
 import pytest
 from mock import Mock  # type: ignore[import]
 from spalloc_client import ProtocolClient
-from spalloc_client.config import SEARCH_PATH
+from spalloc_client.spalloc_config import SEARCH_PATH
 from .common import MockServer
 
 

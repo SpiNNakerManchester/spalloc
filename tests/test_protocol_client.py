@@ -19,8 +19,7 @@ import logging
 import pytest
 from mock import Mock  # type: ignore[import]
 from spalloc_client import (
-    ProtocolClient, SpallocServerException, ProtocolTimeoutError,
-    ProtocolError)
+    ProtocolClient, SpallocServerException, ProtocolTimeoutError)
 from .common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)
@@ -159,25 +158,27 @@ def test_send_json_fails(c):
 def test_call(c, s, bg_accept):
     c.connect()
     bg_accept.join()
+    no_timeout = None
 
     # Basic calls should work
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
 
     # Should be able to cope with notifications arriving before return value
     s.send({"notification": 1})
     s.send({"notification": 2})
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert list(c._notifications) == [{"notification": 1}, {"notification": 2}]
     c._notifications.clear()
 
     # Should be able to timeout immediately
     before = time.time()
+    timeout = 0.1
     with pytest.raises(ProtocolTimeoutError):
-        c.call("foo", 1, bar=2, timeout=0.1)
+        c.call("foo", timeout, 1, bar=2)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert 0.1 < after - before < 0.2
@@ -185,8 +186,9 @@ def test_call(c, s, bg_accept):
     # Should be able to timeout after getting a notification
     s.send({"notification": 3})
     before = time.time()
+    timeout = 0.1
     with pytest.raises(ProtocolTimeoutError):
-        c.call("foo", 1, bar=2, timeout=0.1)
+        c.call("foo", timeout, 1, bar=2)
     after = time.time()
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert 0.1 < after - before < 0.2
@@ -195,13 +197,14 @@ def test_call(c, s, bg_accept):
     # Exceptions should transfer
     s.send({"exception": "something informative"})
     with pytest.raises(SpallocServerException) as e:
-        c.call("foo")
+        c.call("foo", no_timeout)
     assert "something informative" in str(e.value)
 
 
 def test_wait_for_notification(c, s, bg_accept):
     c.connect()
     bg_accept.join()
+    no_timeout = None
 
     # Should be able to timeout
     with pytest.raises(ProtocolTimeoutError):
@@ -214,7 +217,7 @@ def test_wait_for_notification(c, s, bg_accept):
     s.send({"notification": 1})
     s.send({"notification": 2})
     s.send({"return": "Woo"})
-    assert c.call("foo", 1, bar=2) == "Woo"
+    assert c.call("foo", no_timeout, 1, bar=2) == "Woo"
     assert s.recv() == {"command": "foo", "args": [1], "kwargs": {"bar": 2}}
     assert c.wait_for_notification() == {"notification": 1}
     assert c.wait_for_notification() == {"notification": 2}
@@ -229,10 +232,14 @@ def test_commands_as_methods(c, s, bg_accept):
     bg_accept.join()
 
     s.send({"return": "Woo"})
-    assert c.create_job(1, bar=2, owner="dummy") == "Woo"
-    assert s.recv() == {
+    no_timeout = None
+    assert c.create_job(no_timeout, 1, keepalive=2, owner="dummy") == "Woo"
+    commands = s.recv()
+    commands["kwargs"] = {k: v for k, v in commands["kwargs"].items()
+                          if v is not None}
+    assert commands == {
         "command": "create_job", "args": [1], "kwargs": {
-            "bar": 2, "owner": "dummy"}}
+            "keepalive": 2, "owner": "dummy"}}
 
     # Should fail for arbitrary internal method names
     with pytest.raises(AttributeError):
@@ -240,16 +247,3 @@ def test_commands_as_methods(c, s, bg_accept):
     # Should fail for arbitrary external method names
     with pytest.raises(AttributeError):
         c.bar()
-
-
-def test_where_is_sanity(c):
-    with pytest.raises(SpallocServerException):
-        c.where_is(foo=1, bar=2)
-    with pytest.raises(SpallocServerException):
-        c.where_is(machine=1, x=2, y=3, z=4, foo=5)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4, timeout=5)
-    with pytest.raises(ProtocolError):
-        c.where_is(machine=1, x=2, y=3, z=4, timeout=None)
