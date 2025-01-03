@@ -81,7 +81,7 @@ options available (and the default value).
 """
 import configparser
 import os.path
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
 import appdirs
 
@@ -117,82 +117,153 @@ DEFAULT_CONFIG = {
     "ignore_version": "False"}
 
 
-def _read_none_or_float(parser, option):
+def _read_none_or_float(
+        parser: configparser.ConfigParser, option: str) -> Optional[float]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getfloat(SECTION, option)
 
 
-def _read_none_or_int(parser, option):
+def _read_none_or_int(
+        parser: configparser.ConfigParser, option: str) -> Optional[int]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getint(SECTION, option)
 
 
-def _read_any_str(parser, option):
+def _read_any_str(
+        parser: configparser.ConfigParser, option: str) -> Optional[str]:
     try:
         return parser.get(SECTION, option)
     except configparser.NoOptionError:
         return None
 
 
-def _read_none_or_str(parser, option):
+def _read_none_or_str(
+        parser: configparser.ConfigParser, option: str) -> Optional[str]:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.get(SECTION, option)
 
 
-def read_config(filenames: Optional[List[str]] = None) -> Dict[str, Any]:
-    """ Attempt to read local configuration files to determine spalloc client
-    settings.
+class SpallocConfig(object):
+    """ Typed configs """
 
-    Parameters
-    ----------
-    filenames : [str, ...]
-        Filenames to attempt to read. Later config file have higher priority.
+    __slots__ = ("_hostname", "_ignore_version", "_keepalive", "_machine",
+                 "_max_dead_boards", "_max_dead_links", "_min_ratio",
+                 "_owner", "_port", "_reconnect_delay", "_require_torus",
+                 "_tags", "_timeout")
 
-    Returns
-    -------
-    dict
-        The configuration loaded.
-    """
-    if filenames is None:  # pragma: no cover
-        filenames = SEARCH_PATH
-    parser = configparser.ConfigParser()
+    def __init__(self, filenames: Optional[List[str]] = None):
+        """ Attempt to read local configuration files
+        to determine spalloc client settings.
 
-    # Set default config values (NB: No read_dict in Python 2.7)
-    parser.add_section(SECTION)
-    for key, value in DEFAULT_CONFIG.items():
-        parser.set(SECTION, key, value)
+        Parameters
+        ----------
+        filenames : [str, ...]
+            Filenames to attempt to read.
+            Later config file have higher priority.
 
-    # Attempt to read from each possible file location in turn
-    for filename in filenames:
-        try:
-            with open(filename, "r", encoding="utf-8") as f:
-                parser.read_file(f, filename)
-        except (IOError, OSError):
-            # File did not exist, keep trying
-            pass
+        """
+        if filenames is None:  # pragma: no cover
+            filenames = SEARCH_PATH
+        parser = configparser.ConfigParser()
 
-    cfg = {
-        "hostname":        _read_any_str(parser, "hostname"),
-        "owner":           _read_any_str(parser, "owner"),
-        "port":            parser.getint(SECTION, "port"),
-        "keepalive":       _read_none_or_float(parser, "keepalive"),
-        "reconnect_delay": parser.getfloat(SECTION, "reconnect_delay"),
-        "timeout":         _read_none_or_float(parser, "timeout"),
-        "machine":         _read_none_or_str(parser, "machine"),
-        "min_ratio":       parser.getfloat(SECTION, "min_ratio"),
-        "max_dead_boards": _read_none_or_int(parser, "max_dead_boards"),
-        "max_dead_links":  _read_none_or_int(parser, "max_dead_links"),
-        "require_torus":   parser.getboolean(SECTION, "require_torus"),
-        "ignore_version":  parser.getboolean(SECTION, "ignore_version")}
+        # Set default config values (NB: No read_dict in Python 2.7)
+        parser.add_section(SECTION)
+        for key, value in DEFAULT_CONFIG.items():
+            parser.set(SECTION, key, value)
 
-    tags = _read_none_or_str(parser, "tags")
-    cfg["tags"] = None if tags is None else list(
-        map(str.strip, tags.split(",")))
+        # Attempt to read from each possible file location in turn
+        for filename in filenames:
+            try:
+                with open(filename, "r", encoding="utf-8") as f:
+                    parser.read_file(f, filename)
+            except (IOError, OSError):
+                # File did not exist, keep trying
+                pass
 
-    return cfg
+        self._hostname = _read_any_str(parser, "hostname")
+        self._owner = _read_any_str(parser, "owner")
+        self._port = parser.getint(SECTION, "port")
+        self._keepalive = _read_none_or_float(parser, "keepalive")
+        self._reconnect_delay = parser.getfloat(SECTION, "reconnect_delay")
+        self._timeout = _read_none_or_float(parser, "timeout")
+        self._machine = _read_none_or_str(parser, "machine")
+        self._min_ratio = parser.getfloat(SECTION, "min_ratio")
+        self._max_dead_boards = _read_none_or_int(parser, "max_dead_boards")
+        self._max_dead_links = _read_none_or_int(parser, "max_dead_links")
+        self._require_torus = parser.getboolean(SECTION, "require_torus")
+        self._ignore_version = parser.getboolean(SECTION, "ignore_version")
+
+        tags = _read_none_or_str(parser, "tags")
+        self._tags = None if tags is None else list(
+            map(str.strip, tags.split(",")))
+
+    @property
+    def hostname(self) -> Optional[str]:
+        """ Name of the spalloc server if specified """
+        return self._hostname
+
+    @property
+    def ignore_version(self) -> bool:
+        """ Flag to say version can be ignored """
+        return self._ignore_version
+
+    @property
+    def keepalive(self) -> Optional[float]:
+        """ Time to keep job allive """
+        return self._keepalive
+
+    @property
+    def machine(self) -> Optional[str]:
+        """ Name of the spalloc machine to use"""
+        return self._machine
+
+    @property
+    def max_dead_boards(self) -> Optional[int]:
+        """ How many dead boards are allowed in the job"""
+        return self._max_dead_boards
+
+    @property
+    def max_dead_links(self) -> Optional[int]:
+        """ How many dead links are allowed in the Job"""
+        return self._max_dead_links
+
+    @property
+    def min_ratio(self) -> float:
+        """ Min ratio"""
+        return self._min_ratio
+
+    @property
+    def owner(self) -> Optional[str]:
+        """ Owner to assign job to """
+        return self._owner
+
+    @property
+    def port(self) -> int:
+        """ Spalloc server port"""
+        return self._port
+
+    @property
+    def reconnect_delay(self) -> float:
+        """ Reconnect delay """
+        return self._reconnect_delay
+
+    @property
+    def require_torus(self) -> bool:
+        """ Flag to say a torus is required """
+        return self._require_torus
+
+    @property
+    def tags(self) -> Optional[List[str]]:
+        """ List of tags """
+        return self._tags
+
+    @property
+    def timeout(self) -> Optional[float]:
+        """ Time before a command should timeout """
+        return self._timeout
 
 
 if __name__ == "__main__":  # pragma: no cover

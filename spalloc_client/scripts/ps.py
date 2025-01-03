@@ -27,19 +27,20 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 from collections.abc import Sized
 import sys
-from typing import Any, cast, Dict, Union
+from typing import cast, Union
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
 
 from spalloc_client import __version__, JobState, ProtocolClient
+from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import Terminal, render_table, TableColumn, TableType
 from spalloc_client._utils import render_timestamp
 from .support import Script
 
 
 def render_job_list(t: Terminal, jobs: JsonObjectArray,
-                    args: argparse.Namespace):
+                    args: argparse.Namespace) -> str:
     """ Return a human-readable process listing.
 
     Parameters
@@ -99,7 +100,7 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
         else:
             num_boards = ""
         # Format start time
-        timestamp = render_timestamp(job["start_time"])
+        timestamp = render_timestamp(cast(float, job["start_time"]))
 
         if job["allocated_machine_name"] is not None:
             machine_name = str(job["allocated_machine_name"])
@@ -128,7 +129,7 @@ class ProcessListScript(Script):
     An object form Job scripts.
     """
     @overrides(Script.get_parser)
-    def get_parser(self, cfg: Dict[str, Any]) -> argparse.ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="List all active jobs.")
         parser.add_argument(
             "--version", "-V", action="version", version=__version__)
@@ -143,13 +144,15 @@ class ProcessListScript(Script):
             help="list only jobs belonging to a particular owner")
         return parser
 
-    def one_shot(self, client: ProtocolClient, args: argparse.Namespace):
+    def one_shot(self, client: ProtocolClient,
+                 args: argparse.Namespace) -> None:
         """ Gets info on the job list once. """
         t = Terminal(stream=sys.stderr)
         jobs = client.list_jobs(timeout=args.timeout)
         print(render_job_list(t, jobs, args))
 
-    def recurring(self, client: ProtocolClient, args: argparse.Namespace):
+    def recurring(
+            self, client: ProtocolClient, args: argparse.Namespace) -> None:
         """ Repeatedly gets info on the job list. """
         client.notify_job(timeout=args.timeout)
         t = Terminal(stream=sys.stderr)
@@ -168,13 +171,14 @@ class ProcessListScript(Script):
                 print("")
 
     @overrides(Script.body)
-    def body(self, client: ProtocolClient, args: argparse.Namespace):
+    def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:
         if args.watch:
             self.recurring(client, args)
         else:
             self.one_shot(client, args)
+        return 0
 
-    def verify_arguments(self, args: argparse.Namespace):
+    def verify_arguments(self, args: argparse.Namespace) -> None:
         pass
 
 

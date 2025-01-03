@@ -18,15 +18,21 @@ from collections import namedtuple
 import logging
 import subprocess
 import time
+from types import TracebackType
+from typing import (cast, Dict, List, Optional, Tuple, Type, TypeVar, Union)
 import sys
+
+from typing_extensions import Literal, Self, TypeAlias
+
+from spinn_utilities.typing.json import JsonArray
 
 from spalloc_client.scripts.support import (
     VERSION_RANGE_START, VERSION_RANGE_STOP)
 
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
-from .config import read_config, SEARCH_PATH
+from .spalloc_config import SpallocConfig, SEARCH_PATH
 from .states import JobState
-from ._utils import time_left, timed_out, make_timeout
+from ._utils import time_left, time_left_float, timed_out, make_timeout
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +41,44 @@ logger = logging.getLogger(__name__)
 # its own logging so we must add one ourselves as per
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 logger.addHandler(logging.StreamHandler())
+
+F = TypeVar('F', bound='float')
+_INT: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
+_FLOAT: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
+_LIST: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
+_BOOL: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
+
+
+def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == "USE_CONFIG":
+        return config
+    return param
+
+
+def pick_list(param: _LIST,
+              config: Optional[List[str]]) -> Optional[List[str]]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == "USE_CONFIG":
+        return config
+    else:
+        return param
+
+
+def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
+             config: Optional[F]) -> Optional[F]:
+    """ Use the param unless it is the default value, otherwise use config"""
+    if param == "USE_CONFIG":
+        return config
+    return param
+
+
+def pick_bool(param: _BOOL, config: Optional[bool]) -> Optional[bool]:
+    """ Use the param if None or a bool, otherwise use config"""
+    if param is None or isinstance(param, bool):
+        return param
+    else:
+        return config
 
 
 class Job(object):
@@ -121,7 +165,20 @@ class Job(object):
         allocated.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: int, hostname: Optional[str] = "USE_CONFIG",
+                 port: _INT = "USE_CONFIG",
+                 reconnect_delay: _FLOAT = "USE_CONFIG",
+                 timeout: _FLOAT = "USE_CONFIG",
+                 config_filenames: _LIST = "USE_CONFIG",
+                 resume_job_id: Optional[int] = None,
+                 owner: Optional[str] = "USE_CONFIG",
+                 keepalive: _FLOAT = "USE_CONFIG",
+                 machine: Optional[str] = "USE_CONFIG",
+                 tags: _LIST = "USE_CONFIG",
+                 min_ratio: _FLOAT = "USE_CONFIG",
+                 max_dead_boards: _INT = "USE_CONFIG",
+                 max_dead_links: _INT = "USE_CONFIG",
+                 require_torus: _BOOL = "USE_CONFIG"):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
@@ -235,22 +292,26 @@ class Job(object):
             specified.)
         """
         # Read configuration
-        config_filenames = kwargs.pop("config_filenames", SEARCH_PATH)
-        config = read_config(config_filenames)
+        config_filenames = pick_list(config_filenames, SEARCH_PATH)
+        config = SpallocConfig(config_filenames)
 
         # Get protocol client options
-        hostname = kwargs.get("hostname", config["hostname"])
-        owner = kwargs.get("owner", config["owner"])
-        port = kwargs.get("port", config["port"])
-        self._reconnect_delay = kwargs.get("reconnect_delay",
-                                           config["reconnect_delay"])
-        self._timeout = kwargs.get("timeout", config["timeout"])
+        hostname = pick_str(hostname, config.hostname)
+        owner = pick_str(owner, config.owner)
+        port = pick_num(port, config.port)
+        reconnect_delay = pick_num(reconnect_delay, config.reconnect_delay)
+        if reconnect_delay is None:
+            raise ValueError("A reconnect_delay must be specified.")
+        self._reconnect_delay = reconnect_delay
+        self._timeout = pick_num(timeout, config.timeout)
+
         if hostname is None:
             raise ValueError("A hostname must be specified.")
+        if port is None:
+            raise ValueError("A port must be specified.")
 
         # Cached responses of _get_state and _get_machine_info
-        self._last_state = None
-        self._last_machine_info = None
+        self._last_machine_info: Optional["_JobMachineInfoTuple"] = None
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
@@ -261,7 +322,6 @@ class Job(object):
         self._assert_compatible_version()
 
         # Resume/create the job
-        resume_job_id = kwargs.get("resume_job_id", None)
         if resume_job_id:
             self.id = resume_job_id
 
@@ -285,45 +345,42 @@ class Job(object):
             logger.info("Spalloc resumed job %d", self.id)
         else:
             # Get job creation arguments
-            job_args = args
-            job_kwargs = {
-                "owner": owner,
-                "keepalive": kwargs.get("keepalive", config["keepalive"]),
-                "machine": kwargs.get("machine", config["machine"]),
-                "tags": kwargs.get("tags", config["tags"]),
-                "min_ratio": kwargs.get("min_ratio", config["min_ratio"]),
-                "max_dead_boards":
-                    kwargs.get("max_dead_boards", config["max_dead_boards"]),
-                "max_dead_links":
-                    kwargs.get("max_dead_links", config["max_dead_links"]),
-                "require_torus":
-                    kwargs.get("require_torus", config["require_torus"]),
-                "timeout": self._timeout,
-            }
+            machine = pick_str(machine, config.machine)
+            tags = pick_list(tags, config.tags)
 
             # Sanity check arguments
-            if job_kwargs["owner"] is None:
+            if owner is None:
                 raise ValueError("An owner must be specified.")
-            if (job_kwargs["tags"] is not None and
-                    job_kwargs["machine"] is not None):
+            if tags is not None and machine is not None:
                 raise ValueError(
                     "Only one of tags and machine may be specified.")
 
-            self._keepalive = job_kwargs["keepalive"]
+            self._keepalive = pick_num(keepalive, config.keepalive)
 
             # Create the job (failing fast if can't communicate)
-            self.id = self._client.create_job(*job_args, **job_kwargs)
+            self.id = self._client.create_job(
+                self._timeout, *args, owner=owner,
+                keepalive=self._keepalive, machine=machine, tags=tags,
+                min_ratio=pick_num(min_ratio, config.min_ratio),
+                max_dead_boards=pick_num(
+                    max_dead_boards, config.max_dead_boards),
+                max_dead_links=pick_num(
+                    max_dead_links, config.max_dead_links),
+                require_torus=pick_bool(
+                    require_torus, config.require_torus))
 
             logger.info("Created spalloc job %d", self.id)
 
         # Set-up and start background keepalive thread
-        self._keepalive_process = subprocess.Popen(map(str, [
-                sys.executable, "-m", "spalloc_client._keepalive_process",
-                hostname, port, self.id, self._keepalive, self._timeout,
-                self._reconnect_delay]), stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        self._keepalive_process = subprocess.Popen(
+            [sys.executable, "-m", "spalloc_client._keepalive_process",
+             str(hostname), str(port), str(self.id), str(self._keepalive),
+             str(self._timeout), str(self._reconnect_delay)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT)
         # Wait for it to announce that it is working
         stdout = self._keepalive_process.stdout
+        assert stdout is not None
         while not stdout.closed:
             line = stdout.readline().decode("utf-8").strip()
             if line == "KEEPALIVE":
@@ -334,7 +391,7 @@ class Job(object):
             if line:
                 raise ValueError(f"Keepalive process wrote odd line: {line}")
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """ Convenience context manager for common case where a new job is to
         be created and then destroyed once some code has executed.
 
@@ -356,11 +413,13 @@ class Job(object):
             self.destroy()
             raise
 
-    def __exit__(self, _type, _value, _traceback):
+    def __exit__(self, exc_type: Optional[Type],
+                 exc_value: Optional[BaseException],
+                 exc_tb: Optional[TracebackType]) -> Literal[False]:
         self.destroy()
         return False
 
-    def _assert_compatible_version(self):
+    def _assert_compatible_version(self) -> None:
         """ Assert that the server version is compatible.
         """
         v = self._client.version(timeout=self._timeout)
@@ -371,7 +430,7 @@ class Job(object):
             raise ValueError(
                 f"Server version {v} is not compatible with this client.")
 
-    def _reconnect(self):
+    def _reconnect(self) -> None:
         """ Reconnect to the server and check version.
 
         If reconnection fails, the error is reported as a warning but no
@@ -388,7 +447,7 @@ class Job(object):
                 "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
-    def destroy(self, reason=None):
+    def destroy(self, reason: Optional[str] = None) -> None:
         """ Destroy the job and disconnect from the server.
 
         Parameters
@@ -407,7 +466,7 @@ class Job(object):
 
         self.close()
 
-    def close(self):
+    def close(self) -> None:
         """ Disconnect from the server and stop keeping the job alive.
 
         .. warning::
@@ -425,7 +484,7 @@ class Job(object):
         # Disconnect
         self._client.close()
 
-    def _get_state(self):
+    def _get_state(self) -> "_JobStateTuple":
         """ Get the state of the job.
 
         Returns
@@ -434,12 +493,12 @@ class Job(object):
         """
         state = self._client.get_job_state(self.id, timeout=self._timeout)
         return _JobStateTuple(
-            state=JobState(state["state"]),
+            state=JobState(cast(int, state["state"])),
             power=state["power"],
             keepalive=state["keepalive"],
             reason=state["reason"])
 
-    def set_power(self, power):
+    def set_power(self, power: bool) -> None:
         """ Turn the boards allocated to the job on or off.
 
         Does nothing if the job has not yet been allocated any boards.
@@ -458,7 +517,7 @@ class Job(object):
         else:
             self._client.power_off_job_boards(self.id, timeout=self._timeout)
 
-    def reset(self):
+    def reset(self) -> None:
         """ Reset (power-cycle) the boards allocated to the job.
 
         Does nothing if the job has not been allocated.
@@ -468,7 +527,7 @@ class Job(object):
         """
         self.set_power(True)
 
-    def _get_machine_info(self):
+    def _get_machine_info(self) -> "_JobMachineInfoTuple":
         """ Get information about the boards allocated to the job, e.g. the IPs
         and system dimensions.
 
@@ -479,39 +538,37 @@ class Job(object):
         info = self._client.get_job_machine_info(
             self.id, timeout=self._timeout)
 
+        info_connections = cast(list, info["connections"])
         return _JobMachineInfoTuple(
             width=info["width"],
             height=info["height"],
             connections=({(x, y): hostname
-                          for (x, y), hostname in info["connections"]}
-                         if info["connections"] is not None
+                          for (x, y), hostname in info_connections}
+                         if info_connections is not None
                          else None),
             machine_name=info["machine_name"],
             boards=info["boards"])
 
     @property
-    def state(self):
+    def state(self) -> JobState:
         """ The current state of the job.
         """
-        self._last_state = self._get_state()
-        return self._last_state.state
+        return self._get_state().state
 
     @property
-    def power(self):
+    def power(self) -> bool:
         """ Are the boards powered/powering on or off?
         """
-        self._last_state = self._get_state()
-        return self._last_state.power
+        return self._get_state().power
 
     @property
-    def reason(self):
+    def reason(self) -> str:
         """ For what reason was the job destroyed (if any and if destroyed).
         """
-        self._last_state = self._get_state()
-        return self._last_state.reason
+        return self._get_state().reason
 
     @property
-    def connections(self):
+    def connections(self) -> Dict[Tuple[int, int], str]:
         """ The list of Ethernet connected chips and their IPs.
 
         Returns
@@ -527,13 +584,13 @@ class Job(object):
         return self._last_machine_info.connections
 
     @property
-    def hostname(self):
+    def hostname(self) -> Optional[str]:
         """ The hostname of chip 0, 0 (or None if not allocated yet).
         """
         return self.connections[(0, 0)]
 
     @property
-    def width(self):
+    def width(self) -> int:
         """ The width of the allocated machine in chips (or None).
         """
         # Note that the dimensions of a job will never change once defined so
@@ -545,7 +602,7 @@ class Job(object):
         return self._last_machine_info.width
 
     @property
-    def height(self):
+    def height(self) -> int:
         """ The height of the allocated machine in chips (or None).
         """
         # Note that the dimensions of a job will never change once defined so
@@ -557,7 +614,7 @@ class Job(object):
         return self._last_machine_info.height
 
     @property
-    def machine_name(self):
+    def machine_name(self) -> str:
         """ The name of the machine the job is allocated on (or None).
         """
         # Note that the machine will never change once defined so only need to
@@ -569,7 +626,7 @@ class Job(object):
         return self._last_machine_info.machine_name
 
     @property
-    def boards(self):
+    def boards(self) -> Optional[JsonArray]:
         """ The coordinates of the boards allocated for the job (or None).
         """
         # Note that the machine will never change once defined so only need to
@@ -580,7 +637,8 @@ class Job(object):
 
         return self._last_machine_info.boards
 
-    def wait_for_state_change(self, old_state, timeout=None):
+    def wait_for_state_change(self, old_state: JobState,
+                              timeout: Optional[float] = None) -> JobState:
         """ Block until the job's state changes from the supplied state.
 
         Parameters
@@ -626,7 +684,7 @@ class Job(object):
         # return the old state
         return old_state
 
-    def _do_wait_for_a_change(self, finish_time):
+    def _do_wait_for_a_change(self, finish_time: Optional[float]) -> bool:
         """ Wait for a state change and keep the job alive.
         """
         # Since we're about to block holding the client lock, we must be
@@ -640,12 +698,12 @@ class Job(object):
                 # user-specified timeout or half the keepalive interval.
                 if finish_time is not None and self._keepalive is not None:
                     wait_timeout = min(self._keepalive / 2.0,
-                                       time_left(finish_time))
+                                       time_left_float(finish_time))
                 elif finish_time is None:
                     wait_timeout = None if self._keepalive is None \
                         else self._keepalive / 2.0
                 else:
-                    wait_timeout = time_left(finish_time)
+                    wait_timeout = time_left_float(finish_time)
                 if wait_timeout is None or wait_timeout >= 0.0:
                     self._client.wait_for_notification(wait_timeout)
                     return True
@@ -656,19 +714,19 @@ class Job(object):
         # The user's timeout expired while waiting for a state change
         return False
 
-    def _do_reconnect(self, finish_time):
+    def _do_reconnect(self, finish_time: Optional[float]) -> None:
         """ Reconnect after the reconnection delay (or timeout, whichever
         came first).
         """
         self._client.close()
         if finish_time is not None:
-            delay = min(time_left(finish_time), self._reconnect_delay)
+            delay = min(time_left_float(finish_time), self._reconnect_delay)
         else:
             delay = self._reconnect_delay
         time.sleep(max(0.0, delay))
         self._reconnect()
 
-    def wait_until_ready(self, timeout=None):
+    def wait_until_ready(self, timeout: Optional[float] = None) -> None:
         """ Block until the job is allocated and ready.
 
         Parameters
@@ -715,7 +773,8 @@ class Job(object):
         # Timed out!
         raise StateChangeTimeoutError()
 
-    def where_is_machine(self, chip_x, chip_y):
+    def where_is_machine(
+            self, chip_x: int, chip_y: int) -> Tuple[int, int, int]:
         """ Locates and returns cabinet, frame, board for a given chip in a\
         machine allocated to this job.
 
@@ -727,7 +786,8 @@ class Job(object):
             job_id=self.id, chip_x=chip_x, chip_y=chip_y)
         if result is None:
             raise ValueError("received None instead of machine location")
-        return result['physical']
+        [cabinet, frame, board] = cast(list, result['physical'])
+        return (cast(int, cabinet), cast(int, frame), cast(int, board))
 
 
 class StateChangeTimeoutError(Exception):

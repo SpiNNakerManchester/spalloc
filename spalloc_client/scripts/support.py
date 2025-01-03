@@ -14,11 +14,12 @@
 
 from argparse import ArgumentParser, Namespace
 import sys
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 from spalloc_client import (
-    config, ProtocolClient, ProtocolError, ProtocolTimeoutError,
+    ProtocolClient, ProtocolError, ProtocolTimeoutError,
     SpallocServerException)
+from spalloc_client.spalloc_config import SpallocConfig
 
 # The acceptable range of server version numbers
 VERSION_RANGE_START = (0, 1, 0)
@@ -33,14 +34,14 @@ class Terminate(Exception):
         self._code = code
         self._msg = message
 
-    def exit(self):
+    def exit(self) -> None:
         """ Exit the program after printing an error msg. """
         if self._msg is not None:
             sys.stderr.write(self._msg + "\n")
         sys.exit(self._code)
 
 
-def version_verify(client: ProtocolClient, timeout: Optional[int]):
+def version_verify(client: ProtocolClient, timeout: Optional[float]) -> None:
     """
     Verify that the current version of the client is compatible
     """
@@ -52,50 +53,51 @@ def version_verify(client: ProtocolClient, timeout: Optional[int]):
 
 class Script(object, metaclass=AbstractBase):
     """ Base class of various Script Objects. """
-    def __init__(self):
+    def __init__(self) -> None:
         self.client_factory = ProtocolClient
 
-    def get_parser(self, cfg: Dict[str, Any]) -> ArgumentParser:
+    def get_parser(self, cfg: SpallocConfig) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
         """
         raise NotImplementedError
 
     @abstractmethod
-    def verify_arguments(self, args: Namespace):
+    def verify_arguments(self, args: Namespace) -> None:
         """ Check the arguments for sanity and do any second-stage parsing\
             required.
         """
 
     @abstractmethod
-    def body(self, client: ProtocolClient, args: Namespace):
+    def body(self, client: ProtocolClient, args: Namespace) -> int:
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
         """
+        raise NotImplementedError
 
     def build_server_arg_group(self, server_args: Any,
-                               cfg: Dict[str, object]):
+                               cfg: SpallocConfig) -> None:
         """
         Adds a few more arguments
 
         :param argparse._ArguementGroup server_args:
         """
         server_args.add_argument(
-            "--hostname", "-H", default=cfg["hostname"],
+            "--hostname", "-H", default=cfg.hostname,
             help="hostname or IP of the spalloc server (default: %(default)s)")
         server_args.add_argument(
-            "--port", "-P", default=cfg["port"], type=int,
+            "--port", "-P", default=cfg.port, type=int,
             help="port number of the spalloc server (default: %(default)s)")
         server_args.add_argument(
-            "--timeout", default=cfg["timeout"], type=float, metavar="SECONDS",
+            "--timeout", default=cfg.timeout, type=float, metavar="SECONDS",
             help="seconds to wait for a response from the server (default: "
             "%(default)s)")
         server_args.add_argument(
-            "--ignore_version", default=cfg["ignore_version"], type=bool,
+            "--ignore_version", default=cfg.ignore_version, type=bool,
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
-    def __call__(self, argv=None):
-        cfg = config.read_config()
+    def __call__(self, argv: Optional[str] = None) -> int:
+        cfg = SpallocConfig()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)
@@ -120,3 +122,4 @@ class Script(object, metaclass=AbstractBase):
             return 1
         except Terminate as t:
             t.exit()
+            return 1

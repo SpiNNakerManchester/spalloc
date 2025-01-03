@@ -17,10 +17,11 @@
 """
 import sys
 import threading
+from typing import List
 from spalloc_client.protocol_client import ProtocolClient, ProtocolTimeoutError
 
 
-def wait_for_exit(stop_event):
+def wait_for_exit(stop_event: threading.Event) -> None:
     """ Listens to stdin for a line equal to 'exit' or end-of-file and then\
         notifies the given event (that it is time to stop keeping the Spalloc\
         job alive).
@@ -34,8 +35,10 @@ def wait_for_exit(stop_event):
     stop_event.set()
 
 
-def keep_job_alive(hostname, port, job_id, keepalive_period, timeout,
-                   reconnect_delay, stop_event):
+def keep_job_alive(
+        hostname: str, port: int, job_id: int, keepalive_period: float,
+        timeout: float, reconnect_delay: float,
+        stop_event: threading.Event) -> None:
     """ Keeps a Spalloc job alive. Run as a separate process to the main\
         Spalloc client.
 
@@ -78,7 +81,7 @@ def keep_job_alive(hostname, port, job_id, keepalive_period, timeout,
                         client.close()
 
 
-def _run(argv):
+def _run(argv: List[str]) -> None:
     print("KEEPALIVE")
     sys.stdout.flush()
     hostname = argv[1]

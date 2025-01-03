@@ -14,9 +14,16 @@
 
 from datetime import datetime
 import time
+from typing import Optional
 
 
-def time_left(timestamp):
+def time_left_float(timestamp: float) -> float:
+    """ Convert a not None timestamp into how long to wait for it.
+    """
+    return max(0.0, timestamp - time.time())
+
+
+def time_left(timestamp: Optional[float]) -> Optional[float]:
     """ Convert a timestamp into how long to wait for it.
     """
     if timestamp is None:
@@ -24,7 +31,7 @@ def time_left(timestamp):
     return max(0.0, timestamp - time.time())
 
 
-def timed_out(timestamp):
+def timed_out(timestamp: Optional[float]) -> bool:
     """ Check if a timestamp has been reached.
     """
     if timestamp is None:
@@ -32,7 +39,7 @@ def timed_out(timestamp):
     return timestamp < time.time()
 
 
-def make_timeout(delay_seconds):
+def make_timeout(delay_seconds: Optional[float]) -> Optional[float]:
     """ Convert a delay (in seconds) into a timestamp.
     """
     if delay_seconds is None:
@@ -40,7 +47,7 @@ def make_timeout(delay_seconds):
     return time.time() + delay_seconds
 
 
-def render_timestamp(timestamp) -> str:
+def render_timestamp(timestamp: float) -> str:
     """ Convert a timestamp (Unix seconds) into a local human-readable\
         timestamp string.
     """
