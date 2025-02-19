@@ -28,6 +28,6 @@ jobs:
       pylint-packages: spalloc_client
       mypy-packages: tests
       mypy-full-packages: spalloc_client
-      sphinx_directory: docs/source
+      sphinx-directory: docs/source
     secrets: inherit
 
