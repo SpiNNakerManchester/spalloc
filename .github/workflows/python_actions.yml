@@ -22,7 +22,7 @@ jobs:
     uses: SpiNNakerManchester/SupportScripts/.github/workflows/python_checks.yml@action-dash
     with:
       dependencies: SpiNNUtils
-      test_directories: tests
+      test-directories: tests
       coverage-package: spalloc tests
       flake8-packages:  spalloc_client tests
       pylint-packages: spalloc_client
