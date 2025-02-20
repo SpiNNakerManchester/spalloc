@@ -1,6 +1,7 @@
 Spalloc: SpiNNaker machine allocation client
 ============================================
 
+
 .. image:: https://img.shields.io/pypi/v/spalloc.svg?style=flat
    :alt: PyPi version
    :target: https://pypi.python.org/pypi/spalloc/
