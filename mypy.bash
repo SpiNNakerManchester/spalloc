@@ -24,4 +24,4 @@ machine="../SpiNNMachine/spinn_machine"
 man="../SpiNNMan/spinnman"
 pacman="../PACMAN/pacman"
 
-mypy --python-version 3.8 $utils $machine $man $pacman spalloc_client tests
+mypy $utils $machine $man $pacman spalloc_client tests
