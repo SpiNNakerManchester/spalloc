@@ -24,5 +24,5 @@ machine="../SpiNNMachine/spinn_machine"
 man="../SpiNNMan/spinnman"
 pacman="../PACMAN/pacman"
 
-mypy --python-version 3.8 --disallow-untyped-defs $utils $machine $man $pacman spalloc_client
+mypy --disallow-untyped-defs $utils $machine $man $pacman spalloc_client
 
