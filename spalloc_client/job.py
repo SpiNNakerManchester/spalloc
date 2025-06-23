@@ -43,10 +43,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 F = TypeVar('F', bound='float')
-_INT: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
-_FLOAT: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
-_LIST: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
-_BOOL: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
+_Int: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
+_Float: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
+_List: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
+_Bool: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
 
 
 def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
@@ -56,7 +56,7 @@ def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
     return param
 
 
-def pick_list(param: _LIST,
+def pick_list(param: _List,
               config: Optional[List[str]]) -> Optional[List[str]]:
     """ Use the param unless it is the default value, otherwise use config"""
     if param == "USE_CONFIG":
@@ -73,7 +73,7 @@ def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
     return param
 
 
-def pick_bool(param: _BOOL, config: Optional[bool]) -> Optional[bool]:
+def pick_bool(param: _Bool, config: Optional[bool]) -> Optional[bool]:
     """ Use the param if None or a bool, otherwise use config"""
     if param is None or isinstance(param, bool):
         return param
@@ -166,19 +166,19 @@ class Job(object):
     """
 
     def __init__(self, *args: int, hostname: Optional[str] = "USE_CONFIG",
-                 port: _INT = "USE_CONFIG",
-                 reconnect_delay: _FLOAT = "USE_CONFIG",
-                 timeout: _FLOAT = "USE_CONFIG",
-                 config_filenames: _LIST = "USE_CONFIG",
+                 port: _Int = "USE_CONFIG",
+                 reconnect_delay: _Float = "USE_CONFIG",
+                 timeout: _Float = "USE_CONFIG",
+                 config_filenames: _List = "USE_CONFIG",
                  resume_job_id: Optional[int] = None,
                  owner: Optional[str] = "USE_CONFIG",
-                 keepalive: _FLOAT = "USE_CONFIG",
+                 keepalive: _Float = "USE_CONFIG",
                  machine: Optional[str] = "USE_CONFIG",
-                 tags: _LIST = "USE_CONFIG",
-                 min_ratio: _FLOAT = "USE_CONFIG",
-                 max_dead_boards: _INT = "USE_CONFIG",
-                 max_dead_links: _INT = "USE_CONFIG",
-                 require_torus: _BOOL = "USE_CONFIG"):
+                 tags: _List = "USE_CONFIG",
+                 min_ratio: _Float = "USE_CONFIG",
+                 max_dead_boards: _Int = "USE_CONFIG",
+                 max_dead_links: _Int = "USE_CONFIG",
+                 require_torus: _Bool = "USE_CONFIG"):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
