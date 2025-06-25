@@ -314,16 +314,16 @@ def _board_to_cartesian(x: int, y: int, z: int) -> Tuple[int, int]:
 
     Parameters
     ----------
-    x : 
+    x :
         The logical board's X coordinate.
-    y : 
+    y :
         The logical board's Y coordinate.
-    z : 
+    z :
         The logical board's Z coordinate.
 
     Returns
     -------
-    x, y : 
+    x, y :
         Equivalent Cartesian coordinates.
     """  # noqa: W605
     cx = (2*x) - y + (1 if z == 1 else 0)
