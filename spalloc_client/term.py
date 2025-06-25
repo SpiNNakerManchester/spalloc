@@ -97,7 +97,7 @@ class Terminal(object):
     ----------
     stream
         The IO stream which is being used.
-    enabled : bool
+    enabled :
         Is colour enabled?
     """
 
@@ -108,7 +108,7 @@ class Terminal(object):
         ----------
         stream
             The IO stream being written to (by default sys.stdout).
-        force : None or bool
+        force :
             If a bool, forces styling to be enabled or disabled as specified.
             If None, checks whether the stream is a TTY (and that we're not o
             non-posix OS) before enabling colouring automatically.
@@ -203,14 +203,14 @@ def render_table(table: TableType, column_sep: str = "  ") -> str:
 
     Parameters
     ----------
-    table : [row, ...]
+    table :
         A table to render. Each row contains an iterable of column values which
         may be either values or a tuples (f, value) where value is the string
         to print, or an integer to print right-aligned. If a column is a tuple,
         f is a formatting function which is applied to the string before the
         table is finally displayed. Columns are padded to have matching widths
         *before* any formatting functions are applied.
-    column_sep : str
+    column_sep :
         String inserted between each column.
 
     Returns
@@ -281,9 +281,9 @@ def render_definitions(definitions: Dict, separator: str = ": ") -> str:
 
     Parameters
     ----------
-    definitions : :py:class:`collections.OrderedDict`
+    definitions :
         The key/value set to display.
-    separator : str
+    separator :
         The separator inserted between keys and values.
     """
     # Special case since max would fail
@@ -314,12 +314,12 @@ def _board_to_cartesian(x: int, y: int, z: int) -> Tuple[int, int]:
 
     Parameters
     ----------
-    x, y, z : int
+    x, y, z : 
         The logical board coordinates.
 
     Returns
     -------
-    x, y : int
+    x, y : 
         Equivalent Cartesian coordinates.
     """  # noqa: W605
     cx = (2*x) - y + (1 if z == 1 else 0)
@@ -396,25 +396,27 @@ def render_boards(
 
     Parameters
     ----------
-    board_groups : [([(x, y, z), ...], label, edge_inner, edge_outer), ...]
+    board_groups :
         Lists the groups of boards to display. Label is a 3-character string
         labelling the boards in the group, edge_inner and edge_outer are the
         characters to use to draw board edges as a tuple ("___", "\\", "/")
         which are to be used for the inner and outer board edges respectively.
         Board groups are drawn sequentially with later board groups obscuring
         earlier ones when their edges or boards overlap.
-    dead_links : list([(x, y, z, link), ...])
+    dead_links :
         Enumeration of all dead links. These links are re-drawn in the style
         defined by the dead_edge argument after all board groups have been
         drawn.
-    dead_edge : ("___", "\\", "/")
+    dead_edge :
         The strings to use to draw dead links.
-    blank_label : "   "
+        ("___", "\\", "/")
+    blank_label :
         The 3-character string to use to label non-existent boards. (Blank by
         default)
-    blank_edge : ("___", "\\", "/")
+    blank_edge :
         The characters to use to render non-existent board edges. (Blank by
         default)
+        ("___", "\\", "/")
     """
     # pylint: disable=too-many-locals
 
@@ -507,12 +509,12 @@ def render_cells(cells: List[Tuple[int, str]], width: int = 80,
 
     Parameters
     ----------
-    cells : [(strlen, str), ...]
+    cells :
         Gives the cells to print as tuples giving the strings length in visible
         characters and the string to display.
-    width : int
+    width :
         The width of the terminal.
-    col_spacing : int
+    col_spacing :
         Size of the gap to leave between columns.
     """
     # Special case (since max below will fail)

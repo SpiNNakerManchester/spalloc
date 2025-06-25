@@ -137,8 +137,8 @@ def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
 
     Parameters
     ----------
-    connections : {(x, y): hostname, ...}
-    ip_file_filename : str
+    connections :
+    ip_file_filename :
     """
     with open(ip_file_filename, "w", encoding="utf-8") as f:
         f.write("x,y,hostname\n")
@@ -154,13 +154,14 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
 
     Parameters
     ----------
-    machine_name : str
+    machine_name :
         The machine the job is running on.
-    connections : {(x, y): hostname, ...}
+    connections :
         The connections to the boards.
-    width, height : int
+        {(x, y): hostname, ...}
+    width, height :
         The width and height of the machine in chips.
-    ip_file_filename : str
+    ip_file_filename :
     """
     t_stdout = Terminal()
 
@@ -208,14 +209,16 @@ def run_command(
 
     Parameters
     ----------
-    command : [command, arg, ...]
-    machine_name : str
+    command :
+        [command, arg, ...]
+    machine_name :
         The machine the job is running on.
-    connections : {(x, y): hostname, ...}
+    connections :
         The connections to the boards.
-    width, height : int
+        {(x, y): hostname, ...}
+    width, height :
         The width and height of the machine in chips.
-    ip_file_filename : str
+    ip_file_filename :
 
     Returns
     -------
