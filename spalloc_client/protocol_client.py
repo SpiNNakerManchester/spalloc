@@ -336,8 +336,6 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        name :
-            The name of the command to send.
         timeout :
             The number of seconds to wait before timing out or None if this
             function should try again forever.

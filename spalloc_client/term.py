@@ -139,9 +139,9 @@ class Terminal(object):
 
         Parameters
         ----------
-        string : str
+        string :
             The string to print (optional).
-        start_again : bool
+        start_again :
             If False, overwrites the last thing printed. If True, starts a new
             line.
         """
@@ -314,8 +314,12 @@ def _board_to_cartesian(x: int, y: int, z: int) -> Tuple[int, int]:
 
     Parameters
     ----------
-    x, y, z : 
-        The logical board coordinates.
+    x : 
+        The logical board's X coordinate.
+    y : 
+        The logical board's Y coordinate.
+    z : 
+        The logical board's Z coordinate.
 
     Returns
     -------

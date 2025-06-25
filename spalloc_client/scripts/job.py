@@ -110,7 +110,7 @@ def show_job_info(t: Terminal, client: ProtocolClient,
     job_id :
         The job ID of interest.
 
-    Returnsisin
+    Returns
     -------
     int
         An error code, 0 for success.

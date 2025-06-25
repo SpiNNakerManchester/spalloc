@@ -49,10 +49,6 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
         The terminal to which the output will be sent.
     jobs :
         The list of jobs returned by the server.
-    machine :
-        If not None, only list jobs on this machine.
-    owner :
-        If not None, only list jobs with this owner.
     """
     table: TableType = []
 

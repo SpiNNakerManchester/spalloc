@@ -159,8 +159,10 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
     connections :
         The connections to the boards.
         {(x, y): hostname, ...}
-    width, height :
-        The width and height of the machine in chips.
+    width :
+        The width of the machine in chips.
+    height :
+        The height of the machine in chips.
     ip_file_filename :
     """
     t_stdout = Terminal()
@@ -216,8 +218,10 @@ def run_command(
     connections :
         The connections to the boards.
         {(x, y): hostname, ...}
-    width, height :
-        The width and height of the machine in chips.
+    width :
+        The width of the machine in chips.
+    height :
+        The height of the machine in chips.
     ip_file_filename :
 
     Returns

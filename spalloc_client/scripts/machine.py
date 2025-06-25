@@ -64,7 +64,7 @@ def list_machines(t: Terminal, machines: JsonObjectArray,
 
     Parameters
     ----------
-    t : `
+    t :
         An output styling object for stdout.
     machines :
         The list of machines and their properties returned from the server.
@@ -122,7 +122,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
         The list of machines and their properties returned from the server.
     jobs :
         The list of jobs and their properties returned from the server.
-    machine_name : str
+    machine_name :
         The machine of interest.
     compact :
         If True, display the listing of jobs on the machine in a more compact
