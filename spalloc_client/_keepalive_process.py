@@ -27,7 +27,6 @@ def wait_for_exit(stop_event: threading.Event) -> None:
         job alive).
 
     :param stop_event: Used to notify another thread that is time to stop.
-    :type stop_event: threading.Event
     """
     for line in sys.stdin:
         if line.strip() == "exit":
@@ -52,7 +51,6 @@ def keep_job_alive(
         The delay before reconnecting on communication failure.
     :param stop_event: Used to notify this function that it is time to stop \
         keeping the job alive.
-    :type stop_event: threading.Event
     """
     client = ProtocolClient(hostname, port)
     client.connect(timeout)

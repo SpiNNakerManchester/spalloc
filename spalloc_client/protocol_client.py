@@ -99,9 +99,9 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        hostname : str
+        hostname :
             The hostname of the server.
-        port : int
+        port :
             The port to use (default: 22244).
         """
         self._hostname = hostname
@@ -219,7 +219,7 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        timeout : float or None
+        timeout :
             The number of seconds to wait before timing out or None if this
             function should try again forever.
 
@@ -260,9 +260,9 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        obj : object
+        obj :
             The object to serialise.
-        timeout : float or None
+        timeout :
             The number of seconds to wait before timing out or None if this
             function should try again forever.
 
@@ -291,9 +291,9 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        name : str
+        name :
             The name of the command to send.
-        timeout : float or None
+        timeout :
             The number of seconds to wait before timing out or None if this
             function should wait forever. (Default: None)
 
@@ -341,9 +341,7 @@ class ProtocolClient(object):
 
         Parameters
         ----------
-        name : str
-            The name of the command to send.
-        timeout : float or None
+        timeout :
             The number of seconds to wait before timing out or None if this
             function should try again forever.
 

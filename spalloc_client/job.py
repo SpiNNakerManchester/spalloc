@@ -43,10 +43,10 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 
 F = TypeVar('F', bound='float')
-_INT: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
-_FLOAT: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
-_LIST: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
-_BOOL: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
+_Int: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
+_Float: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
+_List: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
+_Bool: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
 
 
 def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
@@ -56,7 +56,7 @@ def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
     return param
 
 
-def pick_list(param: _LIST,
+def pick_list(param: _List,
               config: Optional[List[str]]) -> Optional[List[str]]:
     """ Use the param unless it is the default value, otherwise use config"""
     if param == "USE_CONFIG":
@@ -73,7 +73,7 @@ def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
     return param
 
 
-def pick_bool(param: _BOOL, config: Optional[bool]) -> Optional[bool]:
+def pick_bool(param: _Bool, config: Optional[bool]) -> Optional[bool]:
     """ Use the param if None or a bool, otherwise use config"""
     if param is None or isinstance(param, bool):
         return param
@@ -166,19 +166,19 @@ class Job(object):
     """
 
     def __init__(self, *args: int, hostname: Optional[str] = "USE_CONFIG",
-                 port: _INT = "USE_CONFIG",
-                 reconnect_delay: _FLOAT = "USE_CONFIG",
-                 timeout: _FLOAT = "USE_CONFIG",
-                 config_filenames: _LIST = "USE_CONFIG",
+                 port: _Int = "USE_CONFIG",
+                 reconnect_delay: _Float = "USE_CONFIG",
+                 timeout: _Float = "USE_CONFIG",
+                 config_filenames: _List = "USE_CONFIG",
                  resume_job_id: Optional[int] = None,
                  owner: Optional[str] = "USE_CONFIG",
-                 keepalive: _FLOAT = "USE_CONFIG",
+                 keepalive: _Float = "USE_CONFIG",
                  machine: Optional[str] = "USE_CONFIG",
-                 tags: _LIST = "USE_CONFIG",
-                 min_ratio: _FLOAT = "USE_CONFIG",
-                 max_dead_boards: _INT = "USE_CONFIG",
-                 max_dead_links: _INT = "USE_CONFIG",
-                 require_torus: _BOOL = "USE_CONFIG"):
+                 tags: _List = "USE_CONFIG",
+                 min_ratio: _Float = "USE_CONFIG",
+                 max_dead_boards: _Int = "USE_CONFIG",
+                 max_dead_links: _Int = "USE_CONFIG",
+                 require_torus: _Bool = "USE_CONFIG"):
         """ Request a SpiNNaker machine.
 
         A :py:class:`.Job` is constructed in one of the following styles::
@@ -227,19 +227,19 @@ class Job(object):
 
         Parameters
         ----------
-        hostname : str
+        hostname :
             **Required.** The name of the spalloc server to connect to. (Read
             from config file if not specified.)
-        port : int
+        port :
             The port number of the spalloc server to connect to. (Read from
             config file if not specified.)
-        reconnect_delay : float
+        reconnect_delay :
             Number of seconds between attempts to reconnect to the server.
             (Read from config file if not specified.)
-        timeout : float or None
+        timeout :
             Timeout for waiting for replies from the server. If None, will keep
             trying forever. (Read from config file if not specified.)
-        config_filenames : [str, ...]
+        config_filenames :
             If given must be a list of filenames to read configuration options
             from. If not supplied, the default config file locations are
             searched. Set to an empty list to prevent using values from config
@@ -247,45 +247,45 @@ class Job(object):
 
         Other Parameters
         ----------------
-        resume_job_id : int or None
+        resume_job_id :
             If supplied, rather than creating a new job, take on an existing
             one, keeping it alive as required by the original job. If this
             argument is used, all other requirements are ignored.
-        owner : str
+        owner :
             **Required.** The name of the owner of the job. By convention this
             should be your email address. (Read from config file if not
             specified.)
-        keepalive : float or None
+        keepalive :
             The number of seconds after which the server may consider the job
             dead if this client cannot communicate with it. If None, no timeout
             will be used and the job will run until explicitly destroyed. Use
             with extreme caution. (Read from config file if not specified.)
-        machine : str or None
+        machine :
             Specify the name of a machine which this job must be executed on.
             If None, the first suitable machine available will be used,
             according to the tags selected below. Must be None when tags are
             given. (Read from config file if not specified.)
-        tags : [str, ...] or None
+        tags :
             The set of tags which any machine running this job must have. If
             None is supplied, only machines with the "default" tag will be
             used. If machine is given, this argument must be None.  (Read from
             config file if not specified.)
-        min_ratio : float
+        min_ratio :
             The aspect ratio (h/w) which the allocated region must be 'at least
             as square as'. Set to 0.0 for any allowable shape, 1.0 to be
             exactly square etc. Ignored when allocating single boards or
             specific rectangles of triads.
-        max_dead_boards : int or None
+        max_dead_boards :
             The maximum number of broken or unreachable boards to allow in the
             allocated region. If None, any number of dead boards is permitted,
             as long as the board on the bottom-left corner is alive. (Read from
             config file if not specified.)
-        max_dead_links : int or None
+        max_dead_links :
             The maximum number of broken links allow in the allocated region.
             When require_torus is True this includes wrap-around links,
             otherwise peripheral links are not counted.  If None, any number of
             broken links is allowed. (Read from config file if not specified.).
-        require_torus : bool
+        require_torus :
             If True, only allocate blocks with torus connectivity. In general
             this will only succeed for requests to allocate an entire machine.
             Must be False when allocating boards. (Read from config file if not
@@ -452,7 +452,7 @@ class Job(object):
 
         Parameters
         ----------
-        reason : str or None
+        reason :
             *Optional.* Gives a human-readable explanation for the destruction
             of the job.
         """
@@ -508,7 +508,7 @@ class Job(object):
 
         Parameters
         ----------
-        power : bool
+        power :
             True to power on the boards, False to power off. If the boards are
             already turned on, setting power to True will reset them.
         """
@@ -643,9 +643,9 @@ class Job(object):
 
         Parameters
         ----------
-        old_state : :py:class:`~spalloc_client.JobState`
+        old_state :
             The current state.
-        timeout : float or None
+        timeout :
             The number of seconds to wait for a change before timing out. If
             None, wait forever.
 
@@ -731,7 +731,7 @@ class Job(object):
 
         Parameters
         ----------
-        timeout : float or None
+        timeout :
             The number of seconds to wait before timing out. If None, wait
             forever.
 

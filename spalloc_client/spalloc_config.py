@@ -160,7 +160,7 @@ class SpallocConfig(object):
 
         Parameters
         ----------
-        filenames : [str, ...]
+        filenames :
             Filenames to attempt to read.
             Later config file have higher priority.
 

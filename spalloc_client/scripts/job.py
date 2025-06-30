@@ -101,16 +101,16 @@ def show_job_info(t: Terminal, client: ProtocolClient,
 
     Parameters
     ----------
-    t : :py:class:`.Terminal`
+    t :
         An output styling object for stdout.
-    client : :py:class:`.ProtocolClient`
+    client :
         A connection to the server.
-    timeout : float or None
+    timeout :
         The timeout for server responses.
-    job_id : int
+    job_id :
         The job ID of interest.
 
-    Returnsisin
+    Returns
     -------
     int
         An error code, 0 for success.
@@ -180,13 +180,13 @@ def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[float],
 
     Parameters
     ----------
-    t : :py:class:`.Terminal`
+    t :
         An output styling object for stdout.
-    client : :py:class:`.ProtocolClient`
+    client :
         A connection to the server.
-    timeout : int or None
+    timeout :
         The timeout for server responses.
-    job_id : int
+    job_id :
         The job ID of interest.
 
     Returns
@@ -214,13 +214,13 @@ def power_job(client: ProtocolClient, timeout: Optional[float],
 
     Parameters
     ----------
-    client : :py:class:`.ProtocolClient`
+    client :
         A connection to the server.
-    timeout : int or None
+    timeout :
         The timeout for server responses.
-    job_id : int
+    job_id :
         The job ID of interest.
-    power : bool
+    power :
         True = turn on/reset, False = turn off.
 
     Returns
@@ -263,11 +263,11 @@ def list_ips(client: ProtocolClient, timeout: Optional[float],
 
     Parameters
     ----------
-    client : :py:class:`.ProtocolClient`
+    client :
         A connection to the server.
-    timeout : int or None
+    timeout :
         The timeout for server responses.
-    job_id : int
+    job_id :
         The job ID of interest.
 
     Returns
@@ -296,13 +296,13 @@ def destroy_job(client: ProtocolClient, timeout: Optional[float],
 
     Parameters
     ----------
-    client : :py:class:`.ProtocolClient`
+    client :
         A connection to the server.
-    timeout : int or None
+    timeout :
         The timeout for server responses.
-    job_id : int
+    job_id :
         The job ID of interest.
-    reason : str or None
+    reason :
         The human-readable reason for destroying the job.
 
     Returns
