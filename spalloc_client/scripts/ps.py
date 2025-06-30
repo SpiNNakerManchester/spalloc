@@ -45,14 +45,10 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
 
     Parameters
     ----------
-    t : :py:class:`spalloc.term.Terminal`
+    t :
         The terminal to which the output will be sent.
-    jobs : [{...}, ...]
+    jobs :
         The list of jobs returned by the server.
-    machine : str or None
-        If not None, only list jobs on this machine.
-    owner : str or None
-        If not None, only list jobs with this owner.
     """
     table: TableType = []
 
