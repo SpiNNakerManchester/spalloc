@@ -109,11 +109,6 @@ def show_job_info(t: Terminal, client: ProtocolClient,
         The timeout for server responses.
     job_id :
         The job ID of interest.
-
-    Returns
-    -------
-    int
-        An error code, 0 for success.
     """
     # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
@@ -223,12 +218,6 @@ def power_job(client: ProtocolClient, timeout: Optional[float],
     power :
         True = turn on/reset, False = turn off.
 
-    Returns
-    -------
-    int
-        An error code, 0 for success. Fails if the job is not allocated any
-        boards or if waiting for the state change notification is interrupted
-        by the user.
     """
     if power:
         client.power_on_job_boards(job_id, timeout=timeout)
@@ -269,12 +258,6 @@ def list_ips(client: ProtocolClient, timeout: Optional[float],
         The timeout for server responses.
     job_id :
         The job ID of interest.
-
-    Returns
-    -------
-    int
-        An error code, 0 for success. Fails if the job is not allocated any
-        boards.
     """
     info = client.get_job_machine_info(job_id, timeout=timeout)
     connections = cast(list, info["connections"])
@@ -304,11 +287,6 @@ def destroy_job(client: ProtocolClient, timeout: Optional[float],
         The job ID of interest.
     reason :
         The human-readable reason for destroying the job.
-
-    Returns
-    -------
-    int
-        An error code, 0 for success.
     """
     client.destroy_job(job_id, reason, timeout=timeout)
 
