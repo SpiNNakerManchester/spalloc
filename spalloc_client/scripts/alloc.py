@@ -213,6 +213,8 @@ def run_command(
     ----------
     command :
         [command, arg, ...]
+    job_id :
+        THe ID of the job
     machine_name :
         The machine the job is running on.
     connections :

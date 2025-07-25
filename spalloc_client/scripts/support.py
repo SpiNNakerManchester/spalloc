@@ -84,6 +84,7 @@ class Script(object, metaclass=AbstractBase):
         Adds a few more arguments
 
         :param server_args:
+        :param cfg: the configs
         """
         server_args.add_argument(
             "--hostname", "-H", default=cfg.hostname,

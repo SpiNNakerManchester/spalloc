@@ -282,26 +282,18 @@ class ProtocolClient(object):
     def call(self, name: str, timeout: Optional[float],
              *args: Union[int, str, None],
              **kwargs: Any) -> JsonValue:
-        """ Send a command to the server and return the reply.
+        """
+        Send a command to the server and return the reply.
 
-        Parameters
-        ----------
-        name :
-            The name of the command to send.
-        timeout :
+        :param name:  The name of the command to send.
+        :param timeout:
             The number of seconds to wait before timing out or None if this
             function should wait forever. (Default: None)
-
-        Returns
-        -------
-        object
-            The object returned by the server.
-
-        Raises
-        ------
-        ProtocolTimeoutError
-            If a timeout occurs.
-        ProtocolError
+        :param args:
+        :param kwargs:
+        :returns : The object returned by the server.
+        :raises ProtocolTimeoutError: If a timeout occurs.
+        :raises ProtocolError:
             If the connection is unavailable or is closed.
         """
         try:
