@@ -583,8 +583,6 @@ class Job(object):
     def connections(self) -> Dict[Tuple[int, int], str]:
         """ The list of Ethernet connected chips and their IPs.
 
-        Returns
-        -------
         {(x, y): hostname, ...} or None
         """
         # Note that the connections for a job will never change once defined so
