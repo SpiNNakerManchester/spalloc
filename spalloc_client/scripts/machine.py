@@ -49,6 +49,9 @@ def generate_keys(alphabet: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") -> Iterator:
     """ Generate ascending values in spreadsheet-column-name style.
 
     For example, A, B, C, ..., Y, Z, AA, AB, AC...
+
+    :returns:
+        Iterator yielding ascending values in spreadsheet-column-name style.
     """
     for symbol in alphabet:
         yield symbol

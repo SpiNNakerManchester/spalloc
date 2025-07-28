@@ -163,7 +163,7 @@ github_module_path = "spalloc_client/"
 github_repo = "SpiNNakerManchester/spalloc"
 
 
-def linkcode_resolve(domain, info):
+def linkcode_resolve(domain, info) -> None:
     """Determine the URL corresponding to Python object on GitHub
 
     This code is derived from the version used by `Numpy

@@ -50,7 +50,10 @@ _Bool: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
 
 
 def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
-    """ Use the param unless it is the default value, otherwise use config"""
+    """ Use the param unless it is the default value, otherwise use config
+
+    :returns: param unless it is "USE_CONFIG" when the config is returned
+    """
     if param == "USE_CONFIG":
         return config
     return param
@@ -58,7 +61,10 @@ def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
 
 def pick_list(param: _List,
               config: Optional[List[str]]) -> Optional[List[str]]:
-    """ Use the param unless it is the default value, otherwise use config"""
+    """ Use the param unless it is the default value, otherwise use config
+
+    :returns: param unless it is "USE_CONFIG" when the config is returned
+    """
     if param == "USE_CONFIG":
         return config
     else:
@@ -67,14 +73,20 @@ def pick_list(param: _List,
 
 def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
              config: Optional[F]) -> Optional[F]:
-    """ Use the param unless it is the default value, otherwise use config"""
+    """ Use the param unless it is the default value, otherwise use config
+
+    :returns: param unless it is "USE_CONFIG" when the config is returned
+    """
     if param == "USE_CONFIG":
         return config
     return param
 
 
 def pick_bool(param: _Bool, config: Optional[bool]) -> Optional[bool]:
-    """ Use the param if None or a bool, otherwise use config"""
+    """ Use the param if None or a bool, otherwise use config
+
+    :returns: param unless it is "USE_CONFIG" when the config is returned
+    """
     if param is None or isinstance(param, bool):
         return param
     else:

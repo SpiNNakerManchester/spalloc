@@ -62,6 +62,9 @@ class Script(object, metaclass=AbstractBase):
 
     def get_parser(self, cfg: SpallocConfig) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
+
+        :param cfg: configuration object
+        :returns: Arguments read from user call
         """
         raise NotImplementedError
 
@@ -75,6 +78,8 @@ class Script(object, metaclass=AbstractBase):
     def body(self, client: ProtocolClient, args: Namespace) -> int:
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
+
+        :returns: Success code (0 is OK)
         """
         raise NotImplementedError
 

@@ -285,6 +285,8 @@ def update(msg: str, colour: functools.partial) -> None:
 def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
     """
     Wait for it to become ready, keeping the user informed along the way
+
+    :returns: Code (0 is OK) and reason if not OK
     """
     assert t is not None
     old_state = None
@@ -334,6 +336,8 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
         argparse.ArgumentParser, argparse.Namespace]:
     """
     Parse the arguments.
+
+    :returns: command line Arguments and Attributes
     """
     cfg = SpallocConfig()
 
@@ -442,6 +446,11 @@ def run_job(ip_file_filename: str,
             job_kwargs: Dict[str, Union[float, str, None]]) -> int:
     """
     Run a job
+
+    Returns
+    -------
+    The return code of the supplied command.
+
     """
     assert arguments is not None
     assert t is not None
@@ -493,6 +502,10 @@ def _minzero(value: float) -> Optional[float]:
 def main(argv: Optional[List[str]] = None) -> int:
     """
     The main method run
+
+    Returns
+    -------
+    The return code of the supplied command.
     """
     global arguments, t  # pylint: disable=global-statement
     parser, arguments = parse_argv(argv)
