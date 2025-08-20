@@ -303,7 +303,7 @@ class ManageJobScript(Script):
     def get_job_id(self, client: ProtocolClient,
                    args: argparse.Namespace) -> int:
         """
-    get a job for the owner named in the args
+        :returns: ID for a job for the owner named in the args
         """
         if args.job_id is not None:
             return args.job_id

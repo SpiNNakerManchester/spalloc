@@ -282,26 +282,18 @@ class ProtocolClient(object):
     def call(self, name: str, timeout: Optional[float],
              *args: Union[int, str, None],
              **kwargs: Any) -> JsonValue:
-        """ Send a command to the server and return the reply.
+        """
+        Send a command to the server and return the reply.
 
-        Parameters
-        ----------
-        name :
-            The name of the command to send.
-        timeout :
+        :param name:  The name of the command to send.
+        :param timeout:
             The number of seconds to wait before timing out or None if this
             function should wait forever. (Default: None)
-
-        Returns
-        -------
-        object
-            The object returned by the server.
-
-        Raises
-        ------
-        ProtocolTimeoutError
-            If a timeout occurs.
-        ProtocolError
+        :param args:
+        :param kwargs:
+        :returns: The object returned by the server.
+        :raises ProtocolTimeoutError: If a timeout occurs.
+        :raises ProtocolError:
             If the connection is unavailable or is closed.
         """
         try:
@@ -375,7 +367,10 @@ class ProtocolClient(object):
     # from IDEs.
 
     def version(self, timeout: Optional[float] = None) -> str:
-        """ Ask what version of spalloc is running. """
+        """ Ask what version of spalloc is running.
+
+        :returns: The string returned by the call to the server.
+        """
         return cast(str, self.call("version", timeout))
 
     def create_job(self, timeout: Optional[float], *args: int,
@@ -389,6 +384,8 @@ class ProtocolClient(object):
                    require_torus: Optional[bool] = None) -> int:
         """
         Start a new job
+
+        :returns: The ID returned by the call to the server.
         """
         # If no owner, don't bother with the call
         if owner is None:
@@ -409,71 +406,109 @@ class ProtocolClient(object):
         Send s message to keep the job alive.
 
         Without these the job will be killed after a while.
+
+        :returns: The dict returned by the call to the server.
         """
         return cast(dict, self.call("job_keepalive", timeout, job_id))
 
     def get_job_state(self, job_id: int,
                       timeout: Optional[float] = None) -> JsonObject:
-        """Get the state for this job """
+        """Get the state for this job
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("get_job_state", timeout, job_id))
 
     def get_job_machine_info(self, job_id: int,
                              timeout: Optional[float] = None) -> JsonObject:
-        """ Get info for this job. """
+        """ Get info for this job.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("get_job_machine_info", timeout, job_id))
 
     def power_on_job_boards(self, job_id: int,
                             timeout: Optional[float] = None) -> JsonObject:
-        """ Turn on the power on the jobs boards. """
+        """ Turn on the power on the jobs boards.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("power_on_job_boards", timeout, job_id))
 
     def power_off_job_boards(self, job_id: int,
                              timeout: Optional[float] = None) -> JsonObject:
-        """ Turn off the power on the jobs boards. """
+        """ Turn off the power on the jobs boards.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("power_off_job_boards", timeout, job_id))
 
     def destroy_job(self, job_id: int, reason: Optional[str] = None,
                     timeout: Optional[float] = None) -> JsonObject:
-        """ Destroy the job """
+        """ Destroy the job
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("destroy_job", timeout,
                                     job_id, reason=reason))
 
     def notify_job(self, job_id: Optional[int] = None,
                    timeout: Optional[float] = None) -> JsonObject:
-        """ Turn on notification of job status changes. """
+        """ Turn on notification of job status changes.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("notify_job", timeout, job_id))
 
     def no_notify_job(self, job_id: Optional[int] = None,
                       timeout: Optional[float] = None) -> JsonObject:
-        """ Turn off notification of job status changes. """
+        """ Turn off notification of job status changes.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("no_notify_job", timeout,
                                     job_id))
 
     def notify_machine(self, machine_name: Optional[str] = None,
                        timeout: Optional[float] = None) -> JsonObject:
-        """ Turn on notification of machine status changes. """
+        """ Turn on notification of machine status changes.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("notify_machine", timeout,
                                     machine_name))
 
     def no_notify_machine(self, machine_name: Optional[str] = None,
                           timeout: Optional[float] = None) -> JsonObject:
-        """ Turn off notification of machine status changes. """
+        """ Turn off notification of machine status changes.
+
+        :returns: The dict returned by the call to the server.
+        """
         return cast(dict, self.call("no_notify_machine", timeout,
                                     machine_name))
 
     def list_jobs(self, timeout: Optional[float] = None) -> JsonObjectArray:
-        """ Obtains a list of jobs currently running. """
+        """ Obtains a list of jobs currently running.
+
+        :returns: The list returned by the call to the server.
+        """
         return cast(list, self.call("list_jobs", timeout))
 
     def list_machines(self,
                       timeout: Optional[float] = None) -> JsonObjectArray:
-        """ Obtains a list of currently supported machines. """
+        """ Obtains a list of currently supported machines.
+
+        :returns: The list returned by the call to the server.
+        """
         return cast(list, self.call("list_machines", timeout))
 
     def get_board_position(
             self, machine_name: str, x: int, y: int, z: int,
             timeout: Optional[float] = None) -> JsonObject:  # pragma: no cover
-        """ Gets the position of board x, y, z on the given machine. """
+        """ Gets the position of board x, y, z on the given machine.
+
+        :returns: The dict returned by the call to the server.
+        """
         # pylint: disable=too-many-arguments
         return cast(dict, self.call("get_board_position", timeout,
                                     machine_name, x, y, z))
@@ -481,7 +516,10 @@ class ProtocolClient(object):
     def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
                               timeout: Optional[float] = None
                               ) -> JsonObject:  # pragma: no cover
-        """ Gets the board x, y, z on the requested machine. """
+        """ Gets the board x, y, z on the requested machine.
+
+        :returns: The dict returned by the call to the server.
+        """
         # pylint: disable=too-many-arguments
         return cast(dict, self.call("get_board_at_position", timeout,
                                     machine_name, x, y, z))
@@ -494,7 +532,10 @@ class ProtocolClient(object):
 
     def where_is(self, job_id: int, chip_x: int, chip_y: int,
                  timeout: Optional[float] = None) -> JsonObject:
-        """ Reports where ion the Machine a job is running """
+        """ Reports where on the Machine a job is running
+
+        :returns: The dict returned by the call to the server.
+        """
         # Test for whether sane arguments are passed.
         return cast(dict, self.call("where_is", timeout, job_id=job_id,
                                     chip_x=chip_x, chip_y=chip_y))

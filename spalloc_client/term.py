@@ -125,25 +125,29 @@ class Terminal(object):
     def __call__(self, string: str) -> str:
         """ If enabled, passes through the given value, otherwise passes\
             through an empty string.
+
+        :returns: The string if the terminal is enabled otherwise ""
         """
         return string if self.enabled else ""
 
     def clear_screen(self) -> str:
         """ Clear the screen and reset cursor to top-left corner.
+
+        :return: terminal control sequences
         """
         return self("\033[2J\033[;H")
 
     def update(self, string: str = "", start_again: bool = False) -> str:
-        """ Print before a line and it will replace the previous line prefixed\
+        """
+        Print before a line and it will replace the previous line prefixed\
             with :py:meth:`.update`.
 
-        Parameters
-        ----------
-        string :
-            The string to print (optional).
-        start_again :
+        :param string: The string to print (optional).
+        :param start_again:
             If False, overwrites the last thing printed. If True, starts a new
             line.
+
+        :return: String preceded with terminal control sequence(s)
         """
         if start_again:
             self._location_saved = False
@@ -156,7 +160,8 @@ class Terminal(object):
         return "".join((self("\0338\033[K"), str(string)))
 
     def set_attrs(self, attrs: List) -> str:
-        """ Construct an ANSI control sequence which sets the given attribute\
+        """
+        :returns: An ANSI control sequence which sets the given attribute
             numbers.
         """
         if not attrs:
@@ -166,7 +171,9 @@ class Terminal(object):
     def wrap(self, string: Optional[str] = None,
              pre: str = "", post: str = "") -> str:
         """ Wrap a string in the suppled pre and post strings or just print\
-            the pre string if no string given.
+            the pre string if no string given
+
+        :returns: pre + string + post or just pre if string is None
         """
         if string is None:
             return pre
@@ -285,6 +292,10 @@ def render_definitions(definitions: Dict, separator: str = ": ") -> str:
         The key/value set to display.
     separator :
         The separator inserted between keys and values.
+
+    Returns
+    -------
+    The Dict formatted into rows and columns
     """
     # Special case since max would fail
     if not definitions:
@@ -421,6 +432,10 @@ def render_boards(
         The characters to use to render non-existent board edges. (Blank by
         default)
         ("___", "\\", "/")
+
+    Returns
+    -------
+    Boards as ASCII art diagram
     """
     # pylint: disable=too-many-locals
 
@@ -520,6 +535,10 @@ def render_cells(cells: List[Tuple[int, str]], width: int = 80,
         The width of the terminal.
     col_spacing :
         Size of the gap to leave between columns.
+
+    Returns
+    -------
+    Cells in formatted columns
     """
     # Special case (since max below will fail)
     if not cells:
