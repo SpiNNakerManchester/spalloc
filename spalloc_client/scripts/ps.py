@@ -41,14 +41,11 @@ from .support import Script
 
 def render_job_list(t: Terminal, jobs: JsonObjectArray,
                     args: argparse.Namespace) -> str:
-    """ Return a human-readable process listing.
-
-    Parameters
-    ----------
-    t :
-        The terminal to which the output will be sent.
-    jobs :
-        The list of jobs returned by the server.
+    """
+    :param t: The terminal to which the output will be sent.
+    :param jobs: The list of jobs returned by the server.
+    :param args:
+    :return: A human-readable process listing.
     """
     table: TableType = []
 

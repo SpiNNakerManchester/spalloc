@@ -30,6 +30,10 @@ VERSION_RANGE_STOP = (7, 0, 0)
 class Terminate(Exception):
     """ Exception that can be used to exit the code """
     def __init__(self, code: int, message: Optional[str] = None):
+        """
+        :param code: error code
+        :param message: error message
+        """
         super().__init__()
         self._code = code
         self._msg = message
@@ -58,6 +62,9 @@ class Script(object, metaclass=AbstractBase):
 
     def get_parser(self, cfg: SpallocConfig) -> ArgumentParser:
         """ Return a set-up instance of :py:class:`argparse.ArgumentParser`
+
+        :param cfg: configuration object
+        :returns: Arguments read from user call
         """
         raise NotImplementedError
 
@@ -71,6 +78,8 @@ class Script(object, metaclass=AbstractBase):
     def body(self, client: ProtocolClient, args: Namespace) -> int:
         """ How to do the processing of the script once a client has been\
             obtained and verified to be compatible.
+
+        :returns: Success code (0 is OK)
         """
         raise NotImplementedError
 
@@ -80,6 +89,7 @@ class Script(object, metaclass=AbstractBase):
         Adds a few more arguments
 
         :param server_args:
+        :param cfg: the configs
         """
         server_args.add_argument(
             "--hostname", "-H", default=cfg.hostname,
