@@ -17,17 +17,22 @@
 from collections import deque
 import errno
 import json
+import logging
 import socket
+
+from threading import current_thread, RLock, local, Thread
 from types import TracebackType
 from typing import Any, cast, Dict, List, Literal, Optional, Type, Union
-from threading import current_thread, RLock, local, Thread
-
+from typing import Dict, List, Optional
 from typing_extensions import Self
 
+from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import (
     JsonObject, JsonObjectArray, JsonValue)
 
 from spalloc_client._utils import time_left, timed_out, make_timeout
+
+logger = FormatAdapter(logging.getLogger(__name__))
 
 
 class ProtocolError(Exception):
@@ -391,6 +396,10 @@ class ProtocolClient(object):
         if owner is None:
             raise SpallocServerException(
                 "owner must be specified for all jobs.")
+        msg = (f"create_job {args=} {owner=} {keepalive=} {machine=} {tags} "
+               f"{min_ratio=} {max_dead_boards=} {max_dead_links=} "
+               f"{require_torus=}")
+        logger.info(msg)
         if tags is not None and machine is not None:
             raise SpallocServerException(
                 f"Unexpected {tags=} and {machine=} are both not None")
