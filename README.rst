@@ -7,7 +7,7 @@ Spalloc: SpiNNaker machine allocation client
 .. image:: https://readthedocs.org/projects/spalloc/badge/?version=stable
    :alt: Documentation
    :target: https://spalloc.readthedocs.org/
-.. image:: https://github.com/SpiNNakerManchester/spalloc/workflows/Python%20Build/badge.svg?branch=master
+.. image:: https://github.com/SpiNNakerManchester/spalloc/actions/workflows/python_actions.yml/badge.svg
    :alt: Build Status
    :target: https://github.com/SpiNNakerManchester/spalloc/actions/workflows/python_actions.yml
 .. image:: https://coveralls.io/repos/SpiNNakerManchester/spalloc/badge.svg?branch=master
