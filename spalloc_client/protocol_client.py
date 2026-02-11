@@ -23,7 +23,6 @@ import socket
 from threading import current_thread, RLock, local, Thread
 from types import TracebackType
 from typing import Any, cast, Dict, List, Literal, Optional, Type, Union
-from typing import Dict, List, Optional
 from typing_extensions import Self
 
 from spinn_utilities.log import FormatAdapter
