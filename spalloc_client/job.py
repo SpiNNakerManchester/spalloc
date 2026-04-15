@@ -24,6 +24,7 @@ import sys
 
 from typing_extensions import Literal, Self, TypeAlias
 
+from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import JsonArray
 
 from spalloc_client.scripts.support import (
@@ -34,13 +35,14 @@ from .spalloc_config import SpallocConfig, SEARCH_PATH
 from .states import JobState
 from ._utils import time_left, time_left_float, timed_out, make_timeout
 
-logger = logging.getLogger(__name__)
+plain_logger = logging.getLogger(__name__)
+plain_logger.addHandler(logging.StreamHandler())
+logger = FormatAdapter(plain_logger)
 
 # pylint: disable=wrong-spelling-in-docstring
 # In Python 2, no default handler exists for software which doesn't configure
 # its own logging so we must add one ourselves as per
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
-logger.addHandler(logging.StreamHandler())
 
 F = TypeVar('F', bound='float')
 _Int: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
