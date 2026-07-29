@@ -29,5 +29,6 @@ jobs:
       mypy-packages: tests
       mypy-full-packages: spalloc_client
       sphinx-directory: docs/source
+      ruff-packages: spalloc_client tests
     secrets: inherit
 
