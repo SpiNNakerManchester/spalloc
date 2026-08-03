@@ -25,17 +25,18 @@ This list may be filtered by owner or machine with the ``--owner`` and
 ``--machine`` arguments.
 """
 import argparse
-from collections.abc import Sized
 import sys
-from typing import cast, Union
+from collections.abc import Sized
+from typing import Union, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
 
-from spalloc_client import __version__, JobState, ProtocolClient
-from spalloc_client.spalloc_config import SpallocConfig
-from spalloc_client.term import Terminal, render_table, TableColumn, TableType
+from spalloc_client import JobState, ProtocolClient, __version__
 from spalloc_client._utils import render_timestamp
+from spalloc_client.spalloc_config import SpallocConfig
+from spalloc_client.term import TableColumn, TableType, Terminal, render_table
+
 from .support import Script
 
 

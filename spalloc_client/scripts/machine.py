@@ -29,20 +29,27 @@ running on a machine.
 If the ``--watch`` option is given, the information displayed is updated in
 real-time.
 """
-from collections import defaultdict
 import argparse
 import sys
-from typing import Any, cast, Dict, Iterator, List, Optional
+from collections import defaultdict
+from typing import Any, Dict, Iterator, List, Optional, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray
 
-from spalloc_client import __version__, ProtocolClient
+from spalloc_client import ProtocolClient, __version__
+from spalloc_client.scripts.support import Script, Terminate
 from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import (
-    Terminal, render_table, render_definitions, render_boards, render_cells,
-    DEFAULT_BOARD_EDGES, TableRow, TableType)
-from spalloc_client.scripts.support import Terminate, Script
+    DEFAULT_BOARD_EDGES,
+    TableRow,
+    TableType,
+    Terminal,
+    render_boards,
+    render_cells,
+    render_definitions,
+    render_table,
+)
 
 
 def generate_keys(alphabet: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") -> Iterator:

@@ -18,6 +18,7 @@
 import sys
 import threading
 from typing import List
+
 from spalloc_client.protocol_client import ProtocolClient, ProtocolTimeoutError
 
 

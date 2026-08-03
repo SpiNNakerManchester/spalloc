@@ -14,11 +14,17 @@
 
 import os
 import tempfile
+
 import pytest
 from mock import Mock, PropertyMock  # type: ignore[import]
-from spalloc_client import JobState, JobDestroyedError
+
+from spalloc_client import JobDestroyedError, JobState
 from spalloc_client.scripts.alloc import (
-    write_ips_to_csv, print_info, run_command, main)
+    main,
+    print_info,
+    run_command,
+    write_ips_to_csv,
+)
 
 
 @pytest.yield_fixture

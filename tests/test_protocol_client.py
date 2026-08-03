@@ -12,14 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import socket
 import threading
 import time
-import logging
+
 import pytest
 from mock import Mock  # type: ignore[import]
+
 from spalloc_client import (
-    ProtocolClient, SpallocServerException, ProtocolTimeoutError)
+    ProtocolClient,
+    ProtocolTimeoutError,
+    SpallocServerException,
+)
+
 from .common import MockServer
 
 logging.basicConfig(level=logging.DEBUG)

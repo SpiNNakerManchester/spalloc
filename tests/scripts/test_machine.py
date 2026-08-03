@@ -13,13 +13,21 @@
 # limitations under the License.
 
 import pytest
-from mock import Mock, MagicMock  # type: ignore[import]
-from spalloc_client.term import Terminal
-from spalloc_client.scripts.machine import (
-    main, generate_keys, list_machines, show_machine)
-from spalloc_client.scripts.support import (
-    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate)
+from mock import MagicMock, Mock  # type: ignore[import]
+
 from spalloc_client.protocol_client import ProtocolError
+from spalloc_client.scripts.machine import (
+    generate_keys,
+    list_machines,
+    main,
+    show_machine,
+)
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START,
+    VERSION_RANGE_STOP,
+    Terminate,
+)
+from spalloc_client.term import Terminal
 
 
 @pytest.fixture

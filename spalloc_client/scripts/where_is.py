@@ -66,14 +66,14 @@ To query by chip coordinate of chips allocated to a job::
 """
 import argparse
 import sys
-from typing import Any, cast, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from spinn_utilities.overrides import overrides
 
-from spalloc_client import __version__, ProtocolClient
-from spalloc_client.term import render_definitions
-from spalloc_client.scripts.support import Terminate, Script
+from spalloc_client import ProtocolClient, __version__
+from spalloc_client.scripts.support import Script, Terminate
 from spalloc_client.spalloc_config import SpallocConfig
+from spalloc_client.term import render_definitions
 
 
 class WhereIsScript(Script):

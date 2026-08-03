@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import tempfile
-import shutil
 import os.path
+import shutil
+import tempfile
+
 import pytest
+
 from spalloc_client.spalloc_config import SpallocConfig
 
 
