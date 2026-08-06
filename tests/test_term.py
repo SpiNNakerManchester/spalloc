@@ -13,9 +13,15 @@
 # limitations under the License.
 
 import pytest
+
 from spalloc_client.term import (
-    Terminal, render_table, render_definitions, render_boards, render_cells,
-    DEFAULT_BOARD_EDGES)
+    DEFAULT_BOARD_EDGES,
+    Terminal,
+    render_boards,
+    render_cells,
+    render_definitions,
+    render_table,
+)
 
 
 @pytest.mark.parametrize("force", [True, False])

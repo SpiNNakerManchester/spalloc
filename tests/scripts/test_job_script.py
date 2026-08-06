@@ -13,15 +13,26 @@
 # limitations under the License.
 
 from datetime import datetime
+
 import pytest
-from mock import Mock, MagicMock  # type: ignore[import]
+from mock import MagicMock, Mock  # type: ignore[import]
+
 from spalloc_client import JobState, ProtocolError
+from spalloc_client.scripts.job import (
+    destroy_job,
+    list_ips,
+    main,
+    power_job,
+    show_job_info,
+    watch_job,
+)
+from spalloc_client.scripts.support import (
+    VERSION_RANGE_START,
+    VERSION_RANGE_STOP,
+    Terminate,
+)
 from spalloc_client.spalloc_config import TIMEOUT
 from spalloc_client.term import Terminal
-from spalloc_client.scripts.job import (
-    show_job_info, watch_job, power_job, list_ips, destroy_job, main)
-from spalloc_client.scripts.support import (
-    VERSION_RANGE_START, VERSION_RANGE_STOP, Terminate)
 
 
 @pytest.fixture

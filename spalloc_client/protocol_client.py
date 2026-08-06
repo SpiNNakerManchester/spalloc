@@ -14,22 +14,21 @@
 
 """ A simple blocking spalloc_server protocol implementation.
 """
-from collections import deque
 import errno
 import json
 import logging
 import socket
-
-from threading import current_thread, RLock, local, Thread
+from collections import deque
+from threading import RLock, Thread, current_thread, local
 from types import TracebackType
-from typing import Any, cast, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
+
 from typing_extensions import Self
 
 from spinn_utilities.log import FormatAdapter
-from spinn_utilities.typing.json import (
-    JsonObject, JsonObjectArray, JsonValue)
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray, JsonValue
 
-from spalloc_client._utils import time_left, timed_out, make_timeout
+from spalloc_client._utils import make_timeout, time_left, timed_out
 
 logger = FormatAdapter(logging.getLogger(__name__))
 

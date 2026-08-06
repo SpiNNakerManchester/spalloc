@@ -113,11 +113,17 @@ import os
 import subprocess
 import sys
 import tempfile
-from typing import Dict, List, Optional, Tuple, Union
 from shlex import quote
+from typing import Dict, List, Optional, Tuple, Union
+
 from spalloc_client import (
-    Job, JobState, __version__, ProtocolError, ProtocolTimeoutError,
-    SpallocServerException)
+    Job,
+    JobState,
+    ProtocolError,
+    ProtocolTimeoutError,
+    SpallocServerException,
+    __version__,
+)
 from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import Terminal, render_definitions
 

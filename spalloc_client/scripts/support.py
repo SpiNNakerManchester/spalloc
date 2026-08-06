@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from argparse import ArgumentParser, Namespace
 import sys
+from argparse import ArgumentParser, Namespace
 from typing import Any, Optional
+
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
+
 from spalloc_client import (
-    ProtocolClient, ProtocolError, ProtocolTimeoutError,
-    SpallocServerException)
+    ProtocolClient,
+    ProtocolError,
+    ProtocolTimeoutError,
+    SpallocServerException,
+)
 from spalloc_client.spalloc_config import SpallocConfig
 
 # The acceptable range of server version numbers

@@ -14,15 +14,25 @@
 
 import platform
 import time
-from threading import Thread, Event
+from threading import Event, Thread
+
 import pytest
 from mock import Mock  # type: ignore[import]
+
 from spalloc_client import (
-    Job, JobState, JobDestroyedError, ProtocolTimeoutError)
+    Job,
+    JobDestroyedError,
+    JobState,
+    ProtocolTimeoutError,
+)
 from spalloc_client._keepalive_process import keep_job_alive
 from spalloc_client.job import (
-    _JobStateTuple, _JobMachineInfoTuple, StateChangeTimeoutError,
-    VERSION_RANGE_START, VERSION_RANGE_STOP)
+    VERSION_RANGE_START,
+    VERSION_RANGE_STOP,
+    StateChangeTimeoutError,
+    _JobMachineInfoTuple,
+    _JobStateTuple,
+)
 
 GOOD_VERSION = ".".join(map(str, VERSION_RANGE_START))
 BAD_VERSION = ".".join(map(str, VERSION_RANGE_STOP))

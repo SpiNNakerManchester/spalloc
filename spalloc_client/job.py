@@ -14,13 +14,13 @@
 
 # A high-level Python interface for allocating SpiNNaker boards.
 
-from collections import namedtuple
 import logging
 import subprocess
-import time
-from types import TracebackType
-from typing import (cast, Dict, List, Optional, Tuple, Type, TypeVar, Union)
 import sys
+import time
+from collections import namedtuple
+from types import TracebackType
+from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 from typing_extensions import Literal, Self, TypeAlias
 
@@ -28,12 +28,14 @@ from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import JsonArray
 
 from spalloc_client.scripts.support import (
-    VERSION_RANGE_START, VERSION_RANGE_STOP)
+    VERSION_RANGE_START,
+    VERSION_RANGE_STOP,
+)
 
+from ._utils import make_timeout, time_left, time_left_float, timed_out
 from .protocol_client import ProtocolClient, ProtocolTimeoutError
-from .spalloc_config import SpallocConfig, SEARCH_PATH
+from .spalloc_config import SEARCH_PATH, SpallocConfig
 from .states import JobState
-from ._utils import time_left, time_left_float, timed_out, make_timeout
 
 plain_logger = logging.getLogger(__name__)
 plain_logger.addHandler(logging.StreamHandler())

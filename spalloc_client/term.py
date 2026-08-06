@@ -17,12 +17,21 @@
 
 import os
 import sys
-from itertools import chain
 from collections import defaultdict
 from enum import IntEnum
 from functools import partial
+from itertools import chain
 from typing import (
-    Callable, Dict, Iterable, List, Optional, TextIO, Tuple, Union)
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    TextIO,
+    Tuple,
+    Union,
+)
+
 from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring

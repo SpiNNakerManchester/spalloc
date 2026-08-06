@@ -76,18 +76,21 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
-from typing import Any, cast, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject
 
-from spalloc_client import __version__, JobState
-from spalloc_client.term import (
-    Terminal, render_definitions, render_boards, DEFAULT_BOARD_EDGES)
-from spalloc_client import ProtocolClient
+from spalloc_client import JobState, ProtocolClient, __version__
 from spalloc_client._utils import render_timestamp
+from spalloc_client.scripts.support import Script, Terminate
 from spalloc_client.spalloc_config import SpallocConfig
-from spalloc_client.scripts.support import Terminate, Script
+from spalloc_client.term import (
+    DEFAULT_BOARD_EDGES,
+    Terminal,
+    render_boards,
+    render_definitions,
+)
 
 
 def _state_name(mapping: JsonObject) -> str:
