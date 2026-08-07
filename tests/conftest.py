@@ -102,18 +102,18 @@ def basic_config_file(monkeypatch):
 @pytest.fixture
 def basic_job_kwargs():
     # The kwargs set by the basic_config_file fixture
-    return dict(hostname="localhost",
-                port=22244,
-                reconnect_delay=2.0,
-                timeout=3.0,
-                owner="me",
-                keepalive=1.0,
-                machine="m",
-                tags=None,  # As machine is not None
-                min_ratio=4.0,
-                max_dead_boards=5,
-                max_dead_links=6,
-                require_torus=True)
+    return {"hostname": "localhost",
+            "port": 22244,
+            "reconnect_delay": 2.0,
+            "timeout": 3.0,
+            "owner": "me",
+            "keepalive": 1.0,
+            "machine": "m",
+            "tags": None,  # As machine is not None
+            "min_ratio": 4.0,
+            "max_dead_boards": 5,
+            "max_dead_links": 6,
+            "require_torus": True}
 
 
 @pytest.fixture

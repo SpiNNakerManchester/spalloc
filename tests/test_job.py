@@ -119,14 +119,14 @@ class TestConstructor(object):
             args = client.create_job.mock_calls[0][1]
             kwargs = client.create_job.mock_calls[0][2]
             assert args == (0.2,)
-            assert kwargs == dict(owner="mossblaser",
-                                  keepalive=0.3,
-                                  machine=None,
-                                  tags=["baz", "quz"],
-                                  min_ratio=0.4,
-                                  max_dead_boards=None,
-                                  max_dead_links=None,
-                                  require_torus=False)
+            assert kwargs == {"owner": "mossblaser",
+                              "keepalive": 0.3,
+                              "machine": None,
+                              "tags": ["baz", "quz"],
+                              "min_ratio": 0.4,
+                              "max_dead_boards": None,
+                              "max_dead_links": None,
+                              "require_torus": False}
         finally:
             j.close()
 

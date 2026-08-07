@@ -163,7 +163,7 @@ class WhereIsScript(Script):
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
-        out: Dict[str, Any] = dict()
+        out: Dict[str, Any] = {}
         out["Machine"] = cast(str, location["machine"])
         cabinet, frame, board = cast(list, location["physical"])
         out["Physical location"] = (
