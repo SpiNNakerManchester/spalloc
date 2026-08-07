@@ -116,7 +116,7 @@ def show_job_info(t: Terminal, client: ProtocolClient,
     # Get the complete job information (if the job is alive)
     job_list = client.list_jobs(timeout=timeout)
     jobs = [job for job in job_list if job["job_id"] == job_id]
-    info: Dict[str, Any] = dict()
+    info: Dict[str, Any] = {}
     info["Job ID"] = job_id
 
     if not jobs:

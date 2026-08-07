@@ -169,7 +169,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
                                for job in displayed_jobs)))
 
     # Show general machine information
-    info = dict()
+    info = {}
     info["Name"] = machine["name"]
     info["Tags"] = ", ".join(cast(list, machine["tags"]))
     info["In-use"] = f"{num_in_use} of {num_boards}"

@@ -173,7 +173,7 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
     """
     t_stdout = Terminal()
 
-    to_print = dict()
+    to_print = {}
 
     to_print["Hostname"] = t_stdout.bright(connections[(0, 0)])
     to_print["Width"] = width

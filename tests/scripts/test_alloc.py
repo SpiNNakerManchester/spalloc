@@ -195,7 +195,7 @@ def test_from_config_file(basic_config_file, mock_job, basic_job_kwargs):
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
-@pytest.mark.parametrize("args", [tuple(),
+@pytest.mark.parametrize("args", [(),
                                   (0, ),
                                   (1, 2, ),
                                   (3, 4, 5)])

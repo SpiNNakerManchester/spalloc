@@ -189,7 +189,7 @@ def test_render_table():
 
 def test_render_definitions():
     # Empty case
-    assert render_definitions(dict()) == ""
+    assert render_definitions({}) == ""
 
     # Singleton
     assert render_definitions(dict([("foo", "bar")])) == "foo: bar"

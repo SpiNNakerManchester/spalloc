@@ -106,7 +106,7 @@ class ProtocolClient(object):
         self._port = port
         # Mapping from threads to sockets. Kept because we need to have way to
         # shut down all sockets at once.
-        self._socks: Dict[Thread, socket.socket] = dict()
+        self._socks: Dict[Thread, socket.socket] = {}
         # Thread local variables
         self._local = _ProtocolThreadLocal()
         # A queue of unprocessed notifications
