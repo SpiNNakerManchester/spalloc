@@ -56,7 +56,7 @@ def client(mock_protocol_client):
     return client
 
 
-class TestShowJobInfo(object):
+class TestShowJobInfo:
 
     def test_unknown(self, capsys):
         t = Terminal(force=False)
@@ -203,7 +203,7 @@ def test_watch_job():
     assert watch_job(t, client, 1.0, 123) == 0
 
 
-class TestPowerJob(object):
+class TestPowerJob:
 
     @pytest.mark.parametrize("state", [JobState.unknown, JobState.destroyed])
     @pytest.mark.parametrize("power", [True, False])
@@ -265,7 +265,7 @@ class TestPowerJob(object):
                 123, timeout=1.0)
 
 
-class TestListIPs(object):
+class TestListIPs:
 
     def test_no_connections(self):
         client = Mock()
@@ -304,7 +304,7 @@ def test_destroy_job():
     client.destroy_job.assert_called_once_with(123, "foo", timeout=1.0)
 
 
-class TestMain(object):
+class TestMain:
 
     def test_no_hostname(self, no_config_files):
         with pytest.raises(SystemExit):

@@ -218,7 +218,7 @@ INNER_BOARD_EDGES = ("===", "`", ",")
 OUTER_BOARD_EDGES = DEFAULT_BOARD_EDGES
 
 
-class TestRenderBoards(object):
+class TestRenderBoards:
 
     def test_empty(self):
         assert render_boards([], []) == ""
@@ -304,7 +304,7 @@ class TestRenderBoards(object):
                        ).replace(".", "\n")
 
 
-class TestRenderCells(object):
+class TestRenderCells:
 
     def test_empty(self):
         assert render_cells([]) == ""

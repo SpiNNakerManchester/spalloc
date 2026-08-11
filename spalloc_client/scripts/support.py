@@ -60,7 +60,7 @@ def version_verify(client: ProtocolClient, timeout: Optional[float]) -> None:
             2, f"Incompatible server version ({'.'.join(map(str, version))})")
 
 
-class Script(object, metaclass=AbstractBase):
+class Script(metaclass=AbstractBase):
     """ Base class of various Script Objects. """
     def __init__(self) -> None:
         self.client_factory = ProtocolClient

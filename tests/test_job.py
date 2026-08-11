@@ -62,7 +62,7 @@ def j(client):
     j.destroy()
 
 
-class TestConstructor(object):
+class TestConstructor:
 
     def test_no_hostname(self, no_config_files, client):
         with pytest.raises(ValueError):
@@ -181,7 +181,7 @@ def test_version_check(client, no_config_files, version, ok):
         assert len(client.create_job.mock_calls) == 0
 
 
-class TestKeepalive(object):
+class TestKeepalive:
 
     def test_normal_operation(self, client, no_config_files):
         # Make sure that the keepalive is sent out at the correct interval by
@@ -302,7 +302,7 @@ def test_get_machine_info(no_config_files, j, allocated, client):
         )
 
 
-class TestWaitForStateChange(object):
+class TestWaitForStateChange:
 
     def test_state_already_changed(self, no_config_files, j, client):
         client.get_job_state.return_value = {
@@ -453,7 +453,7 @@ class TestWaitForStateChange(object):
         j.close()
 
 
-class TestWaitUntilReady(object):
+class TestWaitUntilReady:
 
     def test_success(self, no_config_files, j, client):
         # Simple mocked implementation where at first the job is in the wrong

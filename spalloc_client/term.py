@@ -23,12 +23,9 @@ from functools import partial
 from itertools import chain
 from typing import (
     Callable,
-    Dict,
     Iterable,
-    List,
     Optional,
     TextIO,
-    Tuple,
     Union,
 )
 
@@ -38,9 +35,9 @@ from typing_extensions import TypeAlias
 
 TableFunction: TypeAlias = Callable[[Union[int, str]], str]
 TableValue: TypeAlias = Union[int, str]
-TableColumn: TypeAlias = Union[TableValue, Tuple[TableFunction, TableValue]]
+TableColumn: TypeAlias = Union[TableValue, tuple[TableFunction, TableValue]]
 TableRow: TypeAlias = Iterable[TableColumn]
-TableType: TypeAlias = List[TableRow]
+TableType: TypeAlias = list[TableRow]
 
 
 class ANSIDisplayAttributes(IntEnum):
@@ -77,7 +74,7 @@ class ANSIDisplayAttributes(IntEnum):
     bg_white = 47
 
 
-class Terminal(object):
+class Terminal:
     """ ANSI terminal control shenanigans.
 
     Utilities for printing colourful output and re-printing the screen on ANSI
@@ -168,7 +165,7 @@ class Terminal(object):
         # Restore to previous location and clear line.
         return "".join((self("\0338\033[K"), str(string)))
 
-    def set_attrs(self, attrs: List) -> str:
+    def set_attrs(self, attrs: list) -> str:
         """
         :returns: An ANSI control sequence which sets the given attribute
             numbers.
@@ -235,7 +232,7 @@ def render_table(table: TableType, column_sep: str = "  ") -> str:
         The formatted table.
     """
     # Determine maximum column widths
-    column_widths: Dict[int, int] = defaultdict(lambda: 0)
+    column_widths: dict[int, int] = defaultdict(lambda: 0)
     for row in table:
         for i, column in enumerate(row):
             if isinstance(column, str):
@@ -249,7 +246,7 @@ def render_table(table: TableType, column_sep: str = "  ") -> str:
     # Render the table cells with padding [[str, ...], ...]
     out = []
     for row in table:
-        rendered_row: List[str] = []
+        rendered_row: list[str] = []
         out.append(rendered_row)
         f: TableFunction
         for i, column in enumerate(row):
@@ -283,7 +280,7 @@ def render_table(table: TableType, column_sep: str = "  ") -> str:
     return "\n".join(column_sep.join(row).rstrip() for row in out)
 
 
-def render_definitions(definitions: Dict, separator: str = ": ") -> str:
+def render_definitions(definitions: dict, separator: str = ": ") -> str:
     """ Render a definition list.
 
     Such a list looks like this::
@@ -317,7 +314,7 @@ def render_definitions(definitions: Dict, separator: str = ": ") -> str:
         for key, value in definitions.items())
 
 
-def _board_to_cartesian(x: int, y: int, z: int) -> Tuple[int, int]:
+def _board_to_cartesian(x: int, y: int, z: int) -> tuple[int, int]:
     r""" Translate from logical board coordinates (x, y, z) into Cartesian
         coordinates for printing hexagons.
 
@@ -402,12 +399,12 @@ DEFAULT_BOARD_EDGES = ("___", "\\", "/")
 
 
 def render_boards(
-        board_groups: List[Tuple[List[Tuple[int, int, int]], str,
-                           Tuple[str, str, str], Tuple[str, str, str]]],
-        dead_links: List,
-        dead_edge: Tuple[str, str, str] = ("XXX", "X", "X"),
+        board_groups: list[tuple[list[tuple[int, int, int]], str,
+                           tuple[str, str, str], tuple[str, str, str]]],
+        dead_links: list,
+        dead_edge: tuple[str, str, str] = ("XXX", "X", "X"),
         blank_label: str = "   ",
-        blank_edge: Tuple[str, str, str] = ("   ", " ", " ")) -> str:
+        blank_edge: tuple[str, str, str] = ("   ", " ", " ")) -> str:
     r""" Render an ASCII art diagram of a set of boards with sets of boards.
 
     For example::
@@ -523,7 +520,7 @@ def render_boards(
     return "\n".join(filter(None, map(str.rstrip, out)))
 
 
-def render_cells(cells: List[Tuple[int, str]], width: int = 80,
+def render_cells(cells: list[tuple[int, str]], width: int = 80,
                  col_spacing: int = 2) -> str:
     """ Given a list of short (~10 char) strings, display these aligned in\
         columns.

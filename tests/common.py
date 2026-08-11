@@ -17,7 +17,7 @@ import socket
 import threading
 
 
-class MockServer(object):
+class MockServer:
     """A mock JSON line sender/receiver server."""
 
     def __init__(self):

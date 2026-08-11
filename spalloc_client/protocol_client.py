@@ -21,7 +21,7 @@ import socket
 from collections import deque
 from threading import RLock, Thread, current_thread, local
 from types import TracebackType
-from typing import Any, Dict, List, Literal, Optional, Type, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from typing_extensions import Self
 
@@ -60,7 +60,7 @@ class _ProtocolThreadLocal(local):
         self.sock: Optional[socket.socket] = None
 
 
-class ProtocolClient(object):
+class ProtocolClient:
     """ A simple (blocking) client implementation of the `spalloc-server
     <https://github.com/SpiNNakerManchester/spalloc_server>`_ protocol.
 
@@ -106,7 +106,7 @@ class ProtocolClient(object):
         self._port = port
         # Mapping from threads to sockets. Kept because we need to have way to
         # shut down all sockets at once.
-        self._socks: Dict[Thread, socket.socket] = {}
+        self._socks: dict[Thread, socket.socket] = {}
         # Thread local variables
         self._local = _ProtocolThreadLocal()
         # A queue of unprocessed notifications
@@ -120,7 +120,7 @@ class ProtocolClient(object):
         self.connect(self._default_timeout)
         return self
 
-    def __exit__(self, exc_type: Optional[Type],
+    def __exit__(self, exc_type: Optional[type],
                  exc_value: Optional[BaseException],
                  exc_tb: Optional[TracebackType]) -> Literal[False]:
         self.close()
@@ -380,7 +380,7 @@ class ProtocolClient(object):
                    owner: Optional[str] = None,
                    keepalive: Optional[float] = None,
                    machine: Optional[str] = None,
-                   tags: Optional[List[str]] = None,
+                   tags: Optional[list[str]] = None,
                    min_ratio: Optional[float] = None,
                    max_dead_boards: Optional[int] = None,
                    max_dead_links: Optional[int] = None,

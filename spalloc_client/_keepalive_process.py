@@ -17,7 +17,6 @@
 """
 import sys
 import threading
-from typing import List
 
 from spalloc_client.protocol_client import ProtocolClient, ProtocolTimeoutError
 
@@ -80,7 +79,7 @@ def keep_job_alive(
                         client.close()
 
 
-def _run(argv: List[str]) -> None:
+def _run(argv: list[str]) -> None:
     print("KEEPALIVE")
     sys.stdout.flush()
     hostname = argv[1]
