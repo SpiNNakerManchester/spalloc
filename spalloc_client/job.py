@@ -20,7 +20,7 @@ import sys
 import time
 from collections import namedtuple
 from types import TracebackType
-from typing import Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import Optional, TypeVar, Union, cast
 
 from typing_extensions import Literal, Self, TypeAlias
 
@@ -49,7 +49,7 @@ logger = FormatAdapter(plain_logger)
 F = TypeVar('F', bound='float')
 _Int: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
 _Float: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
-_List: TypeAlias = Union[List[str], None, Literal["USE_CONFIG"]]
+_List: TypeAlias = Union[list[str], None, Literal["USE_CONFIG"]]
 _Bool: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
 
 
@@ -64,7 +64,7 @@ def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
 
 
 def pick_list(param: _List,
-              config: Optional[List[str]]) -> Optional[List[str]]:
+              config: Optional[list[str]]) -> Optional[list[str]]:
     """ Use the param unless it is the default value, otherwise use config
 
     :returns: param unless it is "USE_CONFIG" when the config is returned
@@ -97,7 +97,7 @@ def pick_bool(param: _Bool, config: Optional[bool]) -> Optional[bool]:
         return config
 
 
-class Job(object):
+class Job:
     """ A high-level interface for requesting and managing allocations of
     SpiNNaker boards.
 
@@ -429,7 +429,7 @@ class Job(object):
             self.destroy()
             raise
 
-    def __exit__(self, exc_type: Optional[Type],
+    def __exit__(self, exc_type: Optional[type],
                  exc_value: Optional[BaseException],
                  exc_tb: Optional[TracebackType]) -> Literal[False]:
         self.destroy()
@@ -584,7 +584,7 @@ class Job(object):
         return self._get_state().reason
 
     @property
-    def connections(self) -> Dict[Tuple[int, int], str]:
+    def connections(self) -> dict[tuple[int, int], str]:
         """ The list of Ethernet connected chips and their IPs.
 
         {(x, y): hostname, ...} or None
@@ -788,7 +788,7 @@ class Job(object):
         raise StateChangeTimeoutError()
 
     def where_is_machine(
-            self, chip_x: int, chip_y: int) -> Tuple[int, int, int]:
+            self, chip_x: int, chip_y: int) -> tuple[int, int, int]:
         """ Locates and returns cabinet, frame, board for a given chip in a\
         machine allocated to this job.
 

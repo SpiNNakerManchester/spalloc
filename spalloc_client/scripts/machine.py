@@ -32,7 +32,7 @@ real-time.
 import argparse
 import sys
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, cast
+from typing import Any, Iterator, Optional, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray
@@ -148,7 +148,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
     machine = _get_machine(machines, machine_name)
 
     # Extract list of jobs running on the machine
-    displayed_jobs: List[Dict[str, Any]] = []
+    displayed_jobs: list[dict[str, Any]] = []
     job_key_generator = iter(generate_keys())
     job_colours = [
         t.green, t.blue, t.magenta, t.yellow, t.cyan,

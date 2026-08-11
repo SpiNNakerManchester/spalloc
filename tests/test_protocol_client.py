@@ -31,7 +31,7 @@ from .common import MockServer
 logging.basicConfig(level=logging.DEBUG)
 
 
-class TestConnect(object):
+class TestConnect:
 
     @pytest.mark.timeout(1.0)
     def test_first_time(self, s, c, bg_accept):  # @UnusedVariable

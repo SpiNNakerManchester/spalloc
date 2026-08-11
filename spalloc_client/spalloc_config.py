@@ -81,7 +81,7 @@ options available (and the default value).
 """
 import configparser
 import os.path
-from typing import List, Optional
+from typing import Optional
 
 import appdirs
 
@@ -146,7 +146,7 @@ def _read_none_or_str(
     return parser.get(SECTION, option)
 
 
-class SpallocConfig(object):
+class SpallocConfig:
     """ Typed configs """
 
     __slots__ = ("_hostname", "_ignore_version", "_keepalive", "_machine",
@@ -154,7 +154,7 @@ class SpallocConfig(object):
                  "_owner", "_port", "_reconnect_delay", "_require_torus",
                  "_tags", "_timeout")
 
-    def __init__(self, filenames: Optional[List[str]] = None):
+    def __init__(self, filenames: Optional[list[str]] = None):
         """ Attempt to read local configuration files
         to determine spalloc client settings.
 
@@ -256,7 +256,7 @@ class SpallocConfig(object):
         return self._require_torus
 
     @property
-    def tags(self) -> Optional[List[str]]:
+    def tags(self) -> Optional[list[str]]:
         """ List of tags """
         return self._tags
 

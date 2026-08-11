@@ -114,7 +114,7 @@ import subprocess
 import sys
 import tempfile
 from shlex import quote
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, Union
 
 from spalloc_client import (
     Job,
@@ -133,7 +133,7 @@ t: Optional[Terminal] = None
 _input = input  # This is so we can monkey patch input during testing
 
 
-def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
+def write_ips_to_csv(connections: dict[tuple[int, int], str],
                      ip_file_filename: str) -> None:
     """ Write the supplied IP addresses to a CSV file.
 
@@ -153,7 +153,7 @@ def write_ips_to_csv(connections: Dict[Tuple[int, int], str],
                         in sorted(connections.items())))
 
 
-def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
+def print_info(machine_name: str, connections: dict[tuple[int, int], str],
                width: int, height: int, ip_file_filename: str) -> None:
     """ Print the current machine info in a human-readable form and wait for
     the user to press enter.
@@ -194,8 +194,8 @@ def print_info(machine_name: str, connections: Dict[Tuple[int, int], str],
 
 
 def run_command(
-        command: List[str], job_id: int, machine_name: str,
-        connections: Dict[Tuple[int, int], str], width: int, height: int,
+        command: list[str], job_id: int, machine_name: str,
+        connections: dict[tuple[int, int], str], width: int, height: int,
         ip_file_filename: str) -> int:
     """ Run a user-specified command, substituting arguments for values taken
     from the allocated board.
@@ -288,7 +288,7 @@ def update(msg: str, colour: functools.partial) -> None:
     info(t.update(colour(msg)))
 
 
-def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
+def wait_for_job_ready(job: Job) -> tuple[int, Optional[str]]:
     """
     Wait for it to become ready, keeping the user informed along the way
 
@@ -338,7 +338,7 @@ def wait_for_job_ready(job: Job) -> Tuple[int, Optional[str]]:
         return 4, "Keyboard interrupt."
 
 
-def parse_argv(argv: Optional[List[str]]) -> Tuple[
+def parse_argv(argv: Optional[list[str]]) -> tuple[
         argparse.ArgumentParser, argparse.Namespace]:
     """
     Parse the arguments.
@@ -448,8 +448,8 @@ def parse_argv(argv: Optional[List[str]]) -> Tuple[
 
 
 def run_job(ip_file_filename: str,
-            job_args: List[int],
-            job_kwargs: Dict[str, Union[float, str, None]]) -> int:
+            job_args: list[int],
+            job_kwargs: dict[str, Union[float, str, None]]) -> int:
     """
     Run a job
 
@@ -505,7 +505,7 @@ def _minzero(value: float) -> Optional[float]:
     return value if value >= 0.0 else None
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[list[str]] = None) -> int:
     """
     The main method run
 
@@ -527,7 +527,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("--hostname of spalloc server must be specified")
 
     # Set universal job arguments
-    job_kwargs: Dict[str, Union[float, str, None]] = {
+    job_kwargs: dict[str, Union[float, str, None]] = {
         "hostname": arguments.hostname,
         "port": arguments.port,
         "reconnect_delay": _minzero(arguments.reconnect_delay),
