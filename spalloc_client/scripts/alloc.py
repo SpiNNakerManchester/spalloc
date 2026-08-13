@@ -114,7 +114,6 @@ import subprocess
 import sys
 import tempfile
 from shlex import quote
-from typing import Optional, Union
 
 from spalloc_client import (
     Job,
@@ -128,8 +127,8 @@ from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import Terminal, render_definitions
 
 # pylint: disable=invalid-name
-arguments: Optional[argparse.Namespace] = None
-t: Optional[Terminal] = None
+arguments: argparse.Namespace | None = None
+t: Terminal | None = None
 _input = input  # This is so we can monkey patch input during testing
 
 
@@ -288,7 +287,7 @@ def update(msg: str, colour: functools.partial) -> None:
     info(t.update(colour(msg)))
 
 
-def wait_for_job_ready(job: Job) -> tuple[int, Optional[str]]:
+def wait_for_job_ready(job: Job) -> tuple[int, str | None]:
     """
     Wait for it to become ready, keeping the user informed along the way
 
@@ -338,7 +337,7 @@ def wait_for_job_ready(job: Job) -> tuple[int, Optional[str]]:
         return 4, "Keyboard interrupt."
 
 
-def parse_argv(argv: Optional[list[str]]) -> tuple[
+def parse_argv(argv: list[str] | None) -> tuple[
         argparse.ArgumentParser, argparse.Namespace]:
     """
     Parse the arguments.
@@ -449,7 +448,7 @@ def parse_argv(argv: Optional[list[str]]) -> tuple[
 
 def run_job(ip_file_filename: str,
             job_args: list[int],
-            job_kwargs: dict[str, Union[float, str, None]]) -> int:
+            job_kwargs: dict[str, float | str | None]) -> int:
     """
     Run a job
 
@@ -498,14 +497,14 @@ def run_job(ip_file_filename: str,
             job.destroy(reason)
 
 
-def _minzero(value: float) -> Optional[float]:
+def _minzero(value: float) -> float | None:
     """
     Replaces a negative value with None
     """
     return value if value >= 0.0 else None
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """
     The main method run
 
@@ -527,7 +526,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         parser.error("--hostname of spalloc server must be specified")
 
     # Set universal job arguments
-    job_kwargs: dict[str, Union[float, str, None]] = {
+    job_kwargs: dict[str, float | str | None] = {
         "hostname": arguments.hostname,
         "port": arguments.port,
         "reconnect_delay": _minzero(arguments.reconnect_delay),

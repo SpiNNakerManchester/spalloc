@@ -14,7 +14,6 @@
 
 import time
 from datetime import datetime
-from typing import Optional
 
 
 def time_left_float(timestamp: float) -> float:
@@ -25,7 +24,7 @@ def time_left_float(timestamp: float) -> float:
     return max(0.0, timestamp - time.time())
 
 
-def time_left(timestamp: Optional[float]) -> Optional[float]:
+def time_left(timestamp: float | None) -> float | None:
     """ Convert a timestamp into how long to wait for it.
 
     :return: How far in the future the timestamp is
@@ -36,7 +35,7 @@ def time_left(timestamp: Optional[float]) -> Optional[float]:
     return max(0.0, timestamp - time.time())
 
 
-def timed_out(timestamp: Optional[float]) -> bool:
+def timed_out(timestamp: float | None) -> bool:
     """ Check if a timestamp has been reached.
 
     :returns: True if the timeout has been reached or if there is no timeout
@@ -46,7 +45,7 @@ def timed_out(timestamp: Optional[float]) -> bool:
     return timestamp < time.time()
 
 
-def make_timeout(delay_seconds: Optional[float]) -> Optional[float]:
+def make_timeout(delay_seconds: float | None) -> float | None:
     """ Convert a delay (in seconds) into a timestamp.
 
     :returns: the current time plus the delay or None if delay is None

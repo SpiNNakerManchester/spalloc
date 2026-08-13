@@ -76,7 +76,7 @@ which optionally accepts a human-readable explanation::
 """
 import argparse
 import sys
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject
@@ -99,7 +99,7 @@ def _state_name(mapping: JsonObject) -> str:
 
 
 def show_job_info(t: Terminal, client: ProtocolClient,
-                  timeout: Optional[float], job_id: int) -> None:
+                  timeout: float | None, job_id: int) -> None:
     """ Print a human-readable overview of a Job's attributes.
 
     Parameters
@@ -172,7 +172,7 @@ def show_job_info(t: Terminal, client: ProtocolClient,
     print(render_definitions(info))
 
 
-def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[float],
+def watch_job(t: Terminal, client: ProtocolClient, timeout: float | None,
               job_id: int) -> int:
     """ Re-print a job's information whenever the job changes.
 
@@ -206,7 +206,7 @@ def watch_job(t: Terminal, client: ProtocolClient, timeout: Optional[float],
             print("")
 
 
-def power_job(client: ProtocolClient, timeout: Optional[float],
+def power_job(client: ProtocolClient, timeout: float | None,
               job_id: int, power: bool) -> None:
     """ Power a job's boards on/off and wait for the action to complete.
 
@@ -249,7 +249,7 @@ def power_job(client: ProtocolClient, timeout: Optional[float],
                     f"job {job_id} in state {_state_name(state)}"))
 
 
-def list_ips(client: ProtocolClient, timeout: Optional[float],
+def list_ips(client: ProtocolClient, timeout: float | None,
              job_id: int) -> None:
     """ Print a CSV of board hostnames for all boards allocated to a job.
 
@@ -276,8 +276,8 @@ def list_ips(client: ProtocolClient, timeout: Optional[float],
         print(f"{x},{y},{hostname}")
 
 
-def destroy_job(client: ProtocolClient, timeout: Optional[float],
-                job_id: int, reason: Optional[str] = None) -> None:
+def destroy_job(client: ProtocolClient, timeout: float | None,
+                job_id: int, reason: str | None = None) -> None:
     """ Destroy a running job.
 
     Parameters
@@ -301,7 +301,7 @@ class ManageJobScript(Script):
 
     def __init__(self) -> None:
         super().__init__()
-        self.parser: Optional[argparse.ArgumentParser] = None
+        self.parser: argparse.ArgumentParser | None = None
 
     def get_job_id(self, client: ProtocolClient,
                    args: argparse.Namespace) -> int:
