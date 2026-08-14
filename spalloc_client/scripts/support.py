@@ -14,7 +14,7 @@
 
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Any, Optional
+from typing import Any
 
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 
@@ -34,7 +34,7 @@ VERSION_RANGE_STOP = (7, 0, 0)
 
 class Terminate(Exception):
     """ Exception that can be used to exit the code """
-    def __init__(self, code: int, message: Optional[str] = None):
+    def __init__(self, code: int, message: str | None = None):
         """
         :param code: error code
         :param message: error message
@@ -50,7 +50,7 @@ class Terminate(Exception):
         sys.exit(self._code)
 
 
-def version_verify(client: ProtocolClient, timeout: Optional[float]) -> None:
+def version_verify(client: ProtocolClient, timeout: float | None) -> None:
     """
     Verify that the current version of the client is compatible
     """
@@ -111,7 +111,7 @@ class Script(metaclass=AbstractBase):
             help="Ignore the server version (WARNING: could result in errors) "
                  "default: %(default)s)")
 
-    def __call__(self, argv: Optional[str] = None) -> int:
+    def __call__(self, argv: str | None = None) -> int:
         cfg = SpallocConfig()
         parser = self.get_parser(cfg)
         server_args = parser.add_argument_group("spalloc server arguments")

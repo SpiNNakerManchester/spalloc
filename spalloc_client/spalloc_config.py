@@ -81,7 +81,6 @@ options available (and the default value).
 """
 import configparser
 import os.path
-from typing import Optional
 
 import appdirs
 
@@ -118,21 +117,21 @@ DEFAULT_CONFIG = {
 
 
 def _read_none_or_float(
-        parser: configparser.ConfigParser, option: str) -> Optional[float]:
+        parser: configparser.ConfigParser, option: str) -> float | None:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getfloat(SECTION, option)
 
 
 def _read_none_or_int(
-        parser: configparser.ConfigParser, option: str) -> Optional[int]:
+        parser: configparser.ConfigParser, option: str) -> int | None:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.getint(SECTION, option)
 
 
 def _read_any_str(
-        parser: configparser.ConfigParser, option: str) -> Optional[str]:
+        parser: configparser.ConfigParser, option: str) -> str | None:
     try:
         return parser.get(SECTION, option)
     except configparser.NoOptionError:
@@ -140,7 +139,7 @@ def _read_any_str(
 
 
 def _read_none_or_str(
-        parser: configparser.ConfigParser, option: str) -> Optional[str]:
+        parser: configparser.ConfigParser, option: str) -> str | None:
     if parser.get(SECTION, option) == "None":
         return None
     return parser.get(SECTION, option)
@@ -154,7 +153,7 @@ class SpallocConfig:
                  "_owner", "_port", "_reconnect_delay", "_require_torus",
                  "_tags", "_timeout")
 
-    def __init__(self, filenames: Optional[list[str]] = None):
+    def __init__(self, filenames: list[str] | None = None):
         """ Attempt to read local configuration files
         to determine spalloc client settings.
 
@@ -201,7 +200,7 @@ class SpallocConfig:
             map(str.strip, tags.split(",")))
 
     @property
-    def hostname(self) -> Optional[str]:
+    def hostname(self) -> str | None:
         """ Name of the spalloc server if specified """
         return self._hostname
 
@@ -211,22 +210,22 @@ class SpallocConfig:
         return self._ignore_version
 
     @property
-    def keepalive(self) -> Optional[float]:
+    def keepalive(self) -> float | None:
         """ Time to keep job allive """
         return self._keepalive
 
     @property
-    def machine(self) -> Optional[str]:
+    def machine(self) -> str | None:
         """ Name of the spalloc machine to use"""
         return self._machine
 
     @property
-    def max_dead_boards(self) -> Optional[int]:
+    def max_dead_boards(self) -> int | None:
         """ How many dead boards are allowed in the job"""
         return self._max_dead_boards
 
     @property
-    def max_dead_links(self) -> Optional[int]:
+    def max_dead_links(self) -> int | None:
         """ How many dead links are allowed in the Job"""
         return self._max_dead_links
 
@@ -236,7 +235,7 @@ class SpallocConfig:
         return self._min_ratio
 
     @property
-    def owner(self) -> Optional[str]:
+    def owner(self) -> str | None:
         """ Owner to assign job to """
         return self._owner
 
@@ -256,12 +255,12 @@ class SpallocConfig:
         return self._require_torus
 
     @property
-    def tags(self) -> Optional[list[str]]:
+    def tags(self) -> list[str] | None:
         """ List of tags """
         return self._tags
 
     @property
-    def timeout(self) -> Optional[float]:
+    def timeout(self) -> float | None:
         """ Time before a command should timeout """
         return self._timeout
 

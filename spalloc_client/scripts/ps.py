@@ -27,7 +27,7 @@ This list may be filtered by owner or machine with the ``--owner`` and
 import argparse
 import sys
 from collections.abc import Sized
-from typing import Union, cast
+from typing import cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
@@ -88,7 +88,7 @@ def render_job_list(t: Terminal, jobs: JsonObjectArray,
         else:
             power_state = ""
 
-        num_boards: Union[int, str]
+        num_boards: int | str
         if isinstance(job["boards"],  Sized):
             num_boards = len(job["boards"])
         else:

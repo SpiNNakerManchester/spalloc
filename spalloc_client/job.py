@@ -20,7 +20,7 @@ import sys
 import time
 from collections import namedtuple
 from types import TracebackType
-from typing import Optional, TypeVar, Union, cast
+from typing import TypeVar, cast
 
 from typing_extensions import Literal, Self, TypeAlias
 
@@ -47,13 +47,13 @@ logger = FormatAdapter(plain_logger)
 # https://docs.python.org/3.1/library/logging.html#configuring-logging-for-a-library
 
 F = TypeVar('F', bound='float')
-_Int: TypeAlias = Union[int, None, Literal["USE_CONFIG"]]
-_Float: TypeAlias = Union[float, None, Literal["USE_CONFIG"]]
-_List: TypeAlias = Union[list[str], None, Literal["USE_CONFIG"]]
-_Bool: TypeAlias = Union[bool, None, Literal["USE_CONFIG"]]
+_Int: TypeAlias = int | None | Literal["USE_CONFIG"]
+_Float: TypeAlias = float | None | Literal["USE_CONFIG"]
+_List: TypeAlias = list[str] | None | Literal["USE_CONFIG"]
+_Bool: TypeAlias = bool | None | Literal["USE_CONFIG"]
 
 
-def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
+def pick_str(param: str | None, config: str | None) -> str | None:
     """ Use the param unless it is the default value, otherwise use config
 
     :returns: param unless it is "USE_CONFIG" when the config is returned
@@ -64,7 +64,7 @@ def pick_str(param: Optional[str], config: Optional[str]) -> Optional[str]:
 
 
 def pick_list(param: _List,
-              config: Optional[list[str]]) -> Optional[list[str]]:
+              config: list[str] | None) -> list[str] | None:
     """ Use the param unless it is the default value, otherwise use config
 
     :returns: param unless it is "USE_CONFIG" when the config is returned
@@ -75,8 +75,8 @@ def pick_list(param: _List,
         return param
 
 
-def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
-             config: Optional[F]) -> Optional[F]:
+def pick_num(param: F | None | Literal["USE_CONFIG"],
+             config: F | None) -> F | None:
     """ Use the param unless it is the default value, otherwise use config
 
     :returns: param unless it is "USE_CONFIG" when the config is returned
@@ -86,7 +86,7 @@ def pick_num(param: Union[F, None, Literal["USE_CONFIG"]],
     return param
 
 
-def pick_bool(param: _Bool, config: Optional[bool]) -> Optional[bool]:
+def pick_bool(param: _Bool, config: bool | None) -> bool | None:
     """ Use the param if None or a bool, otherwise use config
 
     :returns: param unless it is "USE_CONFIG" when the config is returned
@@ -181,15 +181,15 @@ class Job:
         allocated.
     """
 
-    def __init__(self, *args: int, hostname: Optional[str] = "USE_CONFIG",
+    def __init__(self, *args: int, hostname: str | None = "USE_CONFIG",
                  port: _Int = "USE_CONFIG",
                  reconnect_delay: _Float = "USE_CONFIG",
                  timeout: _Float = "USE_CONFIG",
                  config_filenames: _List = "USE_CONFIG",
-                 resume_job_id: Optional[int] = None,
-                 owner: Optional[str] = "USE_CONFIG",
+                 resume_job_id: int | None = None,
+                 owner: str | None = "USE_CONFIG",
                  keepalive: _Float = "USE_CONFIG",
-                 machine: Optional[str] = "USE_CONFIG",
+                 machine: str | None = "USE_CONFIG",
                  tags: _List = "USE_CONFIG",
                  min_ratio: _Float = "USE_CONFIG",
                  max_dead_boards: _Int = "USE_CONFIG",
@@ -327,7 +327,7 @@ class Job:
             raise ValueError("A port must be specified.")
 
         # Cached responses of _get_state and _get_machine_info
-        self._last_machine_info: Optional["_JobMachineInfoTuple"] = None
+        self._last_machine_info: "_JobMachineInfoTuple" | None = None
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
@@ -429,9 +429,9 @@ class Job:
             self.destroy()
             raise
 
-    def __exit__(self, exc_type: Optional[type],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> Literal[False]:
+    def __exit__(self, exc_type: type | None,
+                 exc_value: BaseException | None,
+                 exc_tb: TracebackType | None) -> Literal[False]:
         self.destroy()
         return False
 
@@ -463,7 +463,7 @@ class Job:
                 "Spalloc server is unreachable (%s), will keep trying...", e)
             self._client.close()
 
-    def destroy(self, reason: Optional[str] = None) -> None:
+    def destroy(self, reason: str | None = None) -> None:
         """ Destroy the job and disconnect from the server.
 
         Parameters
@@ -598,7 +598,7 @@ class Job:
         return self._last_machine_info.connections
 
     @property
-    def hostname(self) -> Optional[str]:
+    def hostname(self) -> str | None:
         """ The hostname of chip 0, 0 (or None if not allocated yet).
         """
         return self.connections[(0, 0)]
@@ -640,7 +640,7 @@ class Job:
         return self._last_machine_info.machine_name
 
     @property
-    def boards(self) -> Optional[JsonArray]:
+    def boards(self) -> JsonArray | None:
         """ The coordinates of the boards allocated for the job (or None).
         """
         # Note that the machine will never change once defined so only need to
@@ -652,7 +652,7 @@ class Job:
         return self._last_machine_info.boards
 
     def wait_for_state_change(self, old_state: JobState,
-                              timeout: Optional[float] = None) -> JobState:
+                              timeout: float | None = None) -> JobState:
         """ Block until the job's state changes from the supplied state.
 
         Parameters
@@ -698,7 +698,7 @@ class Job:
         # return the old state
         return old_state
 
-    def _do_wait_for_a_change(self, finish_time: Optional[float]) -> bool:
+    def _do_wait_for_a_change(self, finish_time: float | None) -> bool:
         """ Wait for a state change and keep the job alive.
         """
         # Since we're about to block holding the client lock, we must be
@@ -728,7 +728,7 @@ class Job:
         # The user's timeout expired while waiting for a state change
         return False
 
-    def _do_reconnect(self, finish_time: Optional[float]) -> None:
+    def _do_reconnect(self, finish_time: float | None) -> None:
         """ Reconnect after the reconnection delay (or timeout, whichever
         came first).
         """
@@ -740,7 +740,7 @@ class Job:
         time.sleep(max(0.0, delay))
         self._reconnect()
 
-    def wait_until_ready(self, timeout: Optional[float] = None) -> None:
+    def wait_until_ready(self, timeout: float | None = None) -> None:
         """ Block until the job is allocated and ready.
 
         Parameters

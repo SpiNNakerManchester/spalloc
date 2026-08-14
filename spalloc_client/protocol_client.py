@@ -21,7 +21,7 @@ import socket
 from collections import deque
 from threading import RLock, Thread, current_thread, local
 from types import TracebackType
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, cast
 
 from typing_extensions import Self
 
@@ -57,7 +57,7 @@ class _ProtocolThreadLocal(local):
     def __init__(self) -> None:
         super().__init__()
         self.buffer = b""
-        self.sock: Optional[socket.socket] = None
+        self.sock: socket.socket | None = None
 
 
 class ProtocolClient:
@@ -88,7 +88,7 @@ class ProtocolClient:
     """
 
     def __init__(self, hostname: str, port: int = 22244,
-                 timeout: Optional[float] = None):
+                 timeout: float | None = None):
         """ Define a new connection.
 
         .. note::
@@ -120,13 +120,13 @@ class ProtocolClient:
         self.connect(self._default_timeout)
         return self
 
-    def __exit__(self, exc_type: Optional[type],
-                 exc_value: Optional[BaseException],
-                 exc_tb: Optional[TracebackType]) -> Literal[False]:
+    def __exit__(self, exc_type: type | None,
+                 exc_value: BaseException | None,
+                 exc_tb: TracebackType | None) -> Literal[False]:
         self.close()
         return False
 
-    def _get_connection(self, timeout: Optional[float]) -> socket.socket:
+    def _get_connection(self, timeout: float | None) -> socket.socket:
         if self._dead:
             raise OSError(errno.ENOTCONN, "not connected")
         connect_needed = False
@@ -164,7 +164,7 @@ class ProtocolClient:
     def _has_open_socket(self) -> bool:
         return self._local.sock is not None
 
-    def connect(self, timeout: Optional[float] = None) -> None:
+    def connect(self, timeout: float | None = None) -> None:
         """(Re)connect to the server.
 
         Raises
@@ -178,7 +178,7 @@ class ProtocolClient:
         self._dead = False
         self._connect(timeout)
 
-    def _connect(self, timeout: Optional[float]) -> socket.socket:
+    def _connect(self, timeout: float | None) -> socket.socket:
         """ Try to (re)connect to the server.
         """
         try:
@@ -189,7 +189,7 @@ class ProtocolClient:
             # Pass on the exception
             raise
 
-    def _close(self, key: Optional[Thread] = None) -> None:
+    def _close(self, key: Thread | None = None) -> None:
         if key is None:
             key = current_thread()
         with self._socks_lock:
@@ -212,7 +212,7 @@ class ProtocolClient:
             self._close(key)
         self._local = _ProtocolThreadLocal()
 
-    def _recv_json(self, timeout: Optional[float] = None) -> JsonObject:
+    def _recv_json(self, timeout: float | None = None) -> JsonObject:
         """ Receive a line of JSON from the server.
 
         Parameters
@@ -253,7 +253,7 @@ class ProtocolClient:
         return json.loads(line.decode("utf-8"))
 
     def _send_json(
-            self, obj: JsonObject, timeout: Optional[float] = None) -> None:
+            self, obj: JsonObject, timeout: float | None = None) -> None:
         """ Attempt to send a line of JSON to the server.
 
         Parameters
@@ -282,8 +282,8 @@ class ProtocolClient:
         except socket.timeout as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
-    def call(self, name: str, timeout: Optional[float],
-             *args: Union[int, str, None],
+    def call(self, name: str, timeout: float | None,
+             *args: int | str | None,
              **kwargs: Any) -> JsonValue:
         """
         Send a command to the server and return the reply.
@@ -326,7 +326,7 @@ class ProtocolClient:
             raise ProtocolError(str(e)) from e
 
     def wait_for_notification(
-            self, timeout: Optional[float] = None) -> Optional[JsonObject]:
+            self, timeout: float | None = None) -> JsonObject | None:
         """ Return the next notification to arrive.
 
         Parameters
@@ -369,22 +369,22 @@ class ProtocolClient:
     # The bindings of the Spalloc protocol methods themselves; simplifies use
     # from IDEs.
 
-    def version(self, timeout: Optional[float] = None) -> str:
+    def version(self, timeout: float | None = None) -> str:
         """ Ask what version of spalloc is running.
 
         :returns: The string returned by the call to the server.
         """
         return cast(str, self.call("version", timeout))
 
-    def create_job(self, timeout: Optional[float], *args: int,
-                   owner: Optional[str] = None,
-                   keepalive: Optional[float] = None,
-                   machine: Optional[str] = None,
-                   tags: Optional[list[str]] = None,
-                   min_ratio: Optional[float] = None,
-                   max_dead_boards: Optional[int] = None,
-                   max_dead_links: Optional[int] = None,
-                   require_torus: Optional[bool] = None) -> int:
+    def create_job(self, timeout: float | None, *args: int,
+                   owner: str | None = None,
+                   keepalive: float | None = None,
+                   machine: str | None = None,
+                   tags: list[str] | None = None,
+                   min_ratio: float | None = None,
+                   max_dead_boards: int | None = None,
+                   max_dead_links: int | None = None,
+                   require_torus: bool | None = None) -> int:
         """
         Start a new job
 
@@ -408,7 +408,7 @@ class ProtocolClient:
             max_dead_links=max_dead_links, require_torus=require_torus))
 
     def job_keepalive(self, job_id: int,
-                      timeout: Optional[float] = None) -> JsonObject:
+                      timeout: float | None = None) -> JsonObject:
         """
         Send s message to keep the job alive.
 
@@ -419,7 +419,7 @@ class ProtocolClient:
         return cast(dict, self.call("job_keepalive", timeout, job_id))
 
     def get_job_state(self, job_id: int,
-                      timeout: Optional[float] = None) -> JsonObject:
+                      timeout: float | None = None) -> JsonObject:
         """Get the state for this job
 
         :returns: The dict returned by the call to the server.
@@ -427,7 +427,7 @@ class ProtocolClient:
         return cast(dict, self.call("get_job_state", timeout, job_id))
 
     def get_job_machine_info(self, job_id: int,
-                             timeout: Optional[float] = None) -> JsonObject:
+                             timeout: float | None = None) -> JsonObject:
         """ Get info for this job.
 
         :returns: The dict returned by the call to the server.
@@ -435,7 +435,7 @@ class ProtocolClient:
         return cast(dict, self.call("get_job_machine_info", timeout, job_id))
 
     def power_on_job_boards(self, job_id: int,
-                            timeout: Optional[float] = None) -> JsonObject:
+                            timeout: float | None = None) -> JsonObject:
         """ Turn on the power on the jobs boards.
 
         :returns: The dict returned by the call to the server.
@@ -443,15 +443,15 @@ class ProtocolClient:
         return cast(dict, self.call("power_on_job_boards", timeout, job_id))
 
     def power_off_job_boards(self, job_id: int,
-                             timeout: Optional[float] = None) -> JsonObject:
+                             timeout: float | None = None) -> JsonObject:
         """ Turn off the power on the jobs boards.
 
         :returns: The dict returned by the call to the server.
         """
         return cast(dict, self.call("power_off_job_boards", timeout, job_id))
 
-    def destroy_job(self, job_id: int, reason: Optional[str] = None,
-                    timeout: Optional[float] = None) -> JsonObject:
+    def destroy_job(self, job_id: int, reason: str | None = None,
+                    timeout: float | None = None) -> JsonObject:
         """ Destroy the job
 
         :returns: The dict returned by the call to the server.
@@ -459,16 +459,16 @@ class ProtocolClient:
         return cast(dict, self.call("destroy_job", timeout,
                                     job_id, reason=reason))
 
-    def notify_job(self, job_id: Optional[int] = None,
-                   timeout: Optional[float] = None) -> JsonObject:
+    def notify_job(self, job_id: int | None = None,
+                   timeout: float | None = None) -> JsonObject:
         """ Turn on notification of job status changes.
 
         :returns: The dict returned by the call to the server.
         """
         return cast(dict, self.call("notify_job", timeout, job_id))
 
-    def no_notify_job(self, job_id: Optional[int] = None,
-                      timeout: Optional[float] = None) -> JsonObject:
+    def no_notify_job(self, job_id: int | None = None,
+                      timeout: float | None = None) -> JsonObject:
         """ Turn off notification of job status changes.
 
         :returns: The dict returned by the call to the server.
@@ -476,8 +476,8 @@ class ProtocolClient:
         return cast(dict, self.call("no_notify_job", timeout,
                                     job_id))
 
-    def notify_machine(self, machine_name: Optional[str] = None,
-                       timeout: Optional[float] = None) -> JsonObject:
+    def notify_machine(self, machine_name: str | None = None,
+                       timeout: float | None = None) -> JsonObject:
         """ Turn on notification of machine status changes.
 
         :returns: The dict returned by the call to the server.
@@ -485,8 +485,8 @@ class ProtocolClient:
         return cast(dict, self.call("notify_machine", timeout,
                                     machine_name))
 
-    def no_notify_machine(self, machine_name: Optional[str] = None,
-                          timeout: Optional[float] = None) -> JsonObject:
+    def no_notify_machine(self, machine_name: str | None = None,
+                          timeout: float | None = None) -> JsonObject:
         """ Turn off notification of machine status changes.
 
         :returns: The dict returned by the call to the server.
@@ -494,7 +494,7 @@ class ProtocolClient:
         return cast(dict, self.call("no_notify_machine", timeout,
                                     machine_name))
 
-    def list_jobs(self, timeout: Optional[float] = None) -> JsonObjectArray:
+    def list_jobs(self, timeout: float | None = None) -> JsonObjectArray:
         """ Obtains a list of jobs currently running.
 
         :returns: The list returned by the call to the server.
@@ -502,7 +502,7 @@ class ProtocolClient:
         return cast(list, self.call("list_jobs", timeout))
 
     def list_machines(self,
-                      timeout: Optional[float] = None) -> JsonObjectArray:
+                      timeout: float | None = None) -> JsonObjectArray:
         """ Obtains a list of currently supported machines.
 
         :returns: The list returned by the call to the server.
@@ -511,7 +511,7 @@ class ProtocolClient:
 
     def get_board_position(
             self, machine_name: str, x: int, y: int, z: int,
-            timeout: Optional[float] = None) -> JsonObject:  # pragma: no cover
+            timeout: float | None = None) -> JsonObject:  # pragma: no cover
         """ Gets the position of board x, y, z on the given machine.
 
         :returns: The dict returned by the call to the server.
@@ -521,7 +521,7 @@ class ProtocolClient:
                                     machine_name, x, y, z))
 
     def get_board_at_position(self, machine_name: str, x: int, y: int, z: int,
-                              timeout: Optional[float] = None
+                              timeout: float | None = None
                               ) -> JsonObject:  # pragma: no cover
         """ Gets the board x, y, z on the requested machine.
 
@@ -538,7 +538,7 @@ class ProtocolClient:
         frozenset("job_id chip_x chip_y".split())])
 
     def where_is(self, job_id: int, chip_x: int, chip_y: int,
-                 timeout: Optional[float] = None) -> JsonObject:
+                 timeout: float | None = None) -> JsonObject:
         """ Reports where on the Machine a job is running
 
         :returns: The dict returned by the call to the server.

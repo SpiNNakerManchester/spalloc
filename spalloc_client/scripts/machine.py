@@ -32,7 +32,7 @@ real-time.
 import argparse
 import sys
 from collections import defaultdict
-from typing import Any, Iterator, Optional, cast
+from typing import Any, Iterator, cast
 
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray
@@ -251,7 +251,7 @@ class ListMachinesScript(Script):
 
     def __init__(self) -> None:
         super().__init__()
-        self.parser: Optional[argparse.ArgumentParser] = None
+        self.parser: argparse.ArgumentParser | None = None
 
     def get_and_display_machine_info(
             self, client: ProtocolClient,

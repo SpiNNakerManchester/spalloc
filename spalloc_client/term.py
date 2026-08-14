@@ -24,18 +24,16 @@ from itertools import chain
 from typing import (
     Callable,
     Iterable,
-    Optional,
     TextIO,
-    Union,
 )
 
 from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
-
-TableFunction: TypeAlias = Callable[[Union[int, str]], str]
-TableValue: TypeAlias = Union[int, str]
-TableColumn: TypeAlias = Union[TableValue, tuple[TableFunction, TableValue]]
+# pylint: disable=invalid-name
+TableFunction: TypeAlias = Callable[[int | str], str]
+TableValue: TypeAlias = int | str
+TableColumn: TypeAlias = TableValue | tuple[TableFunction, TableValue]
 TableRow: TypeAlias = Iterable[TableColumn]
 TableType: TypeAlias = list[TableRow]
 
@@ -44,7 +42,6 @@ class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
     """
-    # pylint: disable=invalid-name
     reset = 0
     bright = 1
     dim = 2
@@ -107,8 +104,8 @@ class Terminal:
         Is colour enabled?
     """
 
-    def __init__(self, stream: Optional[TextIO] = None,
-                 force: Optional[bool] = None):
+    def __init__(self, stream: TextIO | None = None,
+                 force: bool | None = None):
         """
         Parameters
         ----------
@@ -174,7 +171,7 @@ class Terminal:
             return ""
         return self(f"\033[{';'.join(str(attr) for attr in attrs)}m")
 
-    def wrap(self, string: Optional[str] = None,
+    def wrap(self, string: str | None = None,
              pre: str = "", post: str = "") -> str:
         """ Wrap a string in the suppled pre and post strings or just print\
             the pre string if no string given

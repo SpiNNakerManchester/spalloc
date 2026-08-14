@@ -66,7 +66,7 @@ To query by chip coordinate of chips allocated to a job::
 """
 import argparse
 import sys
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from spinn_utilities.overrides import overrides
 
@@ -83,8 +83,8 @@ class WhereIsScript(Script):
 
     def __init__(self) -> None:
         super().__init__()
-        self.parser: Optional[argparse.ArgumentParser] = None
-        self.where_is_kwargs: Optional[dict] = None
+        self.parser: argparse.ArgumentParser | None = None
+        self.where_is_kwargs: dict | None = None
         self.show_board_chip = False
 
     @overrides(Script.get_parser)
