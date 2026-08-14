@@ -30,7 +30,7 @@ from typing import (
 from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
-
+# pylint: disable=invalid-name
 TableFunction: TypeAlias = Callable[[int | str], str]
 TableValue: TypeAlias = int | str
 TableColumn: TypeAlias = TableValue | tuple[TableFunction, TableValue]
@@ -42,7 +42,6 @@ class ANSIDisplayAttributes(IntEnum):
     """ Code numbers of ANSI display attributes for use with `ESC[...m`\
         sequences.
     """
-    # pylint: disable=invalid-name
     reset = 0
     bright = 1
     dim = 2
