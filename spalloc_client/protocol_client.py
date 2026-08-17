@@ -21,7 +21,9 @@ import socket
 from collections import deque
 from threading import RLock, Thread, current_thread, local
 from types import TracebackType
-from typing import Any, Literal, Self, cast
+from typing import Any, Literal, cast
+
+from typing_extensions import Self
 
 from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import JsonObject, JsonObjectArray, JsonValue
