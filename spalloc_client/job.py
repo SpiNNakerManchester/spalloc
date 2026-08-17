@@ -20,9 +20,7 @@ import sys
 import time
 from collections import namedtuple
 from types import TracebackType
-from typing import TypeVar, cast
-
-from typing_extensions import Literal, Self, TypeAlias
+from typing import Literal, Self, TypeAlias, TypeVar, cast
 
 from spinn_utilities.log import FormatAdapter
 from spinn_utilities.typing.json import JsonArray
