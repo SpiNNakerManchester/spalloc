@@ -18,16 +18,14 @@
 import os
 import sys
 from collections import defaultdict
+from collections.abc import Callable, Iterable
 from enum import IntEnum
 from functools import partial
 from itertools import chain
 from typing import (
-    Callable,
-    Iterable,
     TextIO,
+    TypeAlias,
 )
-
-from typing_extensions import TypeAlias
 
 # pylint: disable=wrong-spelling-in-docstring
 # pylint: disable=invalid-name
