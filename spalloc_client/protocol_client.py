@@ -532,10 +532,10 @@ class ProtocolClient:
                                     machine_name, x, y, z))
 
     _acceptable_kwargs_for_where_is = frozenset([
-        frozenset("machine x y z".split()),
-        frozenset("machine cabinet frame board".split()),
-        frozenset("machine chip_x chip_y".split()),
-        frozenset("job_id chip_x chip_y".split())])
+        frozenset(["machine", "x", "y", "z"]),
+        frozenset(["machine", "cabinet", "frame", "board"]),
+        frozenset(["machine", "chip_x", "chip_y"]),
+        frozenset(["job_id", "chip_x", "chip_y"])])
 
     def where_is(self, job_id: int, chip_x: int, chip_y: int,
                  timeout: float | None = None) -> JsonObject:

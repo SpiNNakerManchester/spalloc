@@ -172,26 +172,26 @@ def test_run_command_kill_and_return(mock_popen):
 
 def test_no_owner(no_config_files):
     with pytest.raises(SystemExit):
-        main("--hostname foobar".split())
+        main(["--hostname", "foobar"])
 
 
 def test_no_hostname(no_config_files):
     with pytest.raises(SystemExit):
-        main("--owner me".split())
+        main(["--owner", "me"])
 
 
 def test_too_many_arguments(basic_config_file):
     with pytest.raises(SystemExit):
-        main("1 2 3 4".split())
+        main(["1", "2", "3", "4"])
 
 
 def test_wrong_argument_type(basic_config_file):
     with pytest.raises(SystemExit):
-        main("fail".split())
+        main(["fail"])
 
 
 def test_from_config_file(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("".split()) == 6
+    assert main([]) == 6
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
@@ -228,7 +228,7 @@ def test_tags_arg(basic_config_file, mock_job, args, tags,
 
 
 def test_min_ratio_arg(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--min-ratio 0.5".split()) == 6
+    assert main(["--min-ratio", "0.5"]) == 6
     basic_job_kwargs["min_ratio"] = 0.5
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
@@ -264,19 +264,19 @@ def test_require_torus_args(basic_config_file, mock_job, args,
 
 
 def test_require_owner_args(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--owner theboss".split()) == 6
+    assert main(["--owner", "theboss"]) == 6
     basic_job_kwargs["owner"] = "theboss"
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
 def test_require_hostname_args(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--hostname altserve".split()) == 6
+    assert main(["--hostname", "altserve"]) == 6
     basic_job_kwargs["hostname"] = "altserve"
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
 def test_require_port_args(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--port 1000".split()) == 6
+    assert main(["--port", "1000"]) == 6
     basic_job_kwargs["port"] = 1000
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
@@ -292,13 +292,13 @@ def test_keepalive_args(basic_config_file, mock_job, args,
 
 
 def test_reconnect_delay_args(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--reconnect-delay 0.5".split()) == 6
+    assert main(["--reconnect-delay", "0.5"]) == 6
     basic_job_kwargs["reconnect_delay"] = 0.5
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
 
 def test_timeout_args(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--timeout 0.5".split()) == 6
+    assert main(["--timeout", "0.5"]) == 6
     basic_job_kwargs["timeout"] = 0.5
     mock_job.assert_called_once_with(**basic_job_kwargs)
 
@@ -321,7 +321,7 @@ def test_default_info(capsys, basic_config_file, mock_working_job, mock_input,
 
 
 def test_quiet_args(capsys, basic_config_file, mock_working_job, mock_input):
-    assert main("--quiet".split()) == 0
+    assert main(["--quiet"]) == 0
 
     out, err = capsys.readouterr()
 
@@ -347,7 +347,7 @@ def test_debug_args(basic_config_file, mock_job, monkeypatch, args, enable):
 
 
 def test_command_args(basic_config_file, mock_working_job, mock_popen):
-    assert main("--command foo {} bar{w}x{h}".split()) == 123
+    assert main(["--command", "foo", "{}", "bar{w}x{h}"]) == 123
     mock_popen.assert_called_once_with("foo foobar bar8x8", shell=True)
 
 
@@ -361,30 +361,30 @@ def test_failiure_modes(basic_config_file, mock_working_job,
     mock_working_job.state = state
     mock_working_job.reason = reason
     mock_working_job.wait_for_state_change.side_effect = JobDestroyedError()
-    assert main("".split()) == retcode
+    assert main([]) == retcode
 
 
 def test_get_reason_fails(basic_config_file, mock_working_job):
     mock_working_job.state = JobState.destroyed
     type(mock_working_job).reason = PropertyMock(side_effect=IOError())
-    assert main("".split()) == 1
+    assert main([]) == 1
 
 
 def test_keyboard_interrupt(basic_config_file, mock_working_job):
     mock_working_job.state = JobState.queued
     mock_working_job.wait_for_state_change.side_effect = KeyboardInterrupt()
-    assert main("".split()) == 4
+    assert main([]) == 4
     mock_working_job.destroy.assert_called_once_with("Keyboard interrupt.")
 
 
 def test_no_destroy(basic_config_file, mock_working_job):
-    assert main("--no-destroy -c true".split()) == 0
+    assert main(["--no-destroy", "-c", "true"]) == 0
     assert len(mock_working_job.destroy.mock_calls) == 0
     mock_working_job.close.assert_called_once_with()
 
 
 def test_resume(basic_config_file, mock_job, basic_job_kwargs):
-    assert main("--resume 123 -c true".split()) == 6
+    assert main(["--resume", "123", "-c", "true"]) == 6
     mock_job.assert_called_once_with(**{
         "resume_job_id": 123,
         "hostname": basic_job_kwargs["hostname"],

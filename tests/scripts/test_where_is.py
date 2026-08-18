@@ -44,14 +44,14 @@ def client(monkeypatch):
 
 def test_no_hostname(no_config_files):
     with pytest.raises(SystemExit):
-        main("-b m 1 2 3".split())
+        main(["-b", "m", "1", "2", "3"])
 
 
 @pytest.mark.parametrize("version", [VERSION_RANGE_STOP, (0, 0, 0)])
 def test_bad_version(basic_config_file, client, version):
     client.version.return_value = ".".join(map(str, version))
     with pytest.raises(SystemExit) as exn:
-        main("-b m 1 2 3".split())
+        main(["-b", "m", "1", "2", "3"])
     assert exn.value.code == 2
 
 
@@ -67,35 +67,35 @@ def test_bad_args(basic_config_file, client, args):
 
 def test_server_error(basic_config_file, client):
     client.where_is.side_effect = ProtocolError()
-    assert main("--board name 3 2 1".split()) == 1
+    assert main(["--board", "name", "3", "2", "1"]) == 1
 
 
 def test_board(basic_config_file, client):
-    assert main("--board name 3 2 1".split()) == 0
+    assert main(["--board", "name", "3", "2", "1"]) == 0
     client.where_is.assert_called_once_with(
         machine="name", x=3, y=2, z=1)
 
 
 def test_physical(basic_config_file, client):
-    assert main("--physical name 3 2 1".split()) == 0
+    assert main(["--physical", "name", "3", "2", "1"]) == 0
     client.where_is.assert_called_once_with(
         machine="name", cabinet=3, frame=2, board=1)
 
 
 def test_chip(basic_config_file, client):
-    assert main("--chip name 7 8".split()) == 0
+    assert main(["--chip", "name", "7", "8"]) == 0
     client.where_is.assert_called_once_with(
         machine="name", chip_x=7, chip_y=8)
 
 
 def test_job_chip(basic_config_file, client):
-    assert main("--job-chip 123 7 8".split()) == 0
+    assert main(["--job-chip", "123", "7", "8"]) == 0
     client.where_is.assert_called_once_with(
         job_id=123, chip_x=7, chip_y=8)
 
 
 def test_formatting_full(basic_config_file, client, capsys):
-    assert main("--job-chip 123 7 8".split()) == 0
+    assert main(["--job-chip", "123", "7", "8"]) == 0
     out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
@@ -107,7 +107,7 @@ def test_formatting_full(basic_config_file, client, capsys):
 
 
 def test_formatting_no_board_chip(basic_config_file, client, capsys):
-    assert main("--board m 3 2 1".split()) == 0
+    assert main(["--board", "m", "3", "2", "1"]) == 0
     out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
@@ -120,7 +120,7 @@ def test_formatting_no_board_chip(basic_config_file, client, capsys):
 def test_formatting_no_job(basic_config_file, client, capsys):
     client.where_is.return_value["job_id"] = None
     client.where_is.return_value["job_chip"] = None
-    assert main("--board m 3 2 1".split()) == 0
+    assert main(["--board", "m", "3", "2", "1"]) == 0
     out, _ = capsys.readouterr()
     assert out == ("                 Machine: m\n"
                    "       Physical location: Cabinet 6, Frame 5, Board 4\n"
@@ -132,5 +132,5 @@ def test_formatting_no_job(basic_config_file, client, capsys):
 def test_no_boards(basic_config_file, client, capsys):
     client.where_is.return_value = None
     with pytest.raises(SystemExit) as exn:
-        main("--board m 3 2 1".split())
+        main(["--board", "m", "3", "2", "1"])
     assert exn.value.code == 4
