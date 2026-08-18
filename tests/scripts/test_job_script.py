@@ -476,7 +476,7 @@ class TestMain:
             ("321 --hostname foo " + owner_args + " " + args).split()) == 0
 
         if not reason and owner is not None:
-            reason = "Destroyed by {}".format(owner)
+            reason = f"Destroyed by {owner}"
 
         client.destroy_job.assert_called_once_with(
             321, reason, timeout=TIMEOUT)
