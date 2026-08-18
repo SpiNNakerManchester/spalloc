@@ -218,12 +218,12 @@ def test_show_machine_fail():
 
 def test_no_hostname(no_config_files):
     with pytest.raises(SystemExit):
-        main("".split())
+        main([])
 
 
 def test_detailed_without_machine(basic_config_file):
     with pytest.raises(SystemExit):
-        main("--detailed".split())
+        main(["--detailed"])
 
 
 @pytest.mark.parametrize("version", [(0, 0, 0),
@@ -231,19 +231,19 @@ def test_detailed_without_machine(basic_config_file):
 def test_bad_version(basic_config_file, client, version):
     client.version.return_value = ".".join(map(str, version))
     with pytest.raises(SystemExit) as exn:
-        main("".split())
+        main([])
     assert exn.value.code == 2
 
 
 def test_io_error(basic_config_file, client):
     client.version.side_effect = ProtocolError()
-    assert main("".split()) == 1
+    assert main([]) == 1
 
 
 def test_default_list(basic_config_file, client):
     client.list_machines.return_value = []
     client.list_jobs.return_value = []
-    assert main("".split()) == 0
+    assert main([]) == 0
 
 
 def test_specify_machine(basic_config_file, client):
@@ -254,7 +254,7 @@ def test_specify_machine(basic_config_file, client):
          "dead_links": []},
     ]
     client.list_jobs.return_value = []
-    assert main("m".split()) == 0
+    assert main(["m"]) == 0
 
 
 def test_specify_missing_machine(basic_config_file, client):
@@ -266,7 +266,7 @@ def test_specify_missing_machine(basic_config_file, client):
     ]
     client.list_jobs.return_value = []
     with pytest.raises(SystemExit) as exn:
-        main("n".split())
+        main(["n"])
     assert exn.value.code == 6
 
 
@@ -291,6 +291,6 @@ def test_watch_fail(basic_config_file, client):
 
     client.wait_for_notification.side_effect = [None, KeyboardInterrupt()]
     with pytest.raises(SystemExit) as exn:
-        main("m -w".split())
+        main(["m", "-w"])
     assert exn.value.code == 6
     assert len(client.wait_for_notification.mock_calls) == 0

@@ -185,13 +185,13 @@ def test_render_job_list(machine, owner):
 
 def test_args_no_hostname(no_config_files):
     with pytest.raises(SystemExit):
-        main("".split())
+        main([])
 
 
 def test_args_from_file(basic_config_file, basic_job_kwargs, client_factory,
                         client, faux_render):
     client.list_jobs.return_value = []
-    assert main("".split()) == 0
+    assert main([]) == 0
     client_factory.assert_called_once_with(basic_job_kwargs["hostname"],
                                            basic_job_kwargs["port"])
     assert faux_render.mock_calls[0][1][1] == []
@@ -203,8 +203,8 @@ def test_args(basic_config_file, basic_job_kwargs, client_factory, client,
               faux_render):
     client.list_jobs.return_value = []
     client.wait_for_notification.side_effect = KeyboardInterrupt()
-    assert main("--hostname pstastic --port 10 --timeout 9.0 "
-                "--machine foo --owner bar --watch".split()) == 0
+    assert main(["--hostname", "pstastic", "--port", "10", "--timeout", "9.0",
+                 "--machine", "foo", "--owner", "bar", "--watch"]) == 0
     client_factory.assert_called_once_with("pstastic", 10)
     client.wait_for_notification.assert_called_once_with()
     assert faux_render.mock_calls[0][1][1] == []
@@ -215,14 +215,14 @@ def test_args(basic_config_file, basic_job_kwargs, client_factory, client,
 def test_connection_error(basic_config_file, client):
     client.list_jobs.side_effect = IOError
 
-    assert main("".split()) == 1
+    assert main([]) == 1
 
 
 @pytest.mark.parametrize("version", [(0, 0, 0), VERSION_RANGE_STOP])
 def test_version_error(basic_config_file, version, client):
     client.version.return_value = ".".join(map(str, version))
     with pytest.raises(SystemExit) as exn:
-        main("".split())
+        main([])
     assert exn.value.code == 2
 
 
@@ -230,6 +230,6 @@ def test_watch(basic_config_file, basic_job_kwargs, client):
     client.list_jobs.return_value = []
     client.wait_for_notification.side_effect = [None, KeyboardInterrupt]
 
-    assert main("--watch".split()) == 0
+    assert main(["--watch"]) == 0
 
     assert len(client.list_jobs.mock_calls) == 2

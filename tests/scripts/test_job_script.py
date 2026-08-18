@@ -308,11 +308,11 @@ class TestMain:
 
     def test_no_hostname(self, no_config_files):
         with pytest.raises(SystemExit):
-            main("".split())
+            main([])
 
     def test_no_job_id_or_owner(self, no_config_files):
         with pytest.raises(SystemExit):
-            main("--hostname foo".split())
+            main(["--hostname", "foo"])
 
     @pytest.mark.parametrize("version",
                              [".".join(map(str, VERSION_RANGE_STOP)),
@@ -320,19 +320,19 @@ class TestMain:
     def test_bad_version(self, no_config_files, client, version):
         client.version.return_value = version
         with pytest.raises(SystemExit) as exn:
-            main("--hostname foo 123".split())
+            main(["--hostname", "foo", "123"])
         assert exn.value.code == 2
 
     def test_bad_connection(self, no_config_files, client):
         client.version.side_effect = ProtocolError()
-        assert main("--hostname foo 123".split()) == 1
+        assert main(["--hostname", "foo", "123"]) == 1
 
     def test_no_job_owner_has_no_jobs(self, no_config_files, client):
         client.list_jobs.return_value = [
             {"job_id": 1, "owner": "someone-else"}
         ]
         with pytest.raises(SystemExit) as exn:
-            main("--hostname foo --owner bar".split())
+            main(["--hostname", "foo", "--owner", "bar"])
         assert exn.value.code == 3
 
     def test_no_job_owner_has_many_jobs(self, no_config_files, client):
@@ -341,7 +341,7 @@ class TestMain:
             {"job_id": 2, "owner": "bar"},
         ]
         with pytest.raises(SystemExit) as exn:
-            main("--hostname foo --owner bar".split())
+            main(["--hostname", "foo", "--owner", "bar"])
         assert exn.value.code == 3
 
     def test_automatic_job_id(self, no_config_files, client):
@@ -370,7 +370,7 @@ class TestMain:
             "reason": None,
             "start_time": 0,
         }
-        assert main("--hostname foo --owner bar".split()) == 0
+        assert main(["--hostname", "foo", "--owner", "bar"]) == 0
         client.get_job_machine_info.assert_called_once_with(
             123, timeout=TIMEOUT)
 
@@ -401,7 +401,7 @@ class TestMain:
             "reason": None,
             "start_time": 0,
         }
-        assert main("321 --hostname foo --owner bar".split()) == 0
+        assert main(["321", "--hostname", "foo", "--owner", "bar"]) == 0
         client.get_job_machine_info.assert_called_once_with(
             321, timeout=TIMEOUT)
 
