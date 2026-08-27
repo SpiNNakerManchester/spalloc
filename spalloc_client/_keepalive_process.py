@@ -66,7 +66,7 @@ def keep_job_alive(
             try:
                 client.job_keepalive(job_id, timeout=timeout)
                 break
-            except (ProtocolTimeoutError, IOError, OSError):
+            except (ProtocolTimeoutError, OSError):
                 # Something went wrong, reconnect, after a delay which
                 # may be interrupted by the thread being stopped
 
@@ -75,7 +75,7 @@ def keep_job_alive(
                 if not stop_event.wait(reconnect_delay):
                     try:
                         client.connect(timeout)
-                    except (IOError, OSError):
+                    except OSError:
                         client.close()
 
 

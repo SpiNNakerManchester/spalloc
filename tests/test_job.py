@@ -205,9 +205,9 @@ class TestKeepalive:
     def test_reconnect(self, client, no_config_files):
         # Make sure that we can reconnect in the keepalive thread
         client.job_keepalive.side_effect = [
-            IOError(), IOError(), None, None, None, None]
+            OSError(), OSError(), None, None, None, None]
         client.connect.side_effect = [
-            None, IOError(), None, None, None, None]
+            None, OSError(), None, None, None, None]
         event = Event()
         j = Thread(target=keep_job_alive, args=(
             "localhost", 12345, 1, 0.2, 0.1, 0.2, event))
@@ -230,7 +230,7 @@ class TestKeepalive:
             raise AttributeError()
 
     def test_stop_while_server_down(self, client, no_config_files):
-        client.job_keepalive.side_effect = IOError()
+        client.job_keepalive.side_effect = OSError()
 
         # Make sure that we can stop the background thread while the server is
         # down.
@@ -415,7 +415,7 @@ class TestWaitForStateChange:
 
     def test_server_timeout(self, no_config_files, client):
         # Make sure that if the server dies, the timeout is still respected
-        client.get_job_state.side_effect = IOError()
+        client.get_job_state.side_effect = OSError()
         j = Job(hostname="localhost", owner="me")
 
         before = time.time()
@@ -438,7 +438,7 @@ class TestWaitForStateChange:
         j = Job(hostname="localhost", owner="me", keepalive=0.2,
                 reconnect_delay=0.1)
         client.get_job_state.side_effect = [
-            IOError(),
+            OSError(),
             {
                 "state": int(JobState.ready),
                 "power": True,
@@ -517,7 +517,7 @@ class TestWaitUntilReady:
 
 
 def test_context_manager_fail(no_config_files, monkeypatch, client):
-    monkeypatch.setattr(Job, "wait_until_ready", Mock(side_effect=IOError()))
+    monkeypatch.setattr(Job, "wait_until_ready", Mock(side_effect=OSError()))
 
     j = Job(hostname="localhost", owner="me")
     with pytest.raises(IOError):
@@ -538,7 +538,7 @@ def test_context_manager_success(no_config_files, monkeypatch, client):
 
 
 def test_destroy_absorbs_error(j, client):
-    client.destroy_job.side_effect = IOError()
+    client.destroy_job.side_effect = OSError()
     j.destroy()
 
 

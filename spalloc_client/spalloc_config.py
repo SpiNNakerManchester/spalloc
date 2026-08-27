@@ -178,7 +178,7 @@ class SpallocConfig:
             try:
                 with open(filename, "r", encoding="utf-8") as f:
                     parser.read_file(f, filename)
-            except (IOError, OSError):
+            except OSError:
                 # File did not exist, keep trying
                 pass
 
