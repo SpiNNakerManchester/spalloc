@@ -327,7 +327,7 @@ class Job:
             raise ValueError("A port must be specified.")
 
         # Cached responses of _get_state and _get_machine_info
-        self._last_machine_info: "_JobMachineInfoTuple" | None = None
+        self._last_machine_info: _JobMachineInfoTuple | None = None
 
         # Connection to server (and associated lock)
         self._client = ProtocolClient(hostname, port)
