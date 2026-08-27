@@ -366,7 +366,7 @@ def test_failiure_modes(basic_config_file, mock_working_job,
 
 def test_get_reason_fails(basic_config_file, mock_working_job):
     mock_working_job.state = JobState.destroyed
-    type(mock_working_job).reason = PropertyMock(side_effect=IOError())
+    type(mock_working_job).reason = PropertyMock(side_effect=OSError())
     assert main([]) == 1
 
 

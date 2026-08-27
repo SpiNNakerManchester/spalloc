@@ -312,7 +312,7 @@ def wait_for_job_ready(job: Job) -> tuple[int, str | None]:
                     reason = None
                     try:
                         reason = job.reason
-                    except (IOError, OSError):
+                    except OSError:
                         pass
 
                     if reason is not None:
@@ -465,7 +465,7 @@ def run_job(ip_file_filename: str,
     # Create the job
     try:
         job = Job(*job_args, **job_kwargs)  # type: ignore[arg-type]
-    except (OSError, IOError, ProtocolError, ProtocolTimeoutError) as e:
+    except (OSError, ProtocolError, ProtocolTimeoutError) as e:
         info(t.red(f"Could not connect to server: {e}"))
         return 6
 

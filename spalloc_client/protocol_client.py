@@ -183,7 +183,7 @@ class ProtocolClient:
         """
         try:
             return self._get_connection(timeout)
-        except (IOError, OSError):
+        except OSError:
             # Failure, try again...
             self._close()
             # Pass on the exception
@@ -322,7 +322,7 @@ class ProtocolClient:
                     self._notifications.append(obj)
 
             raise ProtocolTimeoutError(f"{timeout=} passed!")
-        except (IOError, OSError) as e:
+        except OSError as e:
             raise ProtocolError(str(e)) from e
 
     def wait_for_notification(
@@ -363,7 +363,7 @@ class ProtocolClient:
         # Otherwise, wait for a notification to arrive
         try:
             return self._recv_json(timeout)
-        except (IOError, OSError) as e:  # pragma: no cover
+        except OSError as e:  # pragma: no cover
             raise ProtocolError(str(e)) from e
 
     # The bindings of the Spalloc protocol methods themselves; simplifies use

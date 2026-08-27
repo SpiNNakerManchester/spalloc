@@ -456,7 +456,7 @@ class Job:
             self._client.connect(self._timeout)
             self._assert_compatible_version()
             logger.info("Reconnected to spalloc server successfully.")
-        except (IOError, OSError) as e:
+        except OSError as e:
             # Connect/version command failed... Leave the socket clearly
             # broken so that we retry again
             logger.warning(
@@ -477,7 +477,7 @@ class Job:
         # itself.
         try:
             self._client.destroy_job(self.id, reason)
-        except (IOError, OSError, ProtocolTimeoutError) as e:
+        except (OSError, ProtocolTimeoutError) as e:
             logger.warning("Could not destroy spalloc job: %s", e)
 
         self.close()
@@ -688,7 +688,7 @@ class Job:
                         # The user's timeout expired while waiting for a state
                         # change, return the old state and give up.
                         return old_state
-            except (IOError, OSError, ProtocolTimeoutError):
+            except (OSError, ProtocolTimeoutError):
                 # Something went wrong while communicating with the server,
                 # reconnect after the reconnection delay (or timeout, whichever
                 # came first.
