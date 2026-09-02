@@ -139,11 +139,11 @@ def test_getattr():
 
     # Should fail when unrecognised things appear
     with pytest.raises(AttributeError):
-        t.bad
+        _ = t.bad
     with pytest.raises(AttributeError):
-        t.red_bad
+        _ = t.red_bad
     with pytest.raises(AttributeError):
-        t.bad_red
+        _ = t.bad_red
 
 
 def test_render_table():
