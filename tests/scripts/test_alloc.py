@@ -385,10 +385,9 @@ def test_no_destroy(basic_config_file, mock_working_job):
 
 def test_resume(basic_config_file, mock_job, basic_job_kwargs):
     assert main(["--resume", "123", "-c", "true"]) == 6
-    mock_job.assert_called_once_with(**{
-        "resume_job_id": 123,
-        "hostname": basic_job_kwargs["hostname"],
-        "port": basic_job_kwargs["port"],
-        "timeout": basic_job_kwargs["timeout"],
-        "reconnect_delay": basic_job_kwargs["reconnect_delay"],
-    })
+    mock_job.assert_called_once_with(
+        resume_job_id=123,
+        hostname=basic_job_kwargs["hostname"],
+        port=basic_job_kwargs["port"],
+        timeout=basic_job_kwargs["timeout"],
+        reconnect_delay=basic_job_kwargs["reconnect_delay"])
