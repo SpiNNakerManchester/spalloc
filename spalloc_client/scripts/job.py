@@ -203,7 +203,7 @@ def watch_job(t: Terminal, client: ProtocolClient, timeout: float | None,
             # Gracefully exit
             return 0
         finally:
-            print("")
+            print()
 
 
 def power_job(client: ProtocolClient, timeout: float | None,

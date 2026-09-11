@@ -204,7 +204,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
             tuple(map(colour_func, DEFAULT_BOARD_EDGES)),  # Inner
             tuple(map(t.bright, DEFAULT_BOARD_EDGES))  # Outer
         ))
-    print("")
+    print()
     print(render_boards(board_groups, cast(list, machine["dead_links"]),
                         tuple(map(t.red, DEFAULT_BOARD_EDGES))))
     # Produce table showing jobs on machine
@@ -218,7 +218,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
                 cast(int, job["job_id"]) % len(job_colours)]
             cells.append((len(key) + len(job_id) + 1,
                          f"{colour_func(key)}:{job_id}"))
-        print("")
+        print()
         print(render_cells(cells))
     else:
         # In non-compact mode, produce a full table of job information
@@ -241,7 +241,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
                 owner,
             ]
             job_table.append(table_row)
-        print("")
+        print()
         print(render_table(job_table))
 
 
@@ -325,7 +325,7 @@ class ListMachinesScript(Script):
             except KeyboardInterrupt:
                 return
             finally:
-                print("")
+                print()
 
     @overrides(Script.body)
     def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:
