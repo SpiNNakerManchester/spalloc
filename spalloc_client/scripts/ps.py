@@ -162,7 +162,7 @@ class ProcessListScript(Script):
                 # Gracefully exit
                 return
             finally:
-                print("")
+                print()
 
     @overrides(Script.body)
     def body(self, client: ProtocolClient, args: argparse.Namespace) -> int:

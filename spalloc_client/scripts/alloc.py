@@ -189,7 +189,7 @@ def print_info(machine_name: str, connections: dict[tuple[int, int], str],
     try:
         _input(t_stdout.dim("<Press enter when done>"))
     except (KeyboardInterrupt, EOFError):
-        print("")
+        print()
 
 
 def run_command(
