@@ -520,9 +520,8 @@ def test_context_manager_fail(no_config_files, monkeypatch, client):
     monkeypatch.setattr(Job, "wait_until_ready", Mock(side_effect=OSError()))
 
     j = Job(hostname="localhost", owner="me")
-    with pytest.raises(IOError):
-        with j:
-            pass  # pragma: no cover
+    with pytest.raises(IOError), j:
+        pass  # pragma: no cover
 
     client.destroy_job.assert_called_once_with(123, None)
 
