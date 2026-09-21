@@ -451,7 +451,7 @@ def render_boards(
 
     for _boards, label, edge_inner, edge_outer in board_groups:
         # Convert to Cartesian coordinates
-        boards = set(_board_to_cartesian(x, y, z) for x, y, z in _boards)
+        boards = {_board_to_cartesian(x, y, z) for x, y, z in _boards}
         all_boards.update(boards)
 
         # Set board labels and basic edge style
