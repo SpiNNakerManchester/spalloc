@@ -178,8 +178,8 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
     print(render_definitions(info))
 
     # Draw diagram of machine
-    dead_boards = set((x, y, z) for x, y, z in cast(
-        list, machine["dead_boards"]))
+    dead_boards = {(x, y, z) for x, y, z in cast(
+        list, machine["dead_boards"])}
     board_groups = [(list([(x, y, z)
                           for x in range(cast(int, machine["width"]))
                           for y in range(cast(int, machine["height"]))
