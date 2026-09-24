@@ -16,9 +16,9 @@ import os
 import sys
 import tempfile
 import threading
+from unittest.mock import Mock  # type: ignore[import]
 
 import pytest
-from unittest.mock import Mock  # type: ignore[import]
 
 from spalloc_client import ProtocolClient
 from spalloc_client.spalloc_config import SEARCH_PATH

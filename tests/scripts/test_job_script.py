@@ -13,9 +13,9 @@
 # limitations under the License.
 
 from datetime import datetime
+from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 import pytest
-from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 from spalloc_client import JobState, ProtocolError
 from spalloc_client.scripts.job import (

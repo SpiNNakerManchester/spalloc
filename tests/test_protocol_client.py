@@ -16,9 +16,9 @@ import logging
 import socket
 import threading
 import time
+from unittest.mock import Mock  # type: ignore[import]
 
 import pytest
-from unittest.mock import Mock  # type: ignore[import]
 
 from spalloc_client import (
     ProtocolClient,
