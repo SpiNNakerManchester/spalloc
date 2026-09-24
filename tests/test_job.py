@@ -54,7 +54,7 @@ def client(monkeypatch):
     return client
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def j(client):
     # Create a job and create/destroy it
     j = Job(hostname="localhost", owner="me")

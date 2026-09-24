@@ -21,7 +21,7 @@ import pytest
 from spalloc_client.spalloc_config import SpallocConfig
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def tempdir():
     d = tempfile.mkdtemp()
     yield d

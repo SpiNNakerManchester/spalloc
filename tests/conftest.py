@@ -26,7 +26,7 @@ from spalloc_client.spalloc_config import SEARCH_PATH
 from .common import MockServer
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def no_config_files(monkeypatch):
     # Prevent discovery of config files during test
     before = SEARCH_PATH[:]
@@ -35,7 +35,7 @@ def no_config_files(monkeypatch):
     SEARCH_PATH.extend(before)
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def s():
     # A mock server
     s = MockServer()
@@ -43,14 +43,14 @@ def s():
     s.close()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def c():
     c = ProtocolClient("localhost")
     yield c
     c.close()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def bg_accept(s):
     # Accept the first conncetion in the background
     started = threading.Event()
@@ -67,7 +67,7 @@ def bg_accept(s):
     t.join()
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def basic_config_file(monkeypatch):
     # Sets up a basic config file with known and non-default values for all
     # fields
