@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from unittest.mock import MagicMock, Mock  # type: ignore[import]
+
 import pytest
-from mock import MagicMock, Mock  # type: ignore[import]
 
 from spalloc_client.protocol_client import ProtocolError
 from spalloc_client.scripts.support import (

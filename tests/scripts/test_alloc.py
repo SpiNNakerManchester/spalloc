@@ -14,9 +14,9 @@
 
 import os
 import tempfile
+from unittest.mock import Mock, PropertyMock  # type: ignore[import]
 
 import pytest
-from mock import Mock, PropertyMock  # type: ignore[import]
 
 from spalloc_client import JobDestroyedError, JobState
 from spalloc_client.scripts.alloc import (
