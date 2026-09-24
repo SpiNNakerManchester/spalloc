@@ -16,7 +16,7 @@ import collections
 from datetime import datetime
 
 import pytest
-from mock import MagicMock, Mock  # type: ignore[import]
+from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 from spalloc_client import JobState
 from spalloc_client.scripts.ps import main, render_job_list

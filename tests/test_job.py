@@ -17,7 +17,7 @@ import time
 from threading import Event, Thread
 
 import pytest
-from mock import Mock  # type: ignore[import]
+from unittest.mock import Mock  # type: ignore[import]
 
 from spalloc_client import (
     Job,
