@@ -27,7 +27,7 @@ from spalloc_client.scripts.alloc import (
 )
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def filename():
     _, filename = tempfile.mkstemp()
     yield filename
