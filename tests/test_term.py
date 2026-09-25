@@ -192,19 +192,17 @@ def test_render_definitions():
     assert render_definitions({}) == ""
 
     # Singleton
-    assert render_definitions(dict([("foo", "bar")])) == "foo: bar"
+    assert render_definitions({"foo": "bar"}) == "foo: bar"
 
     # Ragged
-    assert render_definitions(dict([
-        ("Key", "Value"),
-        ("Something", "Else"),
-        ("Another", "Thing"),
-    ])) == ("      Key: Value\n"
-            "Something: Else\n"
-            "  Another: Thing")
+    assert render_definitions(
+        {"Key": "Value", "Something": "Else", "Another": "Thing"}) == (
+        "      Key: Value\n"
+        "Something: Else\n"
+        "  Another: Thing")
 
     # Alternative seperator
-    assert render_definitions(dict([("foo", "bar")]),
+    assert render_definitions({"foo": "bar"},
                               separator="=") == "foo=bar"
     # Linebreaks
     assert render_definitions({"Key": "Lines\nBroken\nUp."}) == (
