@@ -115,6 +115,8 @@ import sys
 import tempfile
 from shlex import quote
 
+from spinn_utilities.log import FormatAdapter
+
 from spalloc_client import (
     Job,
     JobState,
@@ -130,6 +132,7 @@ from spalloc_client.term import Terminal, render_definitions
 arguments: argparse.Namespace | None = None
 t: Terminal | None = None
 _input = input  # This is so we can monkey patch input during testing
+logger = FormatAdapter(logging.getLogger(__name__))
 
 
 def write_ips_to_csv(connections: dict[tuple[int, int], str],
@@ -240,10 +243,10 @@ def run_command(
     root_hostname = connections[(0, 0)]
 
     # Print essential info in log
-    logging.info("Allocated %d x %d chip machine in '%s'",
-                 width, height, machine_name)
-    logging.info("Chip (0, 0) IP: %s", root_hostname)
-    logging.info("All board IPs listed in: %s", ip_file_filename)
+    logger.info("Allocated %d x %d chip machine in '%s'",
+                width, height, machine_name)
+    logger.info("Chip (0, 0) IP: %s", root_hostname)
+    logger.info("All board IPs listed in: %s", ip_file_filename)
 
     # Make substitutions in command arguments
     commands = [arg.format(root_hostname,
