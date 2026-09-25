@@ -239,7 +239,7 @@ class ProtocolClient:
         while b"\n" not in self._local.buffer:
             try:
                 data = sock.recv(1024)
-            except socket.timeout as e:
+            except TimeoutError as e:
                 raise ProtocolTimeoutError("recv timed out.") from e
 
             # Has socket closed?
@@ -279,7 +279,7 @@ class ProtocolClient:
             if sock.send(data) != len(data):
                 # If can't send whole command at once, just fail
                 raise OSError("Could not send whole command.")
-        except socket.timeout as e:
+        except TimeoutError as e:
             raise ProtocolTimeoutError("send timed out.") from e
 
     def call(self, name: str, timeout: float | None,

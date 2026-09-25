@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import logging
-import socket
 import threading
 import time
 from unittest.mock import Mock  # type: ignore[import]
@@ -147,7 +146,7 @@ def test_send_json(c, s, bg_accept):
 @pytest.mark.timeout(1.0)
 def test_send_json_fails(c):
     sock = Mock()
-    sock.send.side_effect = [1, socket.timeout()]
+    sock.send.side_effect = [1, TimeoutError()]
     c._socks[threading.current_thread()] = sock
     c._dead = False
 
