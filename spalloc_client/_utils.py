@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import time
-from datetime import datetime
+from datetime import UTC, datetime
 
 
 def time_left_float(timestamp: float) -> float:
@@ -61,4 +61,5 @@ def render_timestamp(timestamp: float) -> str:
 
     :returns: timestamp in human readable format
     """
-    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
+    return (datetime.fromtimestamp(timestamp, tz=UTC)
+            .strftime("%d/%m/%Y %H:%M:%S"))

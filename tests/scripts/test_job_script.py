@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 import pytest
@@ -78,7 +78,7 @@ class TestShowJobInfo:
 
     def test_queued(self, capsys):
         t = Terminal(force=False)
-        naive = datetime(2000, 1, 1, 0, 0, 0)
+        naive = datetime(2000, 1, 1, 0, 0, 0, tzinfo=UTC)
         aware = naive.astimezone()
         epoch = int(aware.timestamp())
 
@@ -116,7 +116,7 @@ class TestShowJobInfo:
     @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
     def test_power_ready(self, capsys, state):
         t = Terminal(force=False)
-        naive = datetime(2000, 1, 1, 0, 0, 0)
+        naive = datetime(2000, 1, 1, 0, 0, 0, tzinfo=UTC)
         aware = naive.astimezone()
         epoch = int(aware.timestamp())
 

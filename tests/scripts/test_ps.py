@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import collections
-from datetime import datetime
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 import pytest
@@ -58,7 +58,7 @@ def faux_render(monkeypatch):
 def test_render_job_list(machine, owner):
     t = Terminal(force=False)
 
-    naive = datetime(2000, 1, 1, 0, 0, 0)
+    naive = datetime(2000, 1, 1, 0, 0, 0, tzinfo=UTC)
     aware = naive.astimezone()
     epoch = int(aware.timestamp())
 
