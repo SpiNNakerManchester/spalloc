@@ -180,11 +180,11 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
     # Draw diagram of machine
     dead_boards = {(x, y, z) for x, y, z in cast(
         list, machine["dead_boards"])}
-    board_groups = [(list([(x, y, z)
+    board_groups = [([(x, y, z)
                           for x in range(cast(int, machine["width"]))
                           for y in range(cast(int, machine["height"]))
                           for z in range(3)
-                          if (x, y, z) not in dead_boards]),
+                          if (x, y, z) not in dead_boards],
                      t.dim(" . "),  # Label
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)),  # Inner
                      tuple(map(t.dim, DEFAULT_BOARD_EDGES)))]  # Outer
