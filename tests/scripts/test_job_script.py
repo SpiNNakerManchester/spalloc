@@ -17,6 +17,8 @@ from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 import pytest
 
+from spinn_utilities.local_time_zone import LOCAL
+
 from spalloc_client import JobState, ProtocolError
 from spalloc_client.scripts.job import (
     destroy_job,
@@ -78,7 +80,7 @@ class TestShowJobInfo:
 
     def test_queued(self, capsys):
         t = Terminal(force=False)
-        naive = datetime(2000, 1, 1, 0, 0, 0)
+        naive = datetime(2000, 1, 1, 0, 0, 0, tzinfo=LOCAL)
         aware = naive.astimezone()
         epoch = int(aware.timestamp())
 
@@ -116,7 +118,7 @@ class TestShowJobInfo:
     @pytest.mark.parametrize("state", [JobState.power, JobState.ready])
     def test_power_ready(self, capsys, state):
         t = Terminal(force=False)
-        naive = datetime(2000, 1, 1, 0, 0, 0)
+        naive = datetime(2000, 1, 1, 0, 0, 0, tzinfo=LOCAL)
         aware = naive.astimezone()
         epoch = int(aware.timestamp())
 
