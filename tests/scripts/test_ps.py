@@ -18,6 +18,8 @@ from unittest.mock import MagicMock, Mock  # type: ignore[import]
 
 import pytest
 
+from spinn_utilities.local_time_zone import LOCAL
+
 from spalloc_client import JobState
 from spalloc_client.scripts.ps import main, render_job_list
 from spalloc_client.scripts.support import (
@@ -58,8 +60,7 @@ def faux_render(monkeypatch):
 def test_render_job_list(machine, owner):
     t = Terminal(force=False)
 
-    naive = datetime(2000, 1, 1, 0, 0, 0)
-    aware = naive.astimezone()
+    aware = datetime(2000, 1, 1, 0, 0, 0, tzinfo=LOCAL)
     epoch = int(aware.timestamp())
 
     jobs = [

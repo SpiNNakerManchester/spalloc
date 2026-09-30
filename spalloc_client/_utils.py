@@ -15,6 +15,8 @@
 import time
 from datetime import datetime
 
+from spinn_utilities.local_time_zone import LOCAL
+
 
 def time_left_float(timestamp: float) -> float:
     """ Convert a not None timestamp into how long to wait for it.
@@ -61,4 +63,5 @@ def render_timestamp(timestamp: float) -> str:
 
     :returns: timestamp in human readable format
     """
-    return datetime.fromtimestamp(timestamp).strftime("%d/%m/%Y %H:%M:%S")
+    return datetime.fromtimestamp(timestamp, tz=LOCAL).strftime(
+        "%d/%m/%Y %H:%M:%S")
