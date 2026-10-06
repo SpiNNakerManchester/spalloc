@@ -117,15 +117,15 @@ from shlex import quote
 
 from spinn_utilities.log import FormatAdapter
 
-from spalloc_client import (
-    Job,
-    JobState,
+from spalloc_client._version import __version__
+from spalloc_client.job import Job
+from spalloc_client.protocol_client import (
     ProtocolError,
     ProtocolTimeoutError,
     SpallocServerException,
-    __version__,
 )
 from spalloc_client.spalloc_config import SpallocConfig
+from spalloc_client.states import JobState
 from spalloc_client.term import Terminal, render_definitions
 
 # pylint: disable=invalid-name
