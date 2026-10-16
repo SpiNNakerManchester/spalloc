@@ -32,8 +32,10 @@ from typing import cast
 from spinn_utilities.overrides import overrides
 from spinn_utilities.typing.json import JsonObjectArray
 
-from spalloc_client import JobState, ProtocolClient, __version__
 from spalloc_client._utils import render_timestamp
+from spalloc_client._version import __version__
+from spalloc_client.job import JobState
+from spalloc_client.protocol_client import ProtocolClient
 from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import TableColumn, TableType, Terminal, render_table
 

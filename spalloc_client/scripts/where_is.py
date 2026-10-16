@@ -70,7 +70,8 @@ from typing import Any, cast
 
 from spinn_utilities.overrides import overrides
 
-from spalloc_client import ProtocolClient, __version__
+from spalloc_client._version import __version__
+from spalloc_client.protocol_client import ProtocolClient
 from spalloc_client.scripts.support import Script, Terminate
 from spalloc_client.spalloc_config import SpallocConfig
 from spalloc_client.term import render_definitions
