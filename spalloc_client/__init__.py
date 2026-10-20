@@ -14,16 +14,16 @@
 
 from spalloc_client._version import __version__  # noqa: F401
 
+from .job import Job, JobDestroyedError, StateChangeTimeoutError
+
 # Alias useful objects
-from spalloc_client.protocol_client import (
+from .protocol_client import (
     ProtocolClient,
     ProtocolError,
     ProtocolTimeoutError,
     SpallocServerException,
 )
-from spalloc_client.states import JobState
-
-from .job import Job, JobDestroyedError, StateChangeTimeoutError
+from .states import JobState
 
 __all__ = [
     "Job", "JobDestroyedError", "JobState", "ProtocolClient",

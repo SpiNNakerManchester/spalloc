@@ -18,7 +18,7 @@ from typing import Any
 
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 
-from spalloc_client import (
+from spalloc_client.protocol_client import (
     ProtocolClient,
     ProtocolError,
     ProtocolTimeoutError,
