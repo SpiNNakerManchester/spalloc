@@ -66,7 +66,7 @@ To query by chip coordinate of chips allocated to a job::
 """
 import argparse
 import sys
-from typing import Any, cast
+from typing import cast
 
 from spinn_utilities.overrides import overrides
 
@@ -163,7 +163,7 @@ class WhereIsScript(Script):
         if location is None:
             raise Terminate(4, "No boards at the specified location")
 
-        out: dict[str, Any] = {}
+        out: dict[str, object] = {}
         out["Machine"] = cast(str, location["machine"])
         cabinet, frame, board = cast(list, location["physical"])
         out["Physical location"] = (

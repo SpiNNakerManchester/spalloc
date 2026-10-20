@@ -14,7 +14,6 @@
 
 import sys
 from argparse import ArgumentParser, Namespace
-from typing import Any
 
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 
@@ -88,7 +87,7 @@ class Script(metaclass=AbstractBase):
         """
         raise NotImplementedError
 
-    def build_server_arg_group(self, server_args: Any,
+    def build_server_arg_group(self, server_args: object,
                                cfg: SpallocConfig) -> None:
         """
         Adds a few more arguments
