@@ -36,7 +36,7 @@ from collections.abc import Iterator
 from typing import cast
 
 from spinn_utilities.overrides import overrides
-from spinn_utilities.typing.json import JsonObject, JsonObjectArray
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray, JsonValue
 
 from spalloc_client import ProtocolClient, __version__
 from spalloc_client.scripts.support import Script, Terminate
@@ -51,7 +51,6 @@ from spalloc_client.term import (
     render_definitions,
     render_table,
 )
-from spinn_utilities.typing.json import JsonValue
 
 
 def generate_keys(alphabet: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ") -> Iterator:
