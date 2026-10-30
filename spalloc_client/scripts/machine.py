@@ -33,10 +33,10 @@ import argparse
 import sys
 from collections import defaultdict
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import cast
 
 from spinn_utilities.overrides import overrides
-from spinn_utilities.typing.json import JsonObject, JsonObjectArray
+from spinn_utilities.typing.json import JsonObject, JsonObjectArray, JsonValue
 
 from spalloc_client._version import __version__
 from spalloc_client.protocol_client import ProtocolClient
@@ -150,7 +150,7 @@ def show_machine(t: Terminal, machines: JsonObjectArray, jobs: JsonObjectArray,
     machine = _get_machine(machines, machine_name)
 
     # Extract list of jobs running on the machine
-    displayed_jobs: list[dict[str, Any]] = []
+    displayed_jobs: list[dict[str, JsonValue]] = []
     job_key_generator = iter(generate_keys())
     job_colours = [
         t.green, t.blue, t.magenta, t.yellow, t.cyan,

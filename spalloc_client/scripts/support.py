@@ -13,8 +13,7 @@
 # limitations under the License.
 
 import sys
-from argparse import ArgumentParser, Namespace
-from typing import Any
+from argparse import ArgumentParser, Namespace, _ArgumentGroup
 
 from spinn_utilities.abstract_base import AbstractBase, abstractmethod
 
@@ -88,7 +87,7 @@ class Script(metaclass=AbstractBase):
         """
         raise NotImplementedError
 
-    def build_server_arg_group(self, server_args: Any,
+    def build_server_arg_group(self, server_args: _ArgumentGroup,
                                cfg: SpallocConfig) -> None:
         """
         Adds a few more arguments
@@ -114,7 +113,8 @@ class Script(metaclass=AbstractBase):
     def __call__(self, argv: str | None = None) -> int:
         cfg = SpallocConfig()
         parser = self.get_parser(cfg)
-        server_args = parser.add_argument_group("spalloc server arguments")
+        server_args: _ArgumentGroup = parser.add_argument_group(
+            "spalloc server arguments")
         self.build_server_arg_group(server_args, cfg)
         args = parser.parse_args(argv)
 
